@@ -1,0 +1,3 @@
+# Gerber output folder. Generated artifacts are git-ignored by default
+# (see ../../.gitignore). Export here via File > Fabrication Outputs, then zip
+# for JLCPCB per docs/04-jlcpcb-fabrication.md.

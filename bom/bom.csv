@@ -12,8 +12,8 @@ D2,Output clamp to GND,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
 D_lfo1,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,Back-to-back with D_lfo2
 D_lfo2,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,
 VTL1,Optocoupler tremolo,Xvive VTL5C1,inline-4,,,1,Or DIY LED+LDR; source from Amplified Parts/Banzai
-LED_rate,Diagnostic rate LED,3mm red,T-1,160-1127-ND,,1,On-board, not panel
-C_main,Main filter cap,4700uF 50V low-ESR,radial,,667-EEU-FC1H472,1,
+LED_rate,Diagnostic rate LED,3mm red,T-1,160-1127-ND,,1,On-board; not panel
+C_main,Main filter cap,4700uF 50V low-ESR,radial,,667-EEU-FC1H472,1,Part7: optionally 2x 2200uF if PCB-mounted (errata #16)
 C_filt1,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
 C_filt2,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
 C101,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
@@ -23,7 +23,7 @@ C104,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
 C_in_pa,Power amp input coupling,1uF 50V film,radial,,,1,
 C_out_pa,Power amp output coupling,2200uF 35V,radial,,,1,REQUIRED for single-supply (errata #7)
 C_gain_pa,Power amp gain LF rolloff,22uF 25V,radial,,,1,
-C_fb_hf,Power amp HF rolloff across R_fb,1nF,film,,,1,7.2 kHz bandwidth limit
+C_fb_hf,Power amp HF rolloff across R_fb,1nF,film,,,1,7.2 kHz bandwidth limit (absent from .cir; see cross-check)
 C_zobel,Zobel cap,100nF 100V film,radial,,,1,
 C_byp1,V+ bypass MLCC,100nF 50V,disc,,594-K104K15X7RF5TL2,1,
 C_byp2,V+ bypass electrolytic,10uF 50V,radial,,,1,
@@ -45,7 +45,7 @@ R_fb,PA feedback,22K 1% 1/4W,axial,,,1,
 R_gain,PA gain set,1K 1% 1/4W,axial,,,1,Av = 23x
 R_zobel,Zobel resistor,10R 1W,axial,,,1,
 R_reg1,LM317 set resistor,240R 1% 1/4W,axial,,603-MFR-25FBF52-240R,1,
-R_reg2,LM317 set resistor,3.0K 1% 1/4W,axial,,603-MFR-25FBF52-3K,1,
+R_reg2,LM317 set resistor,3.09K 1% 1/4W,axial,,,1,Was 3.0K (gave 16.9V); 3.09K E96 -> 17.34V (errata #10)
 R_27V,27V rail dropper,47R 2W metal oxide,axial,,603-MOS2CT52A47R0J,1,
 R_led,LFO LED current limiter,1K 1/4W,axial,,,1,
 R_trem1,Tremolo signal series R,10K 1% 1/4W,axial,,,1,
@@ -54,3 +54,43 @@ REVPAN,Reverb pan,Accutronics 4FB2A1C ~1475ohm,,,,1,NOT 4AB3C1B (8ohm incompatib
 F1,Secondary fuse,1A 250V slow-blow,5x20mm,,576-0273001.H,1,
 F1_holder,Fuse holder,PCB mount 5x20mm,,,534-3557,1,
 T1,Power transformer,reuse original / AnTek AS-0524,,,,1,Test secondary ~48VAC before reuse
+R_bleed,Filter-cap bleeder/discharge,10K 5W,axial,,,1,Across C_main for safe discharge (Part1 safety)
+R_g1,Q1 gate bias to GND,1M 1/4W,axial,,,1,High-Z guitar input [Part2 reconstructed]
+R_d1,Q1 drain load,10K 1/4W,axial,,,1,Set Vd 8-9V [Part2 reconstructed]
+R_s1,Q1 source self-bias,2K2 1/4W,axial,,,1,[Part2 reconstructed]
+C_s1,Q1 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
+C_in_pre,Preamp input coupling,47nF film,radial,,,1,~47nF [Part2 reconstructed]
+R_g2,Q2 gate bias to GND,1M 1/4W,axial,,,1,[Part2 reconstructed]
+R_d2,Q2 drain load,10K 1/4W,axial,,,1,[Part2 reconstructed]
+R_s2,Q2 source self-bias,2K2 1/4W,axial,,,1,[Part2 reconstructed]
+C_s2,Q2 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
+TONE_STACK,Vox tone-stack passives,TBD,,,,,Values NOT recovered; replicate original 25-5274-2 top-boost network
+R_drv1,Reverb driver feedback,100K 1/4W,axial,,,1,Driver gain 11x [netlist sheet4]
+R_drv2,Reverb driver gain-set to GND,10K 1/4W,axial,,,1,[netlist sheet4]
+R_drv3,Tank drive series R,10R 1/4W,axial,,,1,[netlist sheet4]
+C_rev1,Tank drive coupling,1uF 50V film,radial,,,1,[netlist sheet4]
+C_rev2,Tank return coupling,10nF film,radial,,,1,[netlist sheet4]
+R_rec_bias,Recovery JFET gate bias,1M 1/4W,axial,,,1,[netlist sheet4]
+R_rec1,Recovery JFET drain load,10K 1/4W,axial,,,1,[netlist sheet4]
+R_rec2,Recovery JFET source bias,2K2 1/4W,axial,,,1,[netlist sheet4]
+C_rec_byp,Recovery source bypass,10uF 25V,radial,,,1,[netlist sheet4]
+C_rev4,Reverb wet output coupling,100nF 50V film,radial,,,1,[netlist sheet4]
+POT_REV,Reverb mix pot,reuse original,,,,1,Original panel pot (verify taper)
+R_lfo_ser,Wien-bridge series R,100K 1/4W,axial,,,1,Limits max LFO freq [netlist sheet5]
+R_lfo1,Wien-bridge fixed R,33K 1/4W,axial,,,1,[netlist sheet5]
+R_lfo_fb1,LFO feedback divider,10K 1/4W,axial,,,1,[netlist sheet5]
+R_lfo_fb2,LFO feedback divider,4K7 1/4W,axial,,,1,[netlist sheet5]
+R_led_diag,Diagnostic LED limiter,2K2 1/4W,axial,,,1,[netlist sheet5]
+C_dc_blk,LFO DC blocking,10uF 25V,radial,,,1,[netlist sheet5]
+C_trem_out,Tremolo output coupling,100nF 50V film,radial,,,1,[netlist sheet5]
+POT_SPD,Tremolo speed,500K lin,,,,1,Reuse original panel pot
+POT_DPT,Tremolo depth,100K lin,,,,1,Reuse original panel pot
+R_fx_pad,FX-loop send/return pad,10K 1/4W,axial,,,1,Internal effects loop via IN3 (Part2)
+POT_VOL,Volume pot,reuse original,,,,1,Original panel; FX-send tapped at wiper
+POT_TONE,Tone/treble pot,reuse original,,,,1,Original panel
+J_IN,Input jacks,reuse original,,,,3,IN1/IN2 normal; IN3 repurposed for internal FX loop
+FS_DIN,6-pin DIN footswitch jack,reuse original,,,,1,Rev/Trem/MRB + GND
+HS_LM1875,Heatsink for LM1875,<=2.5 C/W,,,,1,Reuse original bracket; mica + shoulder washer
+INS_MICA,TO-220 mica insulator + bushing,,,,,1,For LM1875
+SOCKET_IC,8-pin DIP socket,,,,,2,For IC1/IC2 (recommended)
+STANDOFF,Nylon standoffs + screws,,,,,4,PCB mounting

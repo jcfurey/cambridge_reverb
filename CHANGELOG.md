@@ -25,3 +25,19 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - Reconstructed Parts 1-10 + errata into docs/ from recovered conversation
   content (see docs/PROVENANCE.md for method and verification notes).
 - Added bom/bom.csv, spice/power_amp_lm1875.cir, kicad/netlist-notes.txt.
+
+### Consistency pass & build-out (2026-06-14)
+- **Errata Issues 9–17 resolved** (docs/errata.md): board-dimension decision
+  point, LM317 17 V set-resistor correction (R_reg2 3.0k→3.09k for 17.0–17.5 V),
+  missing HighCurrent net class, via-drill/trace-width reconciliation, reverb-pan
+  and JFET-bias consistency confirmations, filter-cap and bypass wording.
+- **BOM cross-check** (bom/cross-check.md): added the missing preamp, reverb,
+  tremolo, MRB, panel-pot, FX-loop, and mechanical/safety rows to bom/bom.csv
+  (values from Part 2 + netlist-notes); flagged SPICE simplifications and the
+  unrecovered tone-stack values.
+- **KiCad project re-authored** (kicad/): cambridge_reverb.kicad_pro (3 net
+  classes), custom symbol library (VTL5C1, reverb tank, DIN-6), custom
+  footprints (VTL5C1, 1H toroid, 35-pad wiring edge array), library tables, and
+  SCHEMATIC-BUILD.md.
+- **Reference content** added to empty dirs: datasheets/SOURCES.md,
+  photos/CAPTURE-CHECKLIST.md, production/CHECKLIST.md.

@@ -5,6 +5,13 @@
 > was not retained. This document records their documented structure so the
 > project can be rebuilt; the netlist notes in `../kicad/` carry the recovered
 > per-sheet connection detail.
+>
+> **Update (2026-06-14):** the project file and custom libraries have been
+> re-authored and now exist in `../kicad/` — `cambridge_reverb.kicad_pro`
+> (with the corrected three net classes from the errata consistency pass),
+> `symbols/cambridge_reverb.kicad_sym`, `footprints/cambridge_reverb.pretty/`,
+> and the `*-lib-table` files. The eight hierarchical `.kicad_sch` sheets are
+> built in the GUI following `../kicad/SCHEMATIC-BUILD.md`.
 
 ## Project structure (as documented)
 - `.kicad_pro` — JLCPCB-compatible design rules; two net classes (Default 0.3 mm
