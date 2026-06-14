@@ -4,6 +4,15 @@ All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
 ## Audit pass (2026-06-14)
+- **Component availability / sockets / current-draw / noise audit**
+  (`docs/component-availability-audit.md`): parts tiered by sourceability (the two
+  single-points-of-failure are the JFETs and the LM1875 — buy spares); **DIP
+  op-amp sockets made REQUIRED** (machined-pin) with the power TO-220s staying
+  heatsink-mounted; per-rail current budget + LM317/LM1875 dissipation + ~50 VA
+  transformer sizing; noise review. Finding: the **+27 V dropper (47 Ω) is
+  mis-sized** for the modern ~15 mA load (node sits ~32.8 V, not 27 V) — recommend
+  feeding the LM317 directly from +33.5 V or re-sizing to ~390–470 Ω. BOM updated
+  (socket P/N, JFET/LM1875 availability flags).
 - **Schematic pages centered:** the generator now defers emission, computes each
   sheet's content bounding box, and translates it to the page center (snapped to
   the 1.27 mm grid). All 8 sheets centered; ERC still 0 violations.

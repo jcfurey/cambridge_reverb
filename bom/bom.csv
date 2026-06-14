@@ -1,10 +1,10 @@
 ref,description,value,package,digikey_pn,mouser_pn,qty,notes
-Q1,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Use SOT-23 to TO-92 adapter; or J113 TO-92 (J113-ND) with adjusted bias
+Q1,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,AVAILABILITY WATCH: small-signal JFETs going EOL industry-wide - buy spares; alts J113/LSK170/BF245 (re-bias). SOT-23 to TO-92 adapter or J113 TO-92
 Q2,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Bias targets 2N5457 specs
 Q_rec,N-ch JFET reverb recovery,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,
 IC1,Dual JFET op-amp (reverb driver),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
 IC2,Dual JFET op-amp (tremolo LFO),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
-IC_PA,Power amplifier,LM1875T/NOPB,TO-220,LM1875T/NOPB-ND,926-LM1875T/NOPB,1,Heatsink <=2.5 C/W; mica insulator
+IC_PA,Power amplifier,LM1875T/NOPB,TO-220,LM1875T/NOPB-ND,926-LM1875T/NOPB,1,Heatsink <=2.5 C/W; mica insulator. Single-source (TI) - buy a spare; no true 2nd source (TDA2030A needs redesign). NOT socketed (bolts to heatsink)
 U1,Voltage regulator 17V rail,LM317T,TO-220,LM317T/NOPB-ND,926-LM317T/NOPB,1,
 BR1,Bridge rectifier,KBP410G 4A 1000V,inline-4,KBP410G-ND,821-KBP410G,1,Or 4x 1N4007
 D1,Output clamp to V+,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
@@ -92,5 +92,6 @@ J_IN,Input jacks,reuse original,,,,3,IN1/IN2 normal; IN3 repurposed for internal
 FS_DIN,6-pin DIN footswitch jack,reuse original,,,,1,Rev/Trem/MRB + GND
 HS_LM1875,Heatsink for LM1875,<=2.5 C/W,,,,1,Reuse original bracket; mica + shoulder washer
 INS_MICA,TO-220 mica insulator + bushing,,,,,1,For LM1875
-SOCKET_IC,8-pin DIP socket,,,,,2,For IC1/IC2 (recommended)
+SOCKET_IC,8-pin DIP machined-pin socket,turned-pin,DIP-8,ED3008-5-ND,575-193308,2,REQUIRED for IC1/IC2 (TL072); machined/turned-pin not stamped (see component-availability-audit)
+SOCKET_U1,TO-220 socket (optional),3-pin,TO-220,,,0,Optional for LM317 field-swap; LM1875 stays soldered+bolted to heatsink
 STANDOFF,Nylon standoffs + screws,,,,,4,PCB mounting
