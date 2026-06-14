@@ -1,10 +1,57 @@
 # spice/
 
-LTspice simulations (guitar-optimized). Supersedes the original Part 6.
+Circuit simulations for the six blocks. The original set was **LTspice**
+(guitar-optimized, supersedes Part 6); only the power-amp netlist was recovered
+verbatim. Added alongside it is a set of **ngspice-runnable** netlists for all
+the simulatable blocks, so the design can be re-verified with an open-source tool
+(`apt install ngspice`, then `./run_all.sh`). Guitar-optimization parameters are
+documented in `../docs/06b-spice-simulations.md`.
 
-- `power_amp_lm1875.cir` — LM1875 power amp, single supply, recovered verbatim.
+## Files
+| File | Tool | Block | What it checks |
+|------|------|-------|----------------|
+| `power_amp_lm1875.cir` | LTspice | Power amp | Original, recovered verbatim (kept as-is) |
+| `ac_power_amp_lm1875.cir` | ngspice | Power amp | Gain + LF/HF −3 dB corners, **with `C_fb_hf` + 10″ speaker model** |
+| `ac_reverb_driver.cir` | ngspice | Reverb driver | Non-inverting gain (11×) |
+| `ac_mrb.cir` | ngspice | MRB | Resonant-peak frequency |
+| `dc_preamp_jfet.cir` | ngspice | Preamp | JFET bias point + midband gain |
+| `tran_tremolo_lfo.cir` | ngspice | Tremolo LFO | Oscillation + frequency |
+| `models/opamp1p.sub` | — | shared | One-pole op-amp macromodel (TL072 / LM1875) |
+| `models/jfet_2n5457.lib` | — | shared | 2N5457/MMBF5457 JFET model |
+| `run_all.sh` | — | — | Runs every ngspice block and prints key numbers |
 
-The original set covered six circuit blocks (preamp, tone stack, reverb,
-tremolo, MRB, power amp). Only the power-amp netlist was recovered verbatim;
-the others can be rebuilt from `../kicad/netlist-notes.txt` and Part 2 values.
-Guitar-optimization parameters are documented in `../docs/06b-spice-simulations.md`.
+Tone stack has no sim — its values were not recovered (cross-check §4).
+
+## Verified results (ngspice-42)
+Run `./run_all.sh`. Measured vs. documented:
+
+| Block | Measured | Documented | Verdict |
+|-------|----------|------------|---------|
+| Power amp midband gain | **27.21 dB** (23.0×) | 23× / 27.2 dB | ✅ exact |
+| Power amp HF −3 dB | **6.83 kHz** | ~7.2 kHz (from `C_fb_hf`) | ✅ confirms the `C_fb_hf` fix |
+| Power amp LF −3 dB | **17.2 Hz** | "7.2 Hz" (C_gain only) | ⚠️ see note below |
+| Reverb driver gain | **20.83 dB** (11.0×) | 11× | ✅ exact |
+| MRB resonant peak | **577 Hz** | ~610 Hz (1 H ‖ 68 nF) | ✅ (pulled low by output-network loading) |
+| Tremolo LFO freq | **15.9 Hz** | 1/(2πRC) = 15.9 Hz @ 100k/100n | ✅ topology oscillates, tracks RC |
+| Preamp drain Vd | **12.1 V** (Rs = 2.2 k) | 8–9 V target | ⚠️ see note below |
+
+### Findings the sims surfaced (folded into errata / cross-check)
+- **Power-amp LF corner is ~17 Hz, not 7.2 Hz.** The docs' 7.2 Hz counts only the
+  `R_gain·C_gain` pole; the input coupling `C_in`(1 µF)/bias-divider network adds
+  a second LF pole (~14 Hz), so the real −3 dB is ~17 Hz. This is *beneficial* for
+  guitar (rejects subsonic cone-flap; low-E is ~82 Hz). No change needed — just
+  corrected expectation.
+- **Preamp bias is cold with the recovered Rs = 2.2 kΩ.** With a nominal 2N5457
+  (Idss ≈ 3 mA, Vp ≈ −1.8 V) the drain sits at ~12 V (Id ≈ 0.49 mA), above the
+  8–9 V target. **Rs ≈ 1.0 kΩ → Vd ≈ 8.5 V; Rs ≈ 1.2 kΩ → Vd ≈ 9.5 V.** The
+  2N5457 has a wide Idss/Vp spread, so trim Rs (≈1–1.2 k) per device on the bench.
+  See errata Issue 15.
+
+## Notes
+- The ngspice op-amp is a linear one-pole macromodel (no rail clipping): use the
+  AC/​.op results for gain, bandwidth, and bias, not for clipping behavior. The
+  LTspice `power_amp_lm1875.cir` (UniversalOpamp2, rail-clipped) is the reference
+  for large-signal/clipping work.
+- The MRB topology in `../kicad/netlist-notes.txt` is recorded ambiguously; the
+  sim uses the parallel-LC-tank interpretation from Part 1 §6 (see the header
+  comment in `ac_mrb.cir`).

@@ -23,6 +23,11 @@
 | U1 | Voltage regulator (17V rail) | LM317T | TO-220 | 926-LM317T/NOPB | $1.50 |
 | R_reg1 | Regulator set resistor | 240Ω 1% 1/4W metal film | Axial | 603-MFR-25FBF52-240R | $0.10 |
 | R_reg2 | Regulator set resistor | 3.0kΩ 1% 1/4W metal film | Axial | 603-MFR-25FBF52-3K | $0.10 |
+
+> **Errata Issue 10:** 240 Ω + 3.0 kΩ gives Vout = 1.25 × (1 + 3000/240) =
+> **16.88 V**, ~0.13 V below the 17.0–17.5 V band quoted in the setup/troubleshooting
+> tables. For 17.0–17.5 V use **R_reg2 = 3.09 kΩ (E96)** (→ 17.34 V); the BOM uses
+> this value. Alternatively accept ~16.9 V and read the band as 16.8–17.5 V.
 | C_reg_in | Regulator input cap | 10µF 50V tantalum | Radial | 581-TAP106K050SCS | $0.80 |
 | C_reg_out1 | Regulator output cap | 10µF 25V tantalum | Radial | 581-TAP106K025SCS | $0.60 |
 | C_reg_out2 | Regulator output bypass | 100nF 50V MLCC | Disc/radial | 594-K104K15X7RF5TL2 | $0.10 |

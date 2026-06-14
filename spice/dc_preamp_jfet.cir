@@ -1,0 +1,29 @@
+JFET preamp common-source stage -- ngspice .op bias + AC gain
+* Self-biased JFET common-source on the regulated +17 V rail.
+* Bias target (Part 2 / Part 3 troubleshooting): drain Vd ~ 8-9 V.
+* Source bypassed by C_s, so midband gain ~ gm * R_d.
+
+.include models/jfet_2n5457.lib
+
+V_dd  VDD 0 17
+V_in  IN  0 AC 1 DC 0
+
+C_in  IN G 47n
+R_g   G  0 1meg
+J1    D  G S 2N5457
+R_d   VDD D 10k
+R_s   S  0 2.2k
+C_s   S  0 10u
+
+.control
+op
+print v(d)
+print v(s)
+print v(g)
+let vds = v(d) - v(s)
+print vds
+ac dec 100 10 100k
+meas ac av_1k FIND vdb(d) AT=1000
+print av_1k
+.endc
+.end

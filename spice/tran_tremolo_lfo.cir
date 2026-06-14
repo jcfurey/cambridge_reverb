@@ -1,0 +1,42 @@
+Tremolo Wien-bridge LFO -- ngspice transient (oscillator + frequency measure)
+* TL072 half as a Wien-bridge oscillator with back-to-back diode amplitude
+* limiting (D_lfo1/2). Frequency f = 1/(2*pi*R*C). With R=100k, C=100nF the
+* network sets ~15.9 Hz; the speed pot (in series, up to ~500k) lowers it.
+* NOTE: the recovered tremolo R/C set is only loosely specified (Part 2 quotes a
+* ~1-10 Hz range that implies larger R*C than 100k*100n). This sim validates that
+* the topology oscillates and that f tracks 1/(2*pi*R*C); pin the absolute range
+* once the R/C/pot values are confirmed.
+
+.include models/opamp1p.sub
+.model DLIM D(Is=2.5n Rs=0.5 N=1.7 Cjo=4p Bv=100)   ; ~1N4148
+
+* TL072 half
+X1 P N OUT OPAMP1P PARAMS: aol=2e5 gbw=3e6
+
+* Wien positive-feedback network (series RC + shunt RC)
+R_ser OUT n1 100k
+C_ser n1 P 100n
+R_sh  P 0 100k
+C_sh  P 0 100n
+
+* negative feedback, gain = 1 + R_f/R_g = 1 + 10k/4.7k = 3.13 (>3 -> starts)
+R_g N 0 4.7k
+R_f OUT N 10k
+* amplitude-limiting back-to-back diodes across R_f
+Dl1 OUT N DLIM
+Dl2 N OUT DLIM
+
+.ic v(P)=0.05
+.tran 0.5m 4 1 0.5m uic
+
+.control
+run
+* measure one period from two successive rising zero-crossings (after settling)
+meas tran t1 WHEN v(out)=0 RISE=3
+meas tran t2 WHEN v(out)=0 RISE=4
+let period = t2 - t1
+let freq = 1/period
+meas tran vamp MAX v(out)
+print t1 t2 period freq vamp
+.endc
+.end

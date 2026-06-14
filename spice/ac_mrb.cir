@@ -1,0 +1,29 @@
+MRB (Mid Resonance Boost) -- parallel LC tank, ngspice AC analysis
+* Default 600 Hz position: L1 = 1 H, C_mrb = 68 nF -> f0 = 1/(2*pi*sqrt(LC)) ~ 610 Hz.
+*
+* Topology note: kicad/netlist-notes.txt records the MRB string ambiguously as a
+* series chain; Part 1 sec.6 describes it as a PARALLEL LC tank giving a mid boost.
+* This sim uses the parallel-tank interpretation (consistent with Part 1 and the
+* original Vox MRB): a series resistor feeds the signal node, and L1||C_mrb shunts
+* to ground. Off resonance the tank is low-Z (shunts signal); at resonance it is
+* high-Z (signal passes) -> a peak at f0. Swap C_mrb to 120n (~460 Hz) or 47n
+* (~734 Hz) for the optional internal positions.
+
+V_in    IN 0 AC 1
+C_mrb_in IN N1 100n
+R_series N1 OUT 10k
+* parallel LC tank to ground
+L1   OUT 0 1
+C_mrb OUT 0 68n
+C_mrb_out OUT N2 100n
+R_load N2 0 220k
+
+.control
+ac dec 200 20 20k
+meas ac vpk   MAX  vdb(out)
+meas ac fpk   WHEN vdb(out)=vpk
+meas ac g_100 FIND vdb(out) AT=100
+meas ac g_1k  FIND vdb(out) AT=1000
+print vpk fpk g_100 g_1k
+.endc
+.end

@@ -19,3 +19,24 @@ Supply: +33.5 V single rail, 8 Ω load. Closed-loop gain 23× (27 dB).
 
 The full netlist is in `../spice/power_amp_lm1875.cir`. See that folder's README
 for the list of the six circuit-block simulations.
+
+## ngspice companion set + verified results (2026-06-14)
+The original `.cir` is LTspice-flavored (`UniversalOpamp2`, `opamp.sub`). An
+**ngspice-runnable** set was added so the design can be re-verified with an
+open-source tool — `apt install ngspice`, then `cd ../spice && ./run_all.sh`.
+Measured vs. documented:
+
+| Block | Measured (ngspice-42) | Documented |
+|-------|-----------------------|------------|
+| Power-amp gain | 27.21 dB (23.0×) | 23× / 27.2 dB ✅ |
+| Power-amp HF −3 dB | 6.83 kHz (with `C_fb_hf`) | ~7.2 kHz ✅ |
+| Power-amp LF −3 dB | 17.2 Hz | "7.2 Hz" — see below ⚠️ |
+| Reverb-driver gain | 20.83 dB (11.0×) | 11× ✅ |
+| MRB peak | 577 Hz | ~610 Hz ✅ |
+| Tremolo LFO | 15.9 Hz = 1/(2πRC) | RC-set ✅ |
+| Preamp drain | 12.1 V (Rs 2.2 k) | 8–9 V — see below ⚠️ |
+
+Two corrections fell out of running it: the power-amp LF corner is ~17 Hz (the
+input pole adds to `C_gain`; fine for guitar), and the preamp wants Rs ≈ 1–1.2 kΩ
+(not 2.2 kΩ) to hit the 8–9 V drain target. Both are in `errata.md` and
+`../spice/README.md`.

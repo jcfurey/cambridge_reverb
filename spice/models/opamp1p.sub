@@ -1,0 +1,18 @@
+* One-pole op-amp macromodel (ngspice-compatible)
+* Linear small-signal model: DC open-loop gain = aol, gain-bandwidth = gbw,
+* output resistance = rout. Good enough for closed-loop gain/bandwidth AC
+* analysis of the TL072 and the LM1875 (no rail clipping — use for AC/.op only).
+*
+* Defaults approximate the LM1875 (aol=100k, gbw=2.5MHz). For the TL072 pass
+* aol=2e5 gbw=3e6 on the X-line PARAMS.
+*
+.subckt OPAMP1P inp inn out PARAMS: aol=1e5 gbw=2.5e6 rout=0.1
+Rin   inp inn 1G
+* transconductance gm=1m into Rp sets DC gain = gm*Rp = aol
+Gm    0 p  inp inn 1m
+Rp    p 0  {aol/1m}
+* pole at gbw/aol  ->  unity-gain frequency = aol*(gbw/aol) = gbw
+Cp    p 0  {1m/(2*3.141592653589793*gbw)}
+Eout  o 0  p 0 1
+Rout  o out {rout}
+.ends OPAMP1P

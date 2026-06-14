@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "cambridge_reverb")(type "KiCad")(uri "${KIPRJMOD}/footprints/cambridge_reverb.pretty")(options "")(descr "Vox Cambridge Reverb custom footprints (VTL5C1, 1H toroid, 35-pad wiring edge array)"))
+)

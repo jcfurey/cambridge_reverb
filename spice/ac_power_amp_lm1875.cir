@@ -1,0 +1,47 @@
+LM1875 power amp -- ngspice AC analysis (guitar-optimized, with C_fb_hf)
+* Single-supply, gain 23x. This is the ngspice-runnable companion to the
+* LTspice power_amp_lm1875.cir; it ADDS the documented items the LTspice
+* netlist was missing (bom/cross-check.md sec.3):
+*   - C_fb_hf 1nF across R_fb  -> ~7.2 kHz HF -3dB (guitar bandwidth limit)
+*   - a 10" speaker model (Re+Le + 105 Hz mechanical resonance) instead of 8 ohm
+* Expected: midband ~27.2 dB (23x); LF -3dB ~7.2 Hz (C_gain); HF -3dB ~7.2 kHz.
+
+.include models/opamp1p.sub
+
+V_in   IN 0 AC 1
+V_sup  VPLUS 0 DC 33.5 AC 0        ; AC ground; only sets DC operating rail
+
+C_in   IN A 1u
+R_bias1 VPLUS A 22k                ; bias divider (AC: 22k||22k to gnd)
+R_bias2 A 0 22k
+
+* LM1875 behavioral op-amp (aol=100k, GBW=2.5MHz)
+X1 A FB OUT OPAMP1P PARAMS: aol=1e5 gbw=2.5e6 rout=0.1
+
+R_fb   OUT FB 22k
+C_fb_hf OUT FB 1n                  ; HF rolloff ~7.2 kHz  <-- the fix
+R_gain FB G 1k
+C_gain G 0 22u                     ; LF rolloff ~7.2 Hz
+
+* Zobel
+R_zobel OUT Z 10
+C_zobel Z 0 100n
+
+* Output coupling + 10" speaker model
+C_out  OUT SPK 2200u
+R_e    SPK S1 8                    ; voice-coil DC resistance
+L_e    S1 S2 0.5m                  ; voice-coil inductance
+R_res  S2 0 56                     ; mechanical-resonance damping
+L_res  S2 0 22m                    ; with C_res -> ~105 Hz resonance
+C_res  S2 0 104u
+
+.control
+ac dec 200 1 100k
+meas ac g_300  FIND vdb(out) AT=300       ; midband gain (expect ~27.2 dB = 23x)
+meas ac fhi    WHEN vdb(out)=24.21 FALL=1 ; HF -3dB corner (expect ~7.2 kHz, from C_fb_hf)
+meas ac flo    WHEN vdb(out)=24.21 RISE=1 ; LF -3dB corner (full stage, incl. input pole)
+meas ac g_7p2k FIND vdb(out) AT=7200      ; gain at the 7.2 kHz guitar limit
+meas ac g_20k  FIND vdb(out) AT=20000     ; well into rolloff above guitar band
+print g_300 flo fhi g_7p2k g_20k
+.endc
+.end

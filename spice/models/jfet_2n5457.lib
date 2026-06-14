@@ -1,0 +1,5 @@
+* N-channel JFET model approximating the 2N5457 / MMBF5457 (same die).
+* Tuned to the bias targets used throughout the project: Vp ~ -1.8 V, Idss ~ 3 mA.
+* Idss = Beta * Vto^2 = 0.92m * 1.8^2 = 2.98 mA.
+.model 2N5457 NJF(Vto=-1.8 Beta=0.92m Lambda=2.5m Rd=1 Rs=1
++ Cgd=4p Cgs=4.5p Pb=1 Is=1e-14 Kf=1e-18 Af=1)
