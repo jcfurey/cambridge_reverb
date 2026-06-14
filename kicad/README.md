@@ -19,7 +19,8 @@ KiCad project files.
 ## Generated schematic (now present)
 - `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
   `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
-  They open in KiCad 7 and netlist cleanly (94 components, 0 unconnected pins).
+  They open in KiCad 7/8, **pass ERC with 0 violations** (KiCad 8.0.9), and
+  netlist cleanly (102 components, 0 unconnected pins).
 - `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
   the generated sheets.
 - `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).
@@ -27,6 +28,7 @@ KiCad project files.
   known simplifications to finish before a build.
 
 ## Still to do in the KiCad GUI
-- Run ERC (KiCad 8) and annotate if you want standard refdes for layout.
-- `*.kicad_pcb` — board layout (after schematic + ERC).
+- Annotate if you want standard refdes for layout (descriptive refs are kept to
+  match the BOM/docs; ERC is already clean).
+- `*.kicad_pcb` — board layout (after annotation + footprint assignment).
 - `gerbers/` — exported Gerbers (git-ignored; regenerate per Part 4).

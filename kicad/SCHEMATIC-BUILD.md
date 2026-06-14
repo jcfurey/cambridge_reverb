@@ -1,12 +1,13 @@
 # KiCad schematic — generated hierarchical sheets
 
-## Status: the wired sheets now exist
+## Status: the wired sheets exist and pass ERC
 The eight hierarchical `.kicad_sch` sheets and the root are **generated and
-committed**. They open in KiCad 7, and a full netlist exports cleanly:
+committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
-94 components · 56 nets · 0 unconnected pins   (kicad-cli sch export netlist)
-GND spans 55 nodes · +17V 9 nodes · all inter-sheet signals resolve
+kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
+kicad-cli sch export netlist ->  102 components · 58 nets · 0 unconnected pins
+GND spans 55 nodes · VBIAS 10 nodes · all inter-sheet signals resolve
 ```
 
 Files: `cambridge_reverb.kicad_sch` (root) + `power_supply / preamp /
@@ -34,23 +35,33 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   renumber; keep a copy if you want to preserve the doc names).
 
 ## Verified
-- `kicad-cli 7.0.11`: custom symbol library + footprints parse/plot; the
-  hierarchy netlists with **0 unconnected pins** and no duplicate references.
+- `kicad-cli 8.0.9 sch erc`: **0 violations** (errors + warnings). Getting there
+  required snapping all pins/wires to the 1.27 mm connection grid and giving the
+  footswitch lines a real second endpoint (below).
+- `kicad-cli` custom symbol library + footprints parse/plot; the hierarchy
+  netlists with **0 unconnected pins** and no duplicate references.
 - PDF/SVG render of all sheets is correct (title blocks, values, labels).
-- KiCad 7's CLI has no `erc` subcommand (added in KiCad 8); the netlist export is
-  used as the connectivity check here. Open in the KiCad 8 GUI and run ERC for a
-  full rules pass.
+- ERC does not check reference *annotation* (that's a separate tool), so the
+  descriptive non-numeric refs do not produce ERC violations; `export netlist`
+  prints an "annotation" notice but exports all 102 components correctly.
 
-## Known simplifications to finish before a build (honest list)
-- **Op-amp single-supply biasing is minimal.** IC1/IC2 are shown with `V+ = +17V`,
-  `V- = GND`; the recovered notes don't include the mid-rail input-bias network a
-  real single-supply TL072 stage needs. Add a mid-rail divider + input bias before
-  relying on the reverb/tremolo stages.
+## Design additions beyond the recovered notes (clearly marked)
+- **Mid-rail `VBIAS`.** Single-supply TL072 stages need their inputs biased to
+  ~Vcc/2; the recovered notes omit this. A `VBIAS` divider (R_vb1/R_vb2 + C_vb on
+  the Power Supply sheet) feeds the reverb driver and the tremolo LFO; the
+  op-amp `+in`/gain-return nets reference `VBIAS` instead of GND. Flagged in the
+  sheet notes as a design addition — verify values for your rail.
+- **Footswitch control taps.** `FS_REV/FS_TREM/FS_MRB` leave the DIN connector
+  and land on their effect sheet through a 100 k control pulldown (R_fs_*). The
+  exact pedal switching topology follows the original footswitch; these nets are
+  represented as defined control lines so they aren't single-ended.
+
+## Still to finish before a build
 - **Tone stack** values are `TBD` (cross-check §4) — the sheet has the pots and a
   placeholder; fill from the original 25-5274-2 top-boost network.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented
   assumption where the recovered notes are silent; see the note on the root sheet.
-- **No PCB yet.** After ERC + annotation, assign footprints (the custom ones in
+- **No PCB yet.** After annotation, assign footprints (the custom ones in
   `footprints/cambridge_reverb.pretty/` plus standard ones) and lay out the board
   per `docs/04-jlcpcb-fabrication.md`.
 

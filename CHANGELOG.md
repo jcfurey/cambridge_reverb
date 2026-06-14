@@ -62,6 +62,15 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   56 nets, **0 unconnected pins**, no duplicate references; GND spans 55 nodes;
   all inter-sheet signals resolve. PDF/SVG of all sheets render correctly.
 - Connectivity uses global labels (rails/cross-sheet) + local labels; references
-  are descriptive to match the BOM/docs. Known simplifications documented in
-  kicad/SCHEMATIC-BUILD.md (op-amp single-supply biasing minimal, tone-stack TBD,
-  inter-effect routing order assumed).
+  are descriptive to match the BOM/docs.
+
+### Schematic passes ERC (2026-06-14)
+- Installed KiCad 8.0.9 (PPA) and ran a real `kicad-cli sch erc`: **0 violations**.
+  Fixes: snapped all pins/wires to the 1.27 mm connection grid (was 338 off-grid),
+  and gave the footswitch lines (FS_REV/TREM/MRB) a real second endpoint via
+  100 k control pulldowns on the effect sheets.
+- Added a mid-rail **VBIAS** network (divider on the Power Supply sheet) and
+  referenced the TL072 reverb/tremolo stages to it, so the single-supply op-amp
+  stages are electrically real (design addition, flagged in the sheets).
+- Schematic now 102 components, 58 nets, 0 unconnected, VBIAS spans 10 nodes.
+  Remaining to-finish: tone-stack values (TBD) and inter-effect routing order.

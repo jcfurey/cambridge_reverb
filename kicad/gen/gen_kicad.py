@@ -14,6 +14,7 @@ import uuid, os, math
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 def U(): return str(uuid.uuid4())
+def SNAP(v): return round(round(v / 1.27) * 1.27, 4)   # snap to 50-mil grid
 
 # ----------------------------------------------------------------------------
 # Primitive symbol database.
@@ -151,6 +152,7 @@ class Sheet:
 
     def comp(self, libsym, ref, value, x, y, nets, mirror=None):
         """Place a component and attach labels to pins per nets={pinnum:netname}."""
+        x = SNAP(x); y = SNAP(y)     # keep pins/wires on KiCad's 1.27mm connection grid
         self.used.add(libsym)
         cu = U()
         spec = SYMS[libsym]
@@ -268,8 +270,12 @@ def load_custom():
 GLOBAL_NETS = {
  "+33V5","+27V","+17V","GND","SPK_P","SPK_N",
  "GUITAR_IN","PREAMP_OUT","TONE_OUT","DRY","WET","BLEND","TREM_OUT","PA_IN",
- "FS_REV","FS_TREM","FS_MRB","MRB_OUT","FX_RET",
+ "MRB_OUT","FX_RET","VBIAS","FS_REV","FS_TREM","FS_MRB",
 }
+# FS_REV/FS_TREM/FS_MRB are footswitch control lines: they leave the DIN
+# connector (switching sheet) and land on their effect sheet via a control
+# pulldown. Exact switching topology follows the original pedal; represented
+# here as defined control nets so they aren't single-ended.
 
 def build():
     load_custom()
@@ -291,6 +297,11 @@ def build():
     s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"+27V","2":"GND"})
     s.comp("CP","C_reg_out1","10uF/25V",160,140,{"1":"+17V","2":"GND"})
     s.comp("C","C_reg_out2","100nF",185,140,{"1":"+17V","2":"GND"})
+    # Mid-rail reference for single-supply op-amps (DESIGN ADDITION; not recovered)
+    s.note("VBIAS = mid-rail (~8.5V) reference for single-supply TL072 stages [design addition]",40,180)
+    s.comp("R","R_vb1","100k",110,195,{"1":"+17V","2":"VBIAS"})
+    s.comp("R","R_vb2","100k",110,220,{"1":"VBIAS","2":"GND"})
+    s.comp("CP","C_vb","10uF/25V",150,207,{"1":"VBIAS","2":"GND"})
     s.comp("PWR_FLAG","#FLG1","",40,30,{"1":"+33V5"})
     s.comp("PWR_FLAG","#FLG2","",70,30,{"1":"+27V"})
     s.comp("PWR_FLAG","#FLG3","",100,30,{"1":"+17V"})
@@ -325,10 +336,12 @@ def build():
     # ---- Sheet 4: Reverb (netlist-notes sheet 4) ----
     s=Sheet("Reverb","reverb.kicad_sch"); sheets.append(s)
     s.note("REVERB -- TL072 driver (gain 11x) + JFET recovery; drives 4FB2A1C directly.",40,20)
-    s.comp("OPAMP8","IC1","TL072CP",110,80,{"3":"TONE_OUT","2":"R_INV","1":"R_DRVO",
-            "8":"+17V","4":"GND","5":"GND","6":"SP1N","7":"SP1N"})
+    s.comp("OPAMP8","IC1","TL072CP",110,80,{"3":"DRVP","2":"R_INV","1":"R_DRVO",
+            "8":"+17V","4":"GND","5":"VBIAS","6":"SP1N","7":"SP1N"})
+    s.comp("C","C_drvin","100nF",40,165,{"1":"TONE_OUT","2":"DRVP"})   # AC couple in
+    s.comp("R","R_drvbias","220k",75,165,{"1":"DRVP","2":"VBIAS"})     # mid-rail bias
     s.comp("R","R_drv1","100k",150,55,{"1":"R_INV","2":"R_DRVO"})
-    s.comp("R","R_drv2","10k",150,110,{"1":"R_INV","2":"GND"})
+    s.comp("R","R_drv2","10k",150,110,{"1":"R_INV","2":"VBIAS"})       # AC gnd via VBIAS
     s.comp("CP","C_rev1","1uF",160,80,{"1":"R_DRVO","2":"TKDRV"})
     s.comp("R","R_drv3","10R",195,80,{"1":"TKDRV","2":"TANK_IN"})
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
@@ -344,18 +357,19 @@ def build():
     s.comp("R","R_blend1","220k",60,60,{"1":"DRY","2":"BLEND"})
     s.comp("R","R_blend2","220k",60,90,{"1":"WET","2":"BLEND"})
     s.comp("R","R_dry_tap","1M",30,40,{"1":"TONE_OUT","2":"DRY"})
+    s.comp("R","R_fs_rev","100k",30,170,{"1":"FS_REV","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 5: Tremolo (netlist-notes sheet 5) ----
     s=Sheet("Tremolo","tremolo.kicad_sch"); sheets.append(s)
     s.note("TREMOLO -- Wien-bridge LFO (TL072) drives VTL5C1; ~16 Hz at 100k/100n (sim).",40,20)
     s.comp("OPAMP8","IC2","TL072CP",110,90,{"3":"LFO_P","2":"LFO_N","1":"LFO_OUT",
-            "8":"+17V","4":"GND","5":"GND","6":"SP2N","7":"SP2N"})
+            "8":"+17V","4":"GND","5":"VBIAS","6":"SP2N","7":"SP2N"})
     s.comp("R","R_lfo_ser","100k",150,60,{"1":"LFO_OUT","2":"WN1"})
     s.comp("C","C_lfo1","100nF",185,60,{"1":"WN1","2":"LFO_P"})
-    s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"GND"})
-    s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"GND"})
+    s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"VBIAS"})   # LFO biased to mid-rail
+    s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"VBIAS"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
-    s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"GND"})
+    s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS"})  # AC gnd via VBIAS
     s.comp("D","D_lfo1","1N4148",40,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("D","D_lfo2","1N4148",40,100,{"1":"LFO_N","2":"LFO_OUT"})
     s.comp("R","R_led","1k",150,150,{"1":"LFO_OUT","2":"VLED"})
@@ -366,6 +380,7 @@ def build():
     s.comp("CP","C_dc_blk","10uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
     s.comp("C","C_trem_out","100nF",100,150,{"1":"TREM_OUT","2":"MRB_FEED"})
     s.comp("R","R_trem_pass","1M",100,180,{"1":"MRB_FEED","2":"GND"})
+    s.comp("R","R_fs_trem","100k",30,180,{"1":"FS_TREM","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 6: MRB (netlist-notes sheet 6) ----
     s=Sheet("MRB","mrb.kicad_sch"); sheets.append(s)
@@ -377,6 +392,7 @@ def build():
     s.comp("C","C_mrb_450","120nF (opt)",170,130,{"1":"MRB_T","2":"GND"})
     s.comp("C","C_mrb_750","47nF (opt)",170,160,{"1":"MRB_T","2":"GND"})
     s.comp("C","C_mrb_out","100nF",90,130,{"1":"MRB_T","2":"MRB_OUT"})
+    s.comp("R","R_fs_mrb","100k",50,160,{"1":"FS_MRB","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 7: Power Amp (netlist-notes sheet 7, verbatim) ----
     s=Sheet("Power Amp","power_amp.kicad_sch"); sheets.append(s)
