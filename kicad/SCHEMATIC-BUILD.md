@@ -61,9 +61,11 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   placeholder; fill from the original 25-5274-2 top-boost network.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented
   assumption where the recovered notes are silent; see the note on the root sheet.
-- **No PCB yet.** After annotation, assign footprints (the custom ones in
-  `footprints/cambridge_reverb.pretty/` plus standard ones) and lay out the board
-  per `docs/04-jlcpcb-fabrication.md`.
+- **PCB:** a placed starter board (`cambridge_reverb.kicad_pcb`, all footprints
+  assigned + a GND pour) now exists — see `PCB-NOTES.md`. Remaining work is manual
+  placement into the floor-plan zones and signal routing; after annotation you can
+  *Update PCB from schematic* or keep the generated board. Lay out per
+  `docs/04-jlcpcb-fabrication.md`.
 
 ## Per-sheet contents
 Values come from Part 2 + `netlist-notes.txt`; see those and `errata.md` for the

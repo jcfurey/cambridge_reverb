@@ -12,13 +12,15 @@
 > `symbols/cambridge_reverb.kicad_sym` + `symbols/cr_primitives.kicad_sym` hold
 > the symbols; `footprints/cambridge_reverb.pretty/` the footprints; and
 > `gen/gen_kicad.py` generates the wired schematic. Verified with kicad-cli:
-> the hierarchy netlists with **94 components and 0 unconnected pins**. See
+> the hierarchy netlists with **102 components and 0 unconnected pins** (94 at
+> first generation; 102 after the VBIAS mid-rail + footswitch-pulldown additions). See
 > `../kicad/SCHEMATIC-BUILD.md` for connectivity method, the verified results,
 > and the known simplifications (op-amp single-supply biasing, TBD tone stack).
 
 ## Project structure (as documented)
-- `.kicad_pro` — JLCPCB-compatible design rules; two net classes (Default 0.3 mm
-  signals, Power 1.5 mm rails); hierarchical sheet structure for 8 blocks.
+- `.kicad_pro` — JLCPCB-compatible design rules; **three** net classes (Default
+  signals, Power 1.5 mm rails, HighCurrent 2.5 mm speaker/PA — the third added in
+  the consistency pass, errata #11); hierarchical sheet structure for 8 blocks.
 - `.kicad_sch` — 8 hierarchical sheets following signal flow:
   Power Supply → Preamp → Tone Stack → Reverb → Tremolo → MRB → Power Amp → Switching.
 - Custom symbol library: VTL5C1 optocoupler (4-pin), Accutronics reverb tank

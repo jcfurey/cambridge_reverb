@@ -338,7 +338,7 @@ def build():
 
     # ---- Sheet 2: Preamp ----
     s=Sheet("Preamp","preamp.kicad_sch"); sheets.append(s)
-    s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs~1-1.2k for Vd 8-9V (errata #15)",50,20)
+    s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15)",50,20)
     s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"Q1G"})
     s.comp("R","R_g1","1M",40,90,{"1":"Q1G","2":"GND"})
     s.comp("NJFET","Q1","MMBF5457",90,70,{"2":"Q1G","1":"Q1D","3":"Q1S"})

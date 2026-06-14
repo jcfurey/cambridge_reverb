@@ -312,11 +312,11 @@
       },
       {
         "netclass": "HighCurrent",
-        "pattern": "SPKR+"
+        "pattern": "SPK_P"
       },
       {
         "netclass": "HighCurrent",
-        "pattern": "SPKR-"
+        "pattern": "SPK_N"
       },
       {
         "netclass": "HighCurrent",

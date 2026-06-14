@@ -5,7 +5,7 @@ KiCad project files.
 ## Present now
 - `cambridge_reverb.kicad_pro` — project with reconciled design rules and **three
   net classes** from the consistency pass: Default 0.5 mm / Power 1.5 mm /
-  HighCurrent 2.5 mm (errata #11–13). `+33V5`/`SPKR±`/`PA_OUT` are pre-assigned
+  HighCurrent 2.5 mm (errata #11–13). `+33V5`/`SPK_P`/`SPK_N`/`PA_OUT` are pre-assigned
   to HighCurrent by net-name pattern.
 - `symbols/cambridge_reverb.kicad_sym` — custom symbols: `VTL5C1`,
   `Reverb_Tank_4FB2A1C`, `Footswitch_DIN6`.

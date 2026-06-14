@@ -33,7 +33,7 @@ frozen, orderable revision in history (uncomment the lines in `.gitignore`).
       `../kicad/cambridge_reverb.kicad_pro` (Default / Power / HighCurrent)
 - [ ] All zones filled; bottom-layer ground pour continuous, no islands
 - [ ] Edge.Cuts is a single closed outline at the measured size
-- [ ] Power path: +33V5 / SPKR± / PA output on **HighCurrent (2.5 mm)** class
+- [ ] Power path: +33V5 / SPK_P / SPK_N / PA_OUT on **HighCurrent (2.5 mm)** class
       (errata #11); +27V / +17V / GND on Power (1.5 mm)
 - [ ] LM1875 + LM317 oriented toward the heatsink-side board edge
 - [ ] Polarity markers on electrolytics; pin-1 dots on ICs

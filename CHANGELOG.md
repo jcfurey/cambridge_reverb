@@ -59,7 +59,8 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   via kicad/gen/gen_kicad.py, plus a self-contained primitive symbol library
   (symbols/cr_primitives.kicad_sym).
 - **Verified with kicad-cli 7.0.11:** the hierarchy netlists to 94 components,
-  56 nets, **0 unconnected pins**, no duplicate references; GND spans 55 nodes;
+  56 nets (grew to 102/58 with the VBIAS + footswitch-pulldown additions below),
+  **0 unconnected pins**, no duplicate references; GND spans 55 nodes;
   all inter-sheet signals resolve. PDF/SVG of all sheets render correctly.
 - Connectivity uses global labels (rails/cross-sheet) + local labels; references
   are descriptive to match the BOM/docs.
