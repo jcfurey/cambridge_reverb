@@ -86,3 +86,14 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   kicad/PCB-NOTES.md for the DRC breakdown and remaining hand-work (placement,
   routing, DRC-to-zero, Gerbers).
 - Switched the schematic resistor footprint to the compact vertical variant.
+
+### Power-section routing demo + chassis-fit check (2026-06-14)
+- **Routed power demo** (kicad/power_section_demo.kicad_pcb): the +33V5 (2.5 mm
+  HighCurrent) and +17V (1.5 mm Power) rails + LM317 ADJ node routed over a GND
+  pour. kicad-cli pcb drc -> 0 violations. +27V/VRAW left as ratsnest (the +27V
+  cross-row link needs a via — documented).
+- **Chassis-fit packing-density check** in gen_pcb.py: ~51% on 190×115 (original
+  PCB size, feasible-but-tight) vs ~88% on the Part 7 155×90 safe-bet — i.e. the
+  102-part through-hole design does NOT fit the smaller chassis comfortably.
+  Recorded in kicad/PCB-NOTES.md (ties to errata #9): measure the real chassis,
+  or move passives to SMD, before committing to a board size.

@@ -34,6 +34,34 @@ dominated by the expected consequences of an unrouted, densely auto-placed board
 None of these are wiring errors — the netlist is correct (it came from the
 ERC-clean schematic). They are layout-finishing items.
 
+## Chassis-fit reality check ⚠️
+`gen_pcb.py` prints a packing-density estimate (sum of footprint bounding boxes ÷
+usable board area, usable = outline − 10 mm margin all round):
+
+| Board | Usable area | Parts area | Packing |
+|-------|------------:|-----------:|--------:|
+| 190×115 mm (original 25-5274-2) | 16 150 mm² | ~8 270 mm² | **~51 %** |
+| 155×90 mm (Part 7 "safe-bet") | 9 450 mm² | ~8 270 mm² | **~88 %** |
+
+**So it does _not_ comfortably fit the 155×90 safe-bet.** 51 % on the original
+size is feasible but tight for all-through-hole, single-sided routing — expect a
+dense layout. The honest options, tied to errata #9 (board size is measurement-
+gated): (1) **measure the real chassis** — it may be larger than the 155×90
+worst-case; (2) move the small passives to **SMD** to drop the parts area; or
+(3) accept the 190×115 size only if the measured chassis allows it. Do not commit
+to 155×90 for this part count. (Density is an estimate from bounding boxes, not a
+routed layout — treat it as a go/no-go screen, not a guarantee.)
+
+## Power-section routing demo — DRC clean
+`power_section_demo.kicad_pcb` is a small isolated board that **routes the +33V5
+and +17V rails** of the supply over a GND pour, to show the net-class widths in
+real copper: `+33V5` at **2.5 mm** (HighCurrent), `+17V` at **1.5 mm** (Power),
+plus the LM317 `ADJ17` set node. `kicad-cli pcb drc` → **0 violations**. Two nets
+are left as a ratsnest on purpose: `VRAW` (its other end is off this demo board)
+and `+27V` — which has to cross the +17V trunk, i.e. on a single free layer
+(bottom is the GND pour) it needs a **via**. That via-jump is exactly the kind of
+decision the full-board routing has to make throughout.
+
 ## Remaining hand-work (in the KiCad GUI)
 1. **Annotate** the schematic if you want numbered refdes, then *Update PCB from
    schematic* to re-sync (or keep this generated board).
