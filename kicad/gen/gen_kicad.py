@@ -154,6 +154,10 @@ class Sheet:
         """Place a component and attach labels to pins per nets={pinnum:netname}."""
         x = SNAP(x); y = SNAP(y)     # keep pins/wires on KiCad's 1.27mm connection grid
         self.used.add(libsym)
+        fp = FOOTPRINTS.get(libsym, "")
+        COMPONENTS.append(dict(ref=ref, libsym=libsym, value=value, fp=fp,
+                               sheet=self.title, x=x, y=y, nets=dict(nets),
+                               pins=PINS[libsym]))
         cu = U()
         spec = SYMS[libsym]
         lib_id = "cr_primitives:%s" % libsym if libsym in PRIM else "cambridge_reverb:%s" % libsym
@@ -164,7 +168,7 @@ class Sheet:
         s.append(f'    (uuid {cu})')
         s.append(f'    (property "Reference" "{ref}" (at {x+2.54} {y-7.62} 0) (effects (font (size 1.27 1.27)) (justify left)))')
         s.append(f'    (property "Value" "{value}" (at {x+2.54} {y-5.08} 0) (effects (font (size 1.27 1.27)) (justify left)))')
-        s.append(f'    (property "Footprint" "" (at {x} {y} 0) (effects (font (size 1.27 1.27)) hide))')
+        s.append(f'    (property "Footprint" "{fp}" (at {x} {y} 0) (effects (font (size 1.27 1.27)) hide))')
         for (num,nm,ex,ey,ox,oy) in PINS[libsym]:
             s.append(f'    (pin "{num}" (uuid {U()}))')
         s.append(f'    (instances (project "cambridge_reverb" (path "{INSTPATH(self)}" (reference "{ref}") (unit 1))))')
@@ -228,6 +232,31 @@ PRIM = set(SYMS.keys())
 PINS = {name: SYMS[name]["pins"] for name in SYMS}
 ROOTUUID = U()
 CUSTOM_BODIES = {}
+COMPONENTS = []   # structured records for the PCB generator
+
+# Footprint assignment (THT, hand-solderable). Pad numbers match symbol pins.
+FOOTPRINTS = {
+ "R":   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
+ "C":   "Capacitor_THT:C_Disc_D7.5mm_W2.5mm_P5.00mm",
+ "CP":  "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
+ "L":   "cambridge_reverb:Inductor_MRB_1H_Toroid",
+ "D":   "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+ "LED": "LED_THT:LED_D3.0mm",
+ "FUSE":"Fuse:Fuseholder_Clip-5x20mm_Eaton_1A5601-01_Inline_P20.80x6.76mm_D1.70mm_Horizontal",
+ "POT": "Potentiometer_THT:Potentiometer_Alpha_RD901F-40-00D_Single_Vertical",
+ "NJFET":"Package_TO_SOT_THT:TO-92_Inline",
+ "BRIDGE":"Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
+ "LM317":"Package_TO_SOT_THT:TO-220-3_Vertical",
+ "LM1875":"Package_TO_SOT_THT:TO-220-5_Vertical",
+ "OPAMP8":"Package_DIP:DIP-8_W7.62mm",
+ "JACK":"Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+ "SPEAKER":"Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+ "XFMR":"Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+ "PWR_FLAG":"",   # virtual, no board footprint
+ "VTL5C1":"cambridge_reverb:VTL5C1",
+ "Reverb_Tank_4FB2A1C":"Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
+ "Footswitch_DIN6":"Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical",
+}
 
 # Hierarchical instance path for a symbol living in sheet `sh`.
 # Toggle PATHMODE to experiment: "inst" -> /<sheetinst>, "root" -> /<root>/<sheetinst>

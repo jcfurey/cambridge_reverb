@@ -74,3 +74,15 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   stages are electrically real (design addition, flagged in the sheets).
 - Schematic now 102 components, 58 nets, 0 unconnected, VBIAS spans 10 nodes.
   Remaining to-finish: tone-stack values (TBD) and inter-effect routing order.
+
+### Auto-placed PCB (2026-06-14)
+- **Board generated** (kicad/cambridge_reverb.kicad_pcb) via kicad/gen/gen_pcb.py
+  using the KiCad 8 pcbnew API: all 102 footprints assigned + placed, 58 nets
+  with pads assigned (ratsnest matches schematic), 190×115 mm Edge.Cuts outline,
+  bottom-layer GND pour. Footprints carry into the schematic (Footprint field).
+- **Placed, not routed.** kicad-cli pcb drc: the report is dominated by 130
+  unconnected (unrouted signal nets — GND is poured) plus cosmetic silk/courtyard
+  overlaps from dense auto-placement; the netlist itself is correct. See
+  kicad/PCB-NOTES.md for the DRC breakdown and remaining hand-work (placement,
+  routing, DRC-to-zero, Gerbers).
+- Switched the schematic resistor footprint to the compact vertical variant.
