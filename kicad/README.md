@@ -16,10 +16,17 @@ KiCad project files.
   tremolo, MRB).
 - `SCHEMATIC-BUILD.md` — step-by-step to build the 8 hierarchical sheets.
 
-## To be built in the KiCad GUI
-- `*.kicad_sch` — 8 hierarchical sheets (Power Supply → Preamp → Tone Stack →
-  Reverb → Tremolo → MRB → Power Amp → Switching). Follow `SCHEMATIC-BUILD.md`;
-  values come from Part 2 + `netlist-notes.txt`. The wired sheets are built
-  interactively rather than committed pre-wired (see `SCHEMATIC-BUILD.md` for why).
+## Generated schematic (now present)
+- `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
+  `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
+  They open in KiCad 7 and netlist cleanly (94 components, 0 unconnected pins).
+- `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
+  the generated sheets.
+- `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).
+- `SCHEMATIC-BUILD.md` — how the sheets are wired, what's verified, and the
+  known simplifications to finish before a build.
+
+## Still to do in the KiCad GUI
+- Run ERC (KiCad 8) and annotate if you want standard refdes for layout.
 - `*.kicad_pcb` — board layout (after schematic + ERC).
 - `gerbers/` — exported Gerbers (git-ignored; regenerate per Part 4).

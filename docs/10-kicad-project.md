@@ -6,12 +6,15 @@
 > project can be rebuilt; the netlist notes in `../kicad/` carry the recovered
 > per-sheet connection detail.
 >
-> **Update (2026-06-14):** the project file and custom libraries have been
-> re-authored and now exist in `../kicad/` — `cambridge_reverb.kicad_pro`
-> (with the corrected three net classes from the errata consistency pass),
-> `symbols/cambridge_reverb.kicad_sym`, `footprints/cambridge_reverb.pretty/`,
-> and the `*-lib-table` files. The eight hierarchical `.kicad_sch` sheets are
-> built in the GUI following `../kicad/SCHEMATIC-BUILD.md`.
+> **Update (2026-06-14):** the project file, custom libraries, **and the eight
+> hierarchical `.kicad_sch` sheets + root now exist** in `../kicad/`.
+> `cambridge_reverb.kicad_pro` carries the corrected three net classes;
+> `symbols/cambridge_reverb.kicad_sym` + `symbols/cr_primitives.kicad_sym` hold
+> the symbols; `footprints/cambridge_reverb.pretty/` the footprints; and
+> `gen/gen_kicad.py` generates the wired schematic. Verified with kicad-cli:
+> the hierarchy netlists with **94 components and 0 unconnected pins**. See
+> `../kicad/SCHEMATIC-BUILD.md` for connectivity method, the verified results,
+> and the known simplifications (op-amp single-supply biasing, TBD tone stack).
 
 ## Project structure (as documented)
 - `.kicad_pro` — JLCPCB-compatible design rules; two net classes (Default 0.3 mm

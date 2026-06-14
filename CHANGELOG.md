@@ -52,3 +52,16 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - **Two findings from running the sims** (folded into errata #15 + cross-check):
   power-amp LF −3 dB is ~17 Hz (input pole, not just C_gain); preamp Rs 2.2 kΩ
   biases the drain cold at ~12 V — Rs ≈ 1–1.2 kΩ hits the 8–9 V target.
+
+### Generated hierarchical schematic (2026-06-14)
+- **Wired KiCad schematic generated** (kicad/): root + 8 hierarchical sheets
+  (power_supply, preamp, tone_stack, reverb, tremolo, mrb, power_amp, switching)
+  via kicad/gen/gen_kicad.py, plus a self-contained primitive symbol library
+  (symbols/cr_primitives.kicad_sym).
+- **Verified with kicad-cli 7.0.11:** the hierarchy netlists to 94 components,
+  56 nets, **0 unconnected pins**, no duplicate references; GND spans 55 nodes;
+  all inter-sheet signals resolve. PDF/SVG of all sheets render correctly.
+- Connectivity uses global labels (rails/cross-sheet) + local labels; references
+  are descriptive to match the BOM/docs. Known simplifications documented in
+  kicad/SCHEMATIC-BUILD.md (op-amp single-supply biasing minimal, tone-stack TBD,
+  inter-effect routing order assumed).
