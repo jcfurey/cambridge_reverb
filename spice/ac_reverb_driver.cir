@@ -1,0 +1,23 @@
+Reverb driver (TL072 non-inverting) -- ngspice AC analysis
+* Drives the high-Z Accutronics 4FB2A1C pan directly (no transformer T3).
+* Non-inverting gain = 1 + R_drv1/R_drv2 = 1 + 100k/10k = 11x = 20.83 dB.
+* (netlist-notes.txt sheet 4.)
+
+.include models/opamp1p.sub
+
+V_in IN 0 AC 1
+* TL072 half (aol=200k, GBW=3MHz)
+X1 IN FB OUT OPAMP1P PARAMS: aol=2e5 gbw=3e6
+R_drv1 OUT FB 100k
+R_drv2 FB 0 10k
+* tank-drive coupling (pan input ~1475 ohm modeled as resistive load)
+C_rev1 OUT N1 1u
+R_drv3 N1 TANK 10
+R_pan  TANK 0 1475
+
+.control
+ac dec 100 10 100k
+meas ac gain_1k FIND vdb(out) AT=1000     ; expect ~20.8 dB (11x)
+print gain_1k
+.endc
+.end

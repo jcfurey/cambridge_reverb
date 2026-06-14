@@ -114,10 +114,17 @@ across every document. **No change required.**
 Part 2's preamp self-bias (`R_g = 1 MΩ`, `R_d ≈ 10 kΩ`, `R_s ≈ 2.2 kΩ`,
 `C_s = 10 µF`) matches the reverb-recovery JFET in `netlist-notes.txt`
 (`R_rec_bias = 1 MΩ`, `R_rec1 = 10 kΩ`, `R_rec2 = 2.2 kΩ`, `C_rec_byp = 10 µF`).
-**Caveat:** only the *power-amp* SPICE netlist was recovered, so there is **no
-preamp/recovery SPICE** to cross-check the bias point against. **Resolution:**
-values are internally consistent; flag the missing preamp simulation for rebuild
-(see `spice/README.md`). **Severity:** LOW.
+**Caveat:** only the *power-amp* SPICE netlist was recovered, so there was no
+preamp/recovery SPICE to cross-check the bias point against.
+
+**Update (ngspice, 2026-06-14):** a preamp sim now exists
+(`spice/dc_preamp_jfet.cir`). With a nominal 2N5457 (Idss ≈ 3 mA, Vp ≈ −1.8 V),
+the recovered `R_s ≈ 2.2 kΩ` / `R_d = 10 kΩ` bias the **drain at ~12 V**
+(Id ≈ 0.49 mA) — *colder* than the 8–9 V target in Part 2/Part 3. Simulated fix:
+**R_s ≈ 1.0 kΩ → Vd ≈ 8.5 V**, **R_s ≈ 1.2 kΩ → Vd ≈ 9.5 V**. The 2N5457 has a
+wide Idss/Vp spread, so treat R_s ≈ 1–1.2 kΩ as the nominal and **trim per device
+on the bench**. The BOM keeps the recovered 2.2 kΩ with this note.
+**Severity:** LOW (bias trim) — but verify before relying on the stated 8–9 V.
 
 ## Issue 16 — Main filter cap: 4700 µF (Part 2) vs 2× 2200 µF split (Part 7)
 Part 2's BOM gives **C_main = 4700 µF/50 V**; Part 7 notes the original ~5000 µF

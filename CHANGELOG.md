@@ -41,3 +41,14 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   SCHEMATIC-BUILD.md.
 - **Reference content** added to empty dirs: datasheets/SOURCES.md,
   photos/CAPTURE-CHECKLIST.md, production/CHECKLIST.md.
+
+### SPICE verification + validated EDA files (2026-06-14)
+- **KiCad files validated** with kicad-cli 7.0.11: custom symbol library and
+  footprints parse and plot cleanly; .kicad_pro is valid JSON.
+- **ngspice block sims added** (spice/): ac_power_amp_lm1875.cir (with C_fb_hf +
+  10" speaker model), ac_reverb_driver.cir, ac_mrb.cir, dc_preamp_jfet.cir,
+  tran_tremolo_lfo.cir, shared models/ (opamp1p.sub, jfet_2n5457.lib), run_all.sh.
+  All run under ngspice-42 and reproduce the documented gains/frequencies.
+- **Two findings from running the sims** (folded into errata #15 + cross-check):
+  power-amp LF −3 dB is ~17 Hz (input pole, not just C_gain); preamp Rs 2.2 kΩ
+  biases the drain cold at ~12 V — Rs ≈ 1–1.2 kΩ hits the 8–9 V target.

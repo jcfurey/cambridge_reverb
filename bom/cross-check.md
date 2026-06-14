@@ -40,23 +40,26 @@ the `notes` column):
 - **Mechanical / safety:** `R_bleed` 10K/5W (filter-cap discharge, from the
   Part 1 safety note), `HS_LM1875`, `INS_MICA`, `SOCKET_IC` (×2), `STANDOFF`.
 
-## 3. SPICE `.cir` is simplified vs the documented model — flagged, not fixed
-The power-amp netlist omits things the docs describe; the sim is directionally
-right but not the full guitar-optimized model:
+## 3. SPICE `.cir` was simplified vs the documented model — now addressed
+The original (LTspice) power-amp netlist omitted things the docs describe. Rather
+than only flag them, an **ngspice-runnable** companion set now exists and was
+**executed to verify** the design (`../spice/`, run `./run_all.sh`). The recovered
+LTspice `power_amp_lm1875.cir` is left verbatim for provenance; the new
+`ac_power_amp_lm1875.cir` adds the missing pieces:
 
-- **`C_fb_hf` (1 nF across R_fb) is not in the `.cir`.** Part 2, the netlist
-  notes, and the BOM all include it for the 7.2 kHz bandwidth limit, but the
-  simulation has no HF rolloff element — so the `.cir` will show flat HF response
-  instead of the intended −3 dB at ~7.2 kHz. Add `C_fb_hf PA_OUT NODE_FB 1n` to
-  reproduce the documented bandwidth.
-- **Speaker is a plain 8 Ω resistor.** Part 6B specifies a 10" speaker model
-  (105 Hz mechanical resonance + voice-coil inductance); the `.cir` does not
-  model it.
-- **No guitar pickup / cable model** (3 H / 6 kΩ / 100 pF + 300 pF cable) at the
-  input, which Part 6B lists as part of the guitar-optimized chain.
+- **`C_fb_hf` (1 nF across R_fb)** — added; the sim now shows the HF −3 dB at
+  **6.83 kHz** (≈ the documented 7.2 kHz), confirming the bandwidth limit. The
+  original `.cir` had no HF element.
+- **10″ speaker model** (Re + Le + 105 Hz mechanical resonance) replaces the plain
+  8 Ω resistor.
+- **Guitar pickup/cable model** (3 H / 6 kΩ / 100 pF + 300 pF) — still a documented
+  rebuild item for a full source-to-speaker chain (noted in `../spice/README.md`).
 
-These are recorded in `../spice/README.md` as rebuild items; the recovered
-`.cir` is left as-is (verbatim) so its provenance is clear.
+The sims also surfaced two real findings (both folded into errata):
+- **Power-amp LF −3 dB is ~17 Hz, not 7.2 Hz** — the input coupling/bias network
+  adds a second LF pole the docs didn't count. Beneficial for guitar.
+- **Preamp bias is cold with Rs = 2.2 kΩ** (Vd ≈ 12 V vs the 8–9 V target);
+  **Rs ≈ 1–1.2 kΩ** lands it. See errata Issue 15. (BOM note added on R_s1/R_s2.)
 
 ## 4. Still unverified — tone-stack values
 The Vox "top-boost" tone-stack passive values were **not recovered**. A single

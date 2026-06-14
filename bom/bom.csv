@@ -57,12 +57,12 @@ T1,Power transformer,reuse original / AnTek AS-0524,,,,1,Test secondary ~48VAC b
 R_bleed,Filter-cap bleeder/discharge,10K 5W,axial,,,1,Across C_main for safe discharge (Part1 safety)
 R_g1,Q1 gate bias to GND,1M 1/4W,axial,,,1,High-Z guitar input [Part2 reconstructed]
 R_d1,Q1 drain load,10K 1/4W,axial,,,1,Set Vd 8-9V [Part2 reconstructed]
-R_s1,Q1 source self-bias,2K2 1/4W,axial,,,1,[Part2 reconstructed]
+R_s1,Q1 source self-bias,2K2 1/4W,axial,,,1,Recovered 2K2 biases Vd~12V; ~1-1.2K -> 8-9V target (errata #15) - trim per device
 C_s1,Q1 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
 C_in_pre,Preamp input coupling,47nF film,radial,,,1,~47nF [Part2 reconstructed]
 R_g2,Q2 gate bias to GND,1M 1/4W,axial,,,1,[Part2 reconstructed]
 R_d2,Q2 drain load,10K 1/4W,axial,,,1,[Part2 reconstructed]
-R_s2,Q2 source self-bias,2K2 1/4W,axial,,,1,[Part2 reconstructed]
+R_s2,Q2 source self-bias,2K2 1/4W,axial,,,1,See R_s1: ~1-1.2K for 8-9V drain (errata #15)
 C_s2,Q2 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
 TONE_STACK,Vox tone-stack passives,TBD,,,,,Values NOT recovered; replicate original 25-5274-2 top-boost network
 R_drv1,Reverb driver feedback,100K 1/4W,axial,,,1,Driver gain 11x [netlist sheet4]
