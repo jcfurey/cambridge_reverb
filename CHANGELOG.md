@@ -22,3 +22,6 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 
 ## Unreleased
 - Initial git repository structure created.
+- Reconstructed Parts 1-10 + errata into docs/ from recovered conversation
+  content (see docs/PROVENANCE.md for method and verification notes).
+- Added bom/bom.csv, spice/power_amp_lm1875.cir, kicad/netlist-notes.txt.

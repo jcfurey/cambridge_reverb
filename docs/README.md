@@ -1,7 +1,9 @@
 # docs/
 
-Design documentation (Parts 1–10 + errata). Drop the markdown/PDF deliverables here:
+Reconstructed design documentation. **Read `PROVENANCE.md` first** — these were
+rebuilt from recovered conversation fragments, not the original files.
 
+- `PROVENANCE.md` — how these were reconstructed and what to re-verify
 - `01-modernization-guide.md`
 - `02-bom-schematics.md`
 - `03-wiring-harness.md`

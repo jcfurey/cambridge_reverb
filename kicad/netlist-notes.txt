@@ -1,0 +1,101 @@
+# Vox Cambridge Reverb — KiCad netlist notes
+# Recovered substantially verbatim from the source conversation.
+# Per-sheet component lists and connections. Verify against Part 2 / SPICE.
+
+# ====================
+# SHEET 7: POWER AMPLIFIER (LM1875 single supply)
+# ====================
+#   IC_PA    LM1875T/NOPB  Power amplifier
+#   R_bias1  22K           Input bias divider (V+ to input)
+#   R_bias2  22K           Input bias divider (input to GND)
+#   R_fb     22K           Feedback resistor (output to inv input)
+#   C_fb_hf  1nF           Feedback HF rolloff (across R_fb)
+#   R_gain   1K            Gain-setting resistor
+#   C_gain   22uF/25V      Gain LF rolloff cap
+#   C_in     1uF/50V       Input coupling cap (film)
+#   C_out    2200uF/35V    Output coupling cap
+#   R_zobel  10R/1W        Zobel network resistor
+#   C_zobel  100nF/100V    Zobel network cap (film)
+#   C_byp1   100nF/50V     V+ bypass (MLCC, close to IC)
+#   C_byp2   10uF/50V      V+ bypass (electrolytic)
+#   D1       1N4007        Output clamp to V+
+#   D2       1N4007        Output clamp to GND
+#
+# Connections:
+#   PA_INPUT -> C_in(1uF) -> PA_BIAS
+#   +33V5 -> R_bias1(22K) -> PA_BIAS
+#   PA_BIAS -> R_bias2(22K) -> GND
+#   PA_BIAS -> IC_PA pin1 (non-inv +)
+#   IC_PA pin2 (inv -) = PA_INV
+#   PA_INV -> R_fb(22K) -> PA_OUT
+#   PA_INV -> C_fb_hf(1nF) -> PA_OUT  [parallel with R_fb, HF rolloff]
+#   PA_INV -> R_gain(1K) -> C_gain(22uF) -> GND
+#   IC_PA pin3 (V-) -> GND
+#   IC_PA pin5 (V+) -> +33V5
+#   C_byp1(100nF), C_byp2(10uF): IC_PA pin5 to GND [close to IC]
+#   IC_PA pin4 (out) = PA_OUT
+#   PA_OUT -> C_out(2200uF) -> SPK_POS
+#   PA_OUT -> R_zobel(10R) -> C_zobel(100nF) -> GND
+#   D1: PA_OUT(cathode) -> +33V5(anode)
+#   D2: GND(cathode) -> PA_OUT(anode)
+#   SPK_POS -> Speaker(+), Speaker(-) -> GND
+#   Gain = 1 + R_fb/R_gain = 1 + 22K/1K = 23x (27.2 dB)
+
+# ====================
+# SHEET 4: REVERB (TL072 driver + JFET recovery)
+# ====================
+#   DRY_SIGNAL_TAP -> IC_REV pin3 (non-inv +)
+#   IC_REV pin2 (inv -) -> R_drv2(10K) -> GND
+#   IC_REV pin2 (inv -) -> R_drv1(100K) -> IC_REV pin1 (output)
+#   IC_REV pin1 -> C_rev1(1uF) -> R_drv3(10R) -> TANK_INPUT
+#   TANK_OUTPUT -> C_rev2(10nF) -> Q_rec(gate)
+#   Q_rec(gate) -> R_rec_bias(1M) -> GND
+#   Q_rec(drain) -> R_rec1(10K) -> +17V_REG
+#   Q_rec(source) -> R_rec2(2K2) -> GND
+#   C_rec_byp(10uF): across R_rec2
+#   Q_rec(drain) -> C_rev4(100nF) -> POT_REV(CW)
+#   POT_REV(CCW) -> GND
+#   POT_REV(wiper) = WET -> BLEND_JUNCTION
+#   DRY_SIGNAL (from volume pot wiper) -> BLEND_JUNCTION
+#   BLEND_JUNCTION -> POWER_AMP_INPUT
+#   Driver gain = 1 + 100K/10K = 11x
+
+# ====================
+# SHEET 5: TREMOLO (Wien bridge LFO + LED/LDR)
+# ====================
+#   IC2      TL072CP      LFO oscillator (half A) + spare half B
+#   VTL1     Xvive VTL5C1 Optocoupler
+#   R_lfo1   33K          Wien bridge fixed R
+#   R_lfo_ser 100K        Wien bridge series R (limits max freq)
+#   R_lfo_fb1 10K / R_lfo_fb2 4K7   Negative feedback divider
+#   R_led    1K / R_led_diag 2K2    LED current limiters
+#   R_trem1  10K          Signal series resistor
+#   C_lfo1   100nF/50V / C_lfo2 100nF/50V   Wien timing (film)
+#   C_dc_blk 10uF/25V     LFO DC blocking
+#   C_trem_out 100nF/50V  Tremolo output coupling
+#   D_lfo1, D_lfo2  1N4148  Amplitude clamp (back-to-back)
+#   LED_diag 3mm red      On-board diagnostic LED
+#   POT_SPD  500K lin / POT_DPT 100K lin
+#   IC2 pin3 (non-inv +) = LFO_POS
+#   IC2 pin2 (inv -) = LFO_NEG
+
+# ====================
+# SHEET 6: MRB (Mid Resonance Boost)
+# ====================
+#   MRB_IN -> C_mrb_in(100nF) -> L1(1H) -> C_mrb(68nF) -> C_mrb_out(100nF) -> MRB_OUT
+#   Resonant peak at f = 1/(2*pi*sqrt(L*C))
+#     L=1H, C=120nF -> ~460 Hz
+#     L=1H, C=68nF  -> ~610 Hz  (default 600 Hz position)
+#     L=1H, C=47nF  -> ~734 Hz
+
+# ====================
+# PCB LAYOUT GUIDELINES (recovered verbatim)
+# ====================
+# Board outline: 190mm x 115mm (or 155x90mm conservative per Part 7)
+# Mounting holes: match original 25-5274-2 positions (measure your board)
+# Placement zones L->R: [INPUT/PREAMP][TONE STACK][REVERB/TREM][POWER AMP][PSU]
+# Wiring edge: one edge, all off-board connections
+# Ground plane: continuous copper pour on bottom layer; star ground near C_main
+# Keep-outs: 10mm around LM1875/LM317; 15mm from transformer pads; none under LFO timing
+# Trace widths: power rails 2.5mm; 27V/17V rails 1.5mm; signal 0.5mm
+# Vias: power 1.0mm drill; signal 0.5mm; ground stitching 0.8mm every 15mm

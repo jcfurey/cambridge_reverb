@@ -1,0 +1,57 @@
+* ============================================================
+* SIMULATION: LM1875 POWER AMPLIFIER (single supply, guitar-optimized)
+* ============================================================
+* TI does not provide an official LTspice model, so we use the
+* UniversalOpamp2 with parameters matched to LM1875 specs.
+*
+* Supply: +33.5V single rail, 8 ohm speaker load
+* Gain: 23x (27 dB)
+* Recovered verbatim from the source conversation. Verify before use.
+
+* --- Power Supply ---
+V_supply  V_PLUS  0  DC 33.5
+V_gnd     V_MINUS 0  DC 0
+
+* --- Input Signal (from preamp, ~500mVpk after tone stack + volume) ---
+V_in  SIG_IN  0  SIN(0 0.5 1000)
+
+* --- Input Coupling ---
+C_in  SIG_IN  NODE_A  1u
+
+* --- DC Bias (sets output to V+/2) ---
+R_bias1  V_PLUS  NODE_A  22k
+R_bias2  NODE_A  0  22k
+
+* --- Op-Amp (LM1875 behavioral model) ---
+* Using UniversalOpamp2 with:
+*   Aol = 90dB (open loop gain)
+*   GBW = 2.5MHz
+*   Slew = 18V/us
+*   Voh/Vol clipped by supply
+XU1  NODE_A  NODE_FB  V_PLUS  V_MINUS  PA_OUT  UniversalOpamp2
++ Aol=100k GBW=2.5Meg Slew=18Meg
++ Rout=0.1 En=5n In=0.5p Vos=1m Rin=500k
+
+* --- Feedback Network ---
+R_fb    PA_OUT  NODE_FB  22k        ; Feedback resistor
+R_gain  NODE_FB  0  1k              ; Gain resistor (AC coupled)
+C_gain  NODE_FB  0  22u             ; Gain cap (sets LF rolloff at 7.2Hz)
+* Closed-loop gain = 1 + Rfb/Rgain = 23x
+
+* --- Output Coupling ---
+C_out  PA_OUT  SPK_POS  2200u       ; Output coupling capacitor
+
+* --- Zobel Network ---
+R_zobel  PA_OUT  ZOB_MID  10        ; Zobel resistor
+C_zobel  ZOB_MID  0  100n           ; Zobel capacitor
+
+* --- Speaker Load ---
+R_speaker  SPK_POS  0  8            ; 8 ohm speaker
+
+* --- Simulation Commands ---
+.tran 0 20m 0 1u
+* .ac dec 200 1 100k
+* .op
+
+.lib opamp.sub
+.end

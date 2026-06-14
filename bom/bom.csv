@@ -1,0 +1,56 @@
+ref,description,value,package,digikey_pn,mouser_pn,qty,notes
+Q1,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Use SOT-23 to TO-92 adapter; or J113 TO-92 (J113-ND) with adjusted bias
+Q2,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Bias targets 2N5457 specs
+Q_rec,N-ch JFET reverb recovery,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,
+IC1,Dual JFET op-amp (reverb driver),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
+IC2,Dual JFET op-amp (tremolo LFO),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
+IC_PA,Power amplifier,LM1875T/NOPB,TO-220,LM1875T/NOPB-ND,926-LM1875T/NOPB,1,Heatsink <=2.5 C/W; mica insulator
+U1,Voltage regulator 17V rail,LM317T,TO-220,LM317T/NOPB-ND,926-LM317T/NOPB,1,
+BR1,Bridge rectifier,KBP410G 4A 1000V,inline-4,KBP410G-ND,821-KBP410G,1,Or 4x 1N4007
+D1,Output clamp to V+,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
+D2,Output clamp to GND,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
+D_lfo1,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,Back-to-back with D_lfo2
+D_lfo2,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,
+VTL1,Optocoupler tremolo,Xvive VTL5C1,inline-4,,,1,Or DIY LED+LDR; source from Amplified Parts/Banzai
+LED_rate,Diagnostic rate LED,3mm red,T-1,160-1127-ND,,1,On-board, not panel
+C_main,Main filter cap,4700uF 50V low-ESR,radial,,667-EEU-FC1H472,1,
+C_filt1,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
+C_filt2,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
+C101,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
+C102,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
+C103,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
+C104,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
+C_in_pa,Power amp input coupling,1uF 50V film,radial,,,1,
+C_out_pa,Power amp output coupling,2200uF 35V,radial,,,1,REQUIRED for single-supply (errata #7)
+C_gain_pa,Power amp gain LF rolloff,22uF 25V,radial,,,1,
+C_fb_hf,Power amp HF rolloff across R_fb,1nF,film,,,1,7.2 kHz bandwidth limit
+C_zobel,Zobel cap,100nF 100V film,radial,,,1,
+C_byp1,V+ bypass MLCC,100nF 50V,disc,,594-K104K15X7RF5TL2,1,
+C_byp2,V+ bypass electrolytic,10uF 50V,radial,,,1,
+C_pres,Presence rolloff at Q2 drain,100pF,disc,,,1,Guitar-frequency optimization
+C_treble,Vox chime treble cap,470pF,disc,,,1,
+C_lfo1,Wien bridge timing,100nF 50V film,radial,,,1,
+C_lfo2,Wien bridge timing,100nF 50V film,radial,,,1,
+C_mrb_600,MRB 600Hz default,68nF 50V film,radial,,,1,Default position with 1H
+C_mrb_450,MRB 450Hz optional,120nF 50V film,radial,,,1,
+C_mrb_750,MRB 750Hz optional,47nF 50V film,radial,,,1,
+C_mrb_in,MRB input coupling,100nF 50V film,radial,,,1,
+C_mrb_out,MRB output coupling,100nF 50V film,radial,,,1,
+C_reg_in,Regulator input cap,10uF 50V tantalum,radial,,581-TAP106K050SCS,1,
+C_reg_out1,Regulator output cap,10uF 25V tantalum,radial,,581-TAP106K025SCS,1,
+C_reg_out2,Regulator output bypass,100nF 50V MLCC,disc,,594-K104K15X7RF5TL2,1,
+R_bias1,PA input bias high,22K 1% 1/4W,axial,,,1,
+R_bias2,PA input bias low,22K 1% 1/4W,axial,,,1,
+R_fb,PA feedback,22K 1% 1/4W,axial,,,1,
+R_gain,PA gain set,1K 1% 1/4W,axial,,,1,Av = 23x
+R_zobel,Zobel resistor,10R 1W,axial,,,1,
+R_reg1,LM317 set resistor,240R 1% 1/4W,axial,,603-MFR-25FBF52-240R,1,
+R_reg2,LM317 set resistor,3.0K 1% 1/4W,axial,,603-MFR-25FBF52-3K,1,
+R_27V,27V rail dropper,47R 2W metal oxide,axial,,603-MOS2CT52A47R0J,1,
+R_led,LFO LED current limiter,1K 1/4W,axial,,,1,
+R_trem1,Tremolo signal series R,10K 1% 1/4W,axial,,,1,
+L1,MRB inductor,1H toroid,,,,1,Reuse original or 2x 0.5H Fasel wah
+REVPAN,Reverb pan,Accutronics 4FB2A1C ~1475ohm,,,,1,NOT 4AB3C1B (8ohm incompatible)
+F1,Secondary fuse,1A 250V slow-blow,5x20mm,,576-0273001.H,1,
+F1_holder,Fuse holder,PCB mount 5x20mm,,,534-3557,1,
+T1,Power transformer,reuse original / AnTek AS-0524,,,,1,Test secondary ~48VAC before reuse
