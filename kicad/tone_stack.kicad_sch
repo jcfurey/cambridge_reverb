@@ -1,1024 +1,129 @@
-(kicad_sch
-	(version 20260306)
-	(generator "eeschema")
-	(generator_version "10.0")
-	(uuid "40de6400-e17a-4374-82ea-77700a8b888c")
-	(paper "A3")
-	(title_block
-		(title "Vox Cambridge Reverb -- Tone Stack")
-		(company "Reconstructed")
-	)
-	(lib_symbols
-		(symbol "cr_primitives:C"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0.254)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "C"
-				(at 0 6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "cr_primitives:C"
-				(at 0 -6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Unpolarized capacitor"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "C_0_1"
-				(polyline
-					(pts
-						(xy -0.5 -2.54) (xy -0.5 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.5 -2.54) (xy 0.5 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "C_1_1"
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "cr_primitives:POT"
-			(pin_names
-				(offset 0.254)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "RV"
-				(at 0 6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "cr_primitives:POT"
-				(at 0 -6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Potentiometer (1,3 ends; 2 wiper)"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "POT_0_1"
-				(rectangle
-					(start -2.54 -1.27)
-					(end 2.54 1.27)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "POT_1_1"
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "W"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name "3"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "cr_primitives:R"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0.254)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "R"
-				(at 0 6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "cr_primitives:R"
-				(at 0 -6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Resistor"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "R_0_1"
-				(rectangle
-					(start -2.54 -1.27)
-					(end 2.54 1.27)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "R_1_1"
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-	)
-	(text "TONE STACK -- Vox top-boost network. VALUES TBD (cross-check #4): replicate 25-5274-2."
-		(exclude_from_sim no)
-		(at 40 20 0)
-		(effects
-			(font
-				(size 1.5 1.5)
-			)
-			(justify left)
-		)
-		(uuid "dc8813b4-c526-49ea-a8b2-5bb283576309")
-	)
-	(wire
-		(pts
-			(xy 115.57 119.38) (xy 118.11 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0bc5b6a5-d651-4620-aba4-000b848d5fb8")
-	)
-	(wire
-		(pts
-			(xy 134.62 69.85) (xy 132.08 69.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0ca8fcda-5175-47c6-b792-54416bf6c053")
-	)
-	(wire
-		(pts
-			(xy 105.41 119.38) (xy 102.87 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "366f2072-ca8e-4687-a425-8a356fb64926")
-	)
-	(wire
-		(pts
-			(xy 165.1 110.49) (xy 162.56 110.49)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3cc3576d-ac64-4109-9f9c-ef1b363363ed")
-	)
-	(wire
-		(pts
-			(xy 64.77 69.85) (xy 62.23 69.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "59f9b950-d892-4a9a-8bb4-cf218051a649")
-	)
-	(wire
-		(pts
-			(xy 144.78 69.85) (xy 147.32 69.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7b9f2b0f-aae7-43f1-916a-eb4e222683a0")
-	)
-	(wire
-		(pts
-			(xy 139.7 64.77) (xy 139.7 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8d0a5495-41a0-4b7c-bb17-db746e30da26")
-	)
-	(wire
-		(pts
-			(xy 74.93 69.85) (xy 77.47 69.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9f13b3d0-60a3-4dc3-a548-fab6e3885d9f")
-	)
-	(wire
-		(pts
-			(xy 69.85 64.77) (xy 69.85 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9fde92f-314b-4fc0-bf97-9f88b459ee88")
-	)
-	(wire
-		(pts
-			(xy 175.26 110.49) (xy 177.8 110.49)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c6c3591b-a668-4c5b-b50f-735ad1574914")
-	)
-	(label "VOL_W"
-		(at 102.87 119.38 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "36f6185e-3002-4e8e-afc0-32f7e6aeffa0")
-	)
-	(label "VOL_W"
-		(at 132.08 69.85 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "39e6aed8-d607-4fca-8b66-bf2efff15084")
-	)
-	(label "VOL_W"
-		(at 69.85 62.23 90)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "8983b89a-f9fe-46e4-9e3b-c7b0c209bbc7")
-	)
-	(global_label "FX_RET"
-		(shape input)
-		(at 118.11 119.38 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "33437eff-18ff-4d37-a5bb-b3d5b95f21ad")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 118.11 119.38 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape input)
-		(at 177.8 110.49 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "56faa9b7-0b6b-4fa3-96bb-471a7cf00fa7")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 177.8 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "TONE_OUT"
-		(shape input)
-		(at 162.56 110.49 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "59ce7a30-75e2-4018-b4f4-5390f530c01e")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 162.56 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape input)
-		(at 77.47 69.85 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "8611371b-0865-4d07-99a6-7ee456e91faa")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 77.47 69.85 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape input)
-		(at 147.32 69.85 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "9c870fd4-d29d-4bce-bd18-ba4d444c5808")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 147.32 69.85 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "TONE_OUT"
-		(shape input)
-		(at 139.7 62.23 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b7b86a04-3e06-4b7e-a206-e10d46085114")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 139.7 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "PREAMP_OUT"
-		(shape input)
-		(at 62.23 69.85 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "da6b4d83-6ab2-4458-ae4d-2779c2f4002a")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 62.23 69.85 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "cr_primitives:R")
-		(at 110.49 119.38 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "44e6a6d8-5aa1-42b6-8ffe-2d5f74f47120")
-		(property "Reference" "R_fx_pad"
-			(at 113.03 111.76 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "10k"
-			(at 113.03 114.3 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical"
-			(at 110.49 119.38 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 110.49 119.38 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 110.49 119.38 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "64952612-cc69-4f3d-a1cf-553b759d2570")
-		)
-		(pin "2"
-			(uuid "ea052e63-9342-4b4b-8586-b8a56744586a")
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a/c23a8123-8954-4ef1-92ba-73910d27c26b"
-					(reference "R_fx_pad")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "cr_primitives:C")
-		(at 170.18 110.49 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "7110f133-6c9d-4ded-a1cc-b5e2dc93cffc")
-		(property "Reference" "C_tone_tbd"
-			(at 172.72 102.87 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TBD"
-			(at 172.72 105.41 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_THT:C_Disc_D7.5mm_W2.5mm_P5.00mm"
-			(at 170.18 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 170.18 110.49 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 170.18 110.49 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "8522830b-8243-4514-a41a-107dbeecce29")
-		)
-		(pin "2"
-			(uuid "fdcc32b9-e76f-4c41-8b6f-800135a8d64e")
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a/c23a8123-8954-4ef1-92ba-73910d27c26b"
-					(reference "C_tone_tbd")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "cr_primitives:POT")
-		(at 139.7 69.85 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "aeb074f0-8ce0-4e31-a9b8-70cf9504ac6f")
-		(property "Reference" "POT_TONE"
-			(at 142.24 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "reuse"
-			(at 142.24 64.77 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Alpha_RD901F-40-00D_Single_Vertical"
-			(at 139.7 69.85 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 139.7 69.85 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 139.7 69.85 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f707fb96-6106-4a7e-b20f-23623f986114")
-		)
-		(pin "3"
-			(uuid "3e490823-e71b-4302-ab7e-a4c746a4678c")
-		)
-		(pin "2"
-			(uuid "654dd242-5188-490d-b3f2-fdd7aad4754f")
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a/c23a8123-8954-4ef1-92ba-73910d27c26b"
-					(reference "POT_TONE")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "cr_primitives:POT")
-		(at 69.85 69.85 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "f2510885-3655-49e6-9dee-779fe2477b16")
-		(property "Reference" "POT_VOL"
-			(at 72.39 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "reuse"
-			(at 72.39 64.77 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Potentiometer_THT:Potentiometer_Alpha_RD901F-40-00D_Single_Vertical"
-			(at 69.85 69.85 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 69.85 69.85 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 69.85 69.85 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "1bdf10f9-2a3e-491d-91bb-8a2674c7f87d")
-		)
-		(pin "3"
-			(uuid "8f1f3080-b3f8-41db-9b82-e63a07654247")
-		)
-		(pin "2"
-			(uuid "f1ea5410-60f5-4263-86e4-1d482daaabb9")
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a/c23a8123-8954-4ef1-92ba-73910d27c26b"
-					(reference "POT_VOL")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(sheet_instances
-		(path "/"
-			(page "1")
-		)
-	)
+(kicad_sch (version 20230121) (generator cambridge_reverb_gen)
+  (uuid a5e00668-a068-4d87-a499-9948a6b9d5a2)
+  (paper "A3")
+  (title_block (title "Vox Cambridge Reverb -- Tone Stack") (company "Reconstructed"))
+  (lib_symbols
+  (symbol "cr_primitives:C" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
+    (property "Reference" "C" (at 0 6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "cr_primitives:C" (at 0 -6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "ki_description" "Unpolarized capacitor" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (symbol "C_0_1"
+      (polyline (pts (xy -0.5 -2.54) (xy -0.5 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+      (polyline (pts (xy 0.5 -2.54) (xy 0.5 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+    )
+    (symbol "C_1_1"
+      (pin passive line (at -5.08 0 0) (length 2.54)
+        (name "~" (effects (font (size 1.016 1.016))))
+        (number "1" (effects (font (size 1.016 1.016)))))
+      (pin passive line (at 5.08 0 180) (length 2.54)
+        (name "~" (effects (font (size 1.016 1.016))))
+        (number "2" (effects (font (size 1.016 1.016)))))
+    )
+  )
+  (symbol "cr_primitives:POT" (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
+    (property "Reference" "RV" (at 0 6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "cr_primitives:POT" (at 0 -6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "ki_description" "Potentiometer (1,3 ends; 2 wiper)" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (symbol "POT_0_1"
+      (rectangle (start -2.54 -1.27) (end 2.54 1.27) (stroke (width 0.254) (type default)) (fill (type none)))
+    )
+    (symbol "POT_1_1"
+      (pin passive line (at -5.08 0 0) (length 2.54)
+        (name "1" (effects (font (size 1.016 1.016))))
+        (number "1" (effects (font (size 1.016 1.016)))))
+      (pin passive line (at 5.08 0 180) (length 2.54)
+        (name "3" (effects (font (size 1.016 1.016))))
+        (number "3" (effects (font (size 1.016 1.016)))))
+      (pin passive line (at 0 5.08 270) (length 2.54)
+        (name "W" (effects (font (size 1.016 1.016))))
+        (number "2" (effects (font (size 1.016 1.016)))))
+    )
+  )
+  (symbol "cr_primitives:R" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
+    (property "Reference" "R" (at 0 6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "cr_primitives:R" (at 0 -6.35 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (property "ki_description" "Resistor" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+    (symbol "R_0_1"
+      (rectangle (start -2.54 -1.27) (end 2.54 1.27) (stroke (width 0.254) (type default)) (fill (type none)))
+    )
+    (symbol "R_1_1"
+      (pin passive line (at -5.08 0 0) (length 2.54)
+        (name "~" (effects (font (size 1.016 1.016))))
+        (number "1" (effects (font (size 1.016 1.016)))))
+      (pin passive line (at 5.08 0 180) (length 2.54)
+        (name "~" (effects (font (size 1.016 1.016))))
+        (number "2" (effects (font (size 1.016 1.016)))))
+    )
+  )
+  )
+  (text "TONE STACK -- Vox top-boost network. VALUES TBD (cross-check #4): replicate 25-5274-2." (at 130.17000000000002 70.8 0) (effects (font (size 1.5 1.5)) (justify left)) (uuid 10ce2c0c-fe4c-4440-8428-a2c548a320a6))
+  (symbol (lib_id "cr_primitives:POT") (at 160.01999999999998 120.64999999999999 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid ee146fdf-6ba0-4a95-bce1-50c36c34eb07)
+    (property "Reference" "POT_VOL" (at 162.55999999999997 113.02999999999999 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Value" "reuse" (at 162.55999999999997 115.57 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" (at 160.01999999999998 120.64999999999999 0) (effects (font (size 1.27 1.27)) hide))
+    (pin "1" (uuid 285b6068-5746-4886-b5f3-239c697da143))
+    (pin "3" (uuid 9f209456-fb19-4967-b2d2-9395150385e0))
+    (pin "2" (uuid cd14e9f5-1972-4e83-9aa5-fd1faa047c34))
+    (instances (project "cambridge_reverb" (path "/17185805-95a9-4b43-b310-37b04a629e62" (reference "POT_VOL") (unit 1))))
+  )
+  (wire (pts (xy 154.94 120.64999999999999) (xy 152.4 120.64999999999999)) (stroke (width 0) (type default)) (uuid e08c5160-33c0-4824-b398-c1edfc2ae638))
+  (global_label "PREAMP_OUT" (shape input) (at 152.4 120.64999999999999 180) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid 973cefd2-4729-4af1-bdc8-6d60aa05f628))
+  (wire (pts (xy 165.1 120.64999999999999) (xy 167.64 120.64999999999999)) (stroke (width 0) (type default)) (uuid 242e66c7-1bad-4cca-943e-5e196b3d6607))
+  (global_label "GND" (shape input) (at 167.64 120.64999999999999 0) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid c5b555c5-5b0e-483a-aeab-fc538d9e2192))
+  (wire (pts (xy 160.01999999999998 115.57) (xy 160.01999999999998 113.03)) (stroke (width 0) (type default)) (uuid 45ab4393-b785-4d75-8e08-eae6ae0b38ce))
+  (label "VOL_W" (at 160.01999999999998 113.03 90) (effects (font (size 1.27 1.27)) (justify left)) (uuid 3768c9a1-b1a4-49a2-b6cd-df2ae0c21fab))
+  (symbol (lib_id "cr_primitives:POT") (at 229.87 120.64999999999999 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 4f7cf183-3831-4e36-bc82-8904b9e9ca8f)
+    (property "Reference" "POT_TONE" (at 232.41 113.02999999999999 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Value" "reuse" (at 232.41 115.57 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" (at 229.87 120.64999999999999 0) (effects (font (size 1.27 1.27)) hide))
+    (pin "1" (uuid 3a2f92b3-a2f7-49d5-be0d-98fc124b0484))
+    (pin "3" (uuid d9d3551e-7061-4bf7-a115-b4a20a14a197))
+    (pin "2" (uuid 563d4a57-df8c-42f1-9432-2177c2ca4516))
+    (instances (project "cambridge_reverb" (path "/17185805-95a9-4b43-b310-37b04a629e62" (reference "POT_TONE") (unit 1))))
+  )
+  (wire (pts (xy 224.78999999999996 120.64999999999999) (xy 222.25 120.64999999999999)) (stroke (width 0) (type default)) (uuid 2899648a-d675-4cf5-a8f2-c42dcecd896a))
+  (label "VOL_W" (at 222.25 120.64999999999999 180) (effects (font (size 1.27 1.27)) (justify left)) (uuid a2795ccb-79a3-414b-b8e7-de2ad98c5c72))
+  (wire (pts (xy 234.95 120.64999999999999) (xy 237.49 120.64999999999999)) (stroke (width 0) (type default)) (uuid 6413342b-e19f-4334-bf85-80003670b2f7))
+  (global_label "GND" (shape input) (at 237.49 120.64999999999999 0) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid 0d75ba86-6e71-4413-bdf3-2bd5bb49a7f5))
+  (wire (pts (xy 229.87 115.57) (xy 229.87 113.03)) (stroke (width 0) (type default)) (uuid d3a2af96-cb71-4613-b820-2bd93b4a959a))
+  (global_label "TONE_OUT" (shape input) (at 229.87 113.03 90) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid bb12d7ad-e73f-4842-a99a-a89228d74663))
+  (symbol (lib_id "cr_primitives:R") (at 200.66 170.18 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 563ee2ac-baea-474f-88cc-72e9065543ac)
+    (property "Reference" "R_fx_pad" (at 203.2 162.56 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Value" "10k" (at 203.2 165.1 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical" (at 200.66 170.18 0) (effects (font (size 1.27 1.27)) hide))
+    (pin "1" (uuid bb2ac9e3-7896-4bff-b360-88ff24e5b1df))
+    (pin "2" (uuid 5cc0aa69-ac3d-4e22-99cc-e366d2f3aaa9))
+    (instances (project "cambridge_reverb" (path "/17185805-95a9-4b43-b310-37b04a629e62" (reference "R_fx_pad") (unit 1))))
+  )
+  (wire (pts (xy 195.57999999999998 170.18) (xy 193.04 170.18)) (stroke (width 0) (type default)) (uuid 37da6ced-5c23-4853-b1e7-310373d47f09))
+  (label "VOL_W" (at 193.04 170.18 180) (effects (font (size 1.27 1.27)) (justify left)) (uuid 4cc601f7-2671-4382-883f-18087e916db1))
+  (wire (pts (xy 205.74 170.18) (xy 208.28 170.18)) (stroke (width 0) (type default)) (uuid 76ac2ef0-500d-4bdd-b246-5048ec1f28e2))
+  (global_label "FX_RET" (shape input) (at 208.28 170.18 0) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid d29dc7f3-474c-48c9-a783-e7db1afe42d7))
+  (symbol (lib_id "cr_primitives:C") (at 260.35 161.29 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid f4e57983-b496-4423-9543-135e8ad77b0e)
+    (property "Reference" "C_tone_tbd" (at 262.89000000000004 153.67 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Value" "TBD" (at 262.89000000000004 156.20999999999998 0) (effects (font (size 1.27 1.27)) (justify left)))
+    (property "Footprint" "Capacitor_THT:C_Disc_D7.5mm_W2.5mm_P5.00mm" (at 260.35 161.29 0) (effects (font (size 1.27 1.27)) hide))
+    (pin "1" (uuid 1e8cdb93-bf9a-453a-8eb2-6b95ed9a0ef6))
+    (pin "2" (uuid f964794e-1816-4b36-adf5-9b4024c135af))
+    (instances (project "cambridge_reverb" (path "/17185805-95a9-4b43-b310-37b04a629e62" (reference "C_tone_tbd") (unit 1))))
+  )
+  (wire (pts (xy 255.26999999999998 161.29) (xy 252.73000000000002 161.29)) (stroke (width 0) (type default)) (uuid 0cae469b-cbb0-4d7a-bdcd-4264c2555df8))
+  (global_label "TONE_OUT" (shape input) (at 252.73000000000002 161.29 180) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid 05107de8-91c8-4ccf-9ad3-2e01a78262bd))
+  (wire (pts (xy 265.43 161.29) (xy 267.97 161.29)) (stroke (width 0) (type default)) (uuid b613896b-d747-45ca-8cee-d0ad9f279b0d))
+  (global_label "GND" (shape input) (at 267.97 161.29 0) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid d415eb0a-844e-48a1-bb18-e61dd3d4aa2e))
+  (sheet_instances (path "/" (page "1")))
 )

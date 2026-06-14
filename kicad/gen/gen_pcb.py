@@ -105,13 +105,19 @@ def main():
         areas.append(pcbnew.ToMM(bb.GetWidth()) * pcbnew.ToMM(bb.GetHeight()))
         placed += 1
 
-    x0, y0 = MARGIN + 5, MARGIN + 5
+    # main grid; centered horizontally, top-aligned (the board is ~half full of
+    # parts -- see the density note -- so the grid uses most of the height, with a
+    # bottom strip for the off-board connectors and a right strip for the toroid).
     px, py = 13.6, 11.8
-    cols = int((BW - 2 * MARGIN - 24) // px)
+    right = 24.0
+    cols = int((BW - 2 * MARGIN - right) // px)
+    blk_w = (cols - 1) * px
+    x0 = (BW - right - blk_w) / 2.0
+    y0 = MARGIN + 5
     for i, c in enumerate(main_parts):
         place(c, x0 + (i % cols) * px, y0 + (i // cols) * py)
     for j, c in enumerate(big_parts):
-        place(c, BW - MARGIN - 16, MARGIN + 16 + j * 30)
+        place(c, BW - MARGIN - 14, MARGIN + 16 + j * 30)
     ex, ey = MARGIN + 8, BH - MARGIN - 4
     for k, c in enumerate(edge_parts):
         place(c, ex + k * 22.0, ey, rot=90)

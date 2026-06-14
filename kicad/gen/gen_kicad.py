@@ -142,11 +142,15 @@ def write_primitives_lib():
 # Schematic emitter
 # ----------------------------------------------------------------------------
 class Sheet:
+    # page (A3) and the target center for content. True page center horizontally;
+    # nudged up only slightly so the tallest sheet still clears the title block.
+    PAGE_W, PAGE_H = 420.0, 297.0
+    CX, CY = 210.0, 141.0
+
     def __init__(self, title, fname):
         self.title = title; self.fname = fname
-        self.items = []          # body s-expr strings
+        self.ops = []            # deferred draw ops; coordinates centered at render time
         self.used = set()        # lib symbol names used
-        self.instances = []      # (lib, ref, uuid, unit)
         self.uuid = U()          # this file's own root uuid
         self.inst = U()          # uuid of the (sheet) instance in the root
 
@@ -158,72 +162,89 @@ class Sheet:
         COMPONENTS.append(dict(ref=ref, libsym=libsym, value=value, fp=fp,
                                sheet=self.title, x=x, y=y, nets=dict(nets),
                                pins=PINS[libsym]))
-        cu = U()
-        spec = SYMS[libsym]
-        lib_id = "cr_primitives:%s" % libsym if libsym in PRIM else "cambridge_reverb:%s" % libsym
-        s = []
-        extra = ""
-        s.append(f'  (symbol (lib_id "{lib_id}") (at {x} {y} 0) (unit 1)')
-        s.append(f'    (in_bom yes) (on_board yes) (dnp no)')
-        s.append(f'    (uuid {cu})')
-        s.append(f'    (property "Reference" "{ref}" (at {x+2.54} {y-7.62} 0) (effects (font (size 1.27 1.27)) (justify left)))')
-        s.append(f'    (property "Value" "{value}" (at {x+2.54} {y-5.08} 0) (effects (font (size 1.27 1.27)) (justify left)))')
-        s.append(f'    (property "Footprint" "{fp}" (at {x} {y} 0) (effects (font (size 1.27 1.27)) hide))')
-        for (num,nm,ex,ey,ox,oy) in PINS[libsym]:
-            s.append(f'    (pin "{num}" (uuid {U()}))')
-        s.append(f'    (instances (project "cambridge_reverb" (path "{INSTPATH(self)}" (reference "{ref}") (unit 1))))')
-        s.append('  )')
-        self.items.append("\n".join(s))
-        self.instances.append((lib_id, ref, cu))
-        # attach pin labels
-        for (num,nm,ex,ey,ox,oy) in PINS[libsym]:
+        self.ops.append(('sym', libsym, ref, value, fp, x, y, U()))
+        for (num, nm, ex, ey, ox, oy) in PINS[libsym]:
             if num not in nets:
                 continue
             net = nets[num]
             px = x + ex; py = y - ey         # symbol y-up -> schematic y-down
             sox, soy = ox, -oy
-            lx = px + 2.54*sox; ly = py + 2.54*soy
-            # wire stub
-            self.items.append(
-                f'  (wire (pts (xy {px} {py}) (xy {lx} {ly})) (stroke (width 0) (type default)) (uuid {U()}))')
-            self.label(net, lx, ly, sox, soy)
-
-    def label(self, net, x, y, sox, soy):
-        # rotation: text reads away from the wire
-        rot = 0
-        if sox < 0: rot = 180
-        elif soy > 0: rot = 270
-        elif soy < 0: rot = 90
-        if net in GLOBAL_NETS:
-            shape = "input"
-            self.items.append(
-                f'  (global_label "{net}" (shape {shape}) (at {x} {y} {rot}) (fields_autoplaced)'
-                f' (effects (font (size 1.27 1.27)) (justify left)) (uuid {U()}))')
-        else:
-            self.items.append(
-                f'  (label "{net}" (at {x} {y} {rot}) (effects (font (size 1.27 1.27)) (justify left)) (uuid {U()}))')
+            lx = px + 2.54 * sox; ly = py + 2.54 * soy
+            rot = 0
+            if sox < 0: rot = 180
+            elif soy > 0: rot = 270
+            elif soy < 0: rot = 90
+            self.ops.append(('wire', px, py, lx, ly))
+            self.ops.append(('label', net, lx, ly, rot, net in GLOBAL_NETS))
 
     def note(self, text, x, y):
-        self.items.append(f'  (text "{text}" (at {x} {y} 0) (effects (font (size 1.5 1.5)) (justify left)) (uuid {U()}))')
+        self.ops.append(('text', text, x, y))
+
+    def _sym_sexpr(self, libsym, ref, value, fp, x, y, cu):
+        lib_id = "cr_primitives:%s" % libsym if libsym in PRIM else "cambridge_reverb:%s" % libsym
+        s = [f'  (symbol (lib_id "{lib_id}") (at {x} {y} 0) (unit 1)',
+             '    (in_bom yes) (on_board yes) (dnp no)',
+             f'    (uuid {cu})',
+             f'    (property "Reference" "{ref}" (at {x+2.54} {y-7.62} 0) (effects (font (size 1.27 1.27)) (justify left)))',
+             f'    (property "Value" "{value}" (at {x+2.54} {y-5.08} 0) (effects (font (size 1.27 1.27)) (justify left)))',
+             f'    (property "Footprint" "{fp}" (at {x} {y} 0) (effects (font (size 1.27 1.27)) hide))']
+        for (num, nm, ex, ey, ox, oy) in PINS[libsym]:
+            s.append(f'    (pin "{num}" (uuid {U()}))')
+        s.append(f'    (instances (project "cambridge_reverb" (path "{INSTPATH(self)}" (reference "{ref}") (unit 1))))')
+        s.append('  )')
+        return "\n".join(s)
+
+    def _bbox(self):
+        """Bounding box of the circuit (symbols + wires + labels); notes excluded
+        so a long caption doesn't skew the centering."""
+        xs, ys = [], []
+        for op in self.ops:
+            if op[0] == 'sym':
+                xs.append(op[5]); ys.append(op[6])
+            elif op[0] == 'wire':
+                xs += [op[1], op[3]]; ys += [op[2], op[4]]
+            elif op[0] == 'label':
+                xs.append(op[2]); ys.append(op[3])
+        return (min(xs), min(ys), max(xs), max(ys)) if xs else (0, 0, 0, 0)
 
     def render(self):
+        minx, miny, maxx, maxy = self._bbox()
+        # translate content so its center lands on (CX, CY); snap so pins stay on grid
+        dx = SNAP(self.CX - (minx + maxx) / 2.0)
+        dy = SNAP(self.CY - (miny + maxy) / 2.0)
+        items = []
+        for op in self.ops:
+            if op[0] == 'sym':
+                _, libsym, ref, value, fp, x, y, cu = op
+                items.append(self._sym_sexpr(libsym, ref, value, fp, x + dx, y + dy, cu))
+            elif op[0] == 'wire':
+                _, x1, y1, x2, y2 = op
+                items.append(f'  (wire (pts (xy {x1+dx} {y1+dy}) (xy {x2+dx} {y2+dy})) '
+                             f'(stroke (width 0) (type default)) (uuid {U()}))')
+            elif op[0] == 'label':
+                _, net, x, y, rot, g = op
+                x += dx; y += dy
+                if g:
+                    items.append(f'  (global_label "{net}" (shape input) (at {x} {y} {rot}) '
+                                 f'(fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left)) (uuid {U()}))')
+                else:
+                    items.append(f'  (label "{net}" (at {x} {y} {rot}) '
+                                 f'(effects (font (size 1.27 1.27)) (justify left)) (uuid {U()}))')
+            elif op[0] == 'text':
+                _, text, x, y = op
+                items.append(f'  (text "{text}" (at {x+dx} {y+dy} 0) '
+                             f'(effects (font (size 1.5 1.5)) (justify left)) (uuid {U()}))')
         libdefs = []
         for name in sorted(self.used):
-            if name in PRIM:
-                libdefs.append(sym_body(name, libname="cr_primitives:%s" % name))
-            else:
-                libdefs.append(CUSTOM_BODIES[name])
-        out = []
-        out.append('(kicad_sch (version 20230121) (generator cambridge_reverb_gen)')
-        out.append(f'  (uuid {self.uuid})')
-        out.append('  (paper "A3")')
-        out.append(f'  (title_block (title "Vox Cambridge Reverb -- {self.title}") (company "Reconstructed"))')
-        out.append('  (lib_symbols')
-        out.append("\n".join(libdefs))
-        out.append('  )')
-        out.append("\n".join(self.items))
-        out.append(f'  (sheet_instances (path "/" (page "1")))')
-        out.append(')')
+            libdefs.append(sym_body(name, libname="cr_primitives:%s" % name)
+                           if name in PRIM else CUSTOM_BODIES[name])
+        out = ['(kicad_sch (version 20230121) (generator cambridge_reverb_gen)',
+               f'  (uuid {self.uuid})',
+               '  (paper "A3")',
+               f'  (title_block (title "Vox Cambridge Reverb -- {self.title}") (company "Reconstructed"))',
+               '  (lib_symbols', "\n".join(libdefs), '  )',
+               "\n".join(items),
+               '  (sheet_instances (path "/" (page "1")))', ')']
         p = os.path.join(ROOT, self.fname)
         open(p, "w").write("\n".join(out) + "\n")
         return p
@@ -243,7 +264,9 @@ FOOTPRINTS = {
  "D":   "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
  "LED": "LED_THT:LED_D3.0mm",
  "FUSE":"Fuse:Fuseholder_Clip-5x20mm_Eaton_1A5601-01_Inline_P20.80x6.76mm_D1.70mm_Horizontal",
- "POT": "Potentiometer_THT:Potentiometer_Alpha_RD901F-40-00D_Single_Vertical",
+ # Panel pots are reused/off-board (wired to the panel), so on the PCB they are a
+ # 3-pad wiring connector, not an on-board panel-pot footprint.
+ "POT": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
  "NJFET":"Package_TO_SOT_THT:TO-92_Inline",
  "BRIDGE":"Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
  "LM317":"Package_TO_SOT_THT:TO-220-3_Vertical",

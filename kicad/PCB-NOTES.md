@@ -19,17 +19,26 @@ the remaining hand-work.
 - **GND plane** poured on B.Cu; the three net classes (Default / Power /
   HighCurrent, errata #11) carry over from the project file for routing.
 
+> **Full layout audit:** see `PCB-AUDIT.md` for a detailed, category-by-category
+> audit (footprints, placement, net classes, copper, routing) with prioritized
+> fixes. Summary below.
+
 ## DRC status (`kicad-cli 8.0.9 pcb drc`)
 Run: `kicad-cli pcb drc kicad/cambridge_reverb.kicad_pcb`. Current report is
 dominated by the expected consequences of an unrouted, densely auto-placed board:
 
-| Category | Count | Meaning |
-|----------|------:|---------|
-| `unconnected_items` | 130 | Signal nets not routed yet (GND is poured). **Expected** — routing is the next step. |
-| `silk_overlap` / `silk_over_copper` | ~150 | Footprint silkscreen outlines collide at chassis-size density. Cosmetic; resolved during manual placement. |
-| `courtyards_overlap` | 4 | A few footprints still too close. Manual nudge. |
-| `annular_width` | 5 | Stock TO-220 (LM1875) pads vs the conservative 0.15 mm rule; JLCPCB-fine. |
-| `copper_edge_clearance` / `hole_near_hole` | 2 | Edge/placement artifacts. |
+| Category | Count | Severity | Meaning |
+|----------|------:|----------|---------|
+| `unconnected_items` | 131 | error | Signal nets not routed yet (GND is poured). **Expected** — routing is next. |
+| `silk_overlap` / `silk_over_copper` | 144 / 8 | warning | Footprint silk outlines collide at density. Cosmetic; refs/values hidden. |
+| `annular_width` | 5 | error | All on LM1875 (TO-220-5): 1.275 mm pad on 1.1 mm drill → 0.0875 mm. See PCB-AUDIT §1. |
+| `courtyards_overlap` | 2 | error | Two neighbours too close at grid density. |
+| `copper_edge_clearance` / `hole_near_hole` | 1 / 1 | error | Edge/placement artifacts. |
+
+**Non-routing errors: 9.** Cosmetic warnings: ~155. The `power_section_demo`
+board is **0 violations**. This pass also: switched the 5 reused/off-board pots
+from a 16 mm panel-pot footprint to 3-pad wiring connectors (correctness + cut
+silk overlap; packing 51 %→48 %), and centered the component grid.
 
 None of these are wiring errors — the netlist is correct (it came from the
 ERC-clean schematic). They are layout-finishing items.

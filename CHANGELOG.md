@@ -3,6 +3,19 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+## Audit pass (2026-06-14)
+- **Schematic pages centered:** the generator now defers emission, computes each
+  sheet's content bounding box, and translates it to the page center (snapped to
+  the 1.27 mm grid). All 8 sheets centered; ERC still 0 violations.
+- **PCB layout audit** (`kicad/PCB-AUDIT.md`): category-by-category review.
+  Fixes applied: the 5 reused/off-board pots moved from a 16 mm panel-pot
+  footprint to 3-pad wiring connectors (correctness + less silk overlap; packing
+  51 %→48 %), and the component grid centered. Findings documented: LM1875
+  TO-220-5 annular (0.0875 mm), KBP410G placeholder footprint, density as the root
+  cause of silk/courtyard overlaps. Non-routing DRC errors: 9; demo board 0.
+- **SPICE audit** (`spice/README.md`): all five blocks re-verified under
+  ngspice-42 (exit 0, numbers match); no correctness issues found.
+
 ## Design deliverables
 
 - **Part 1 — Modernization Guide:** all circuit sections, safety.

@@ -55,3 +55,20 @@ Run `./run_all.sh`. Measured vs. documented:
 - The MRB topology in `../kicad/netlist-notes.txt` is recorded ambiguously; the
   sim uses the parallel-LC-tank interpretation from Part 1 §6 (see the header
   comment in `ac_mrb.cir`).
+
+## Audit (2026-06-14)
+Full pass over every netlist + model; all five blocks run under ngspice-42
+(`./run_all.sh`, exit 0) and reproduce the documented numbers. Verdict: **solid.**
+- `models/opamp1p.sub` — correct one-pole macromodel: DC gain = gm·Rp = `aol`,
+  pole at `gbw/aol` (unity-gain = `gbw`). No supply rails by design → use for
+  AC/.op only, not clipping (documented).
+- `models/jfet_2n5457.lib` — nominal 2N5457 (Idss≈2.98 mA, Vp=−1.8 V). The real
+  part has a wide Idss/Vp spread; the preamp sim deliberately uses the recovered
+  `Rs=2.2k` to show the resulting cold bias (Vd≈12 V vs the 8–9 V target, errata #15).
+- `ac_power_amp_lm1875.cir` — the −3 dB search compares against a literal `24.21`
+  (= measured midband 27.21 − 3); fine for this fixed design, re-derive if the
+  gain network changes.
+- `power_amp_lm1875.cir` is **LTspice-only** (UniversalOpamp2 + `opamp.sub`) and
+  will not run under ngspice — kept verbatim for provenance; the `ac_*` files are
+  the runnable companions.
+No correctness issues found.

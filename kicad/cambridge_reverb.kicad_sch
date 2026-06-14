@@ -1,397 +1,66 @@
-(kicad_sch
-	(version 20260306)
-	(generator "eeschema")
-	(generator_version "10.0")
-	(uuid "d3516e47-2fb3-48ff-90cc-77528bd2645a")
-	(paper "A3")
-	(title_block
-		(title "Vox Cambridge Reverb -- Root")
-		(company "Reconstructed")
-	)
-	(lib_symbols)
-	(text "Signal flow: GUITAR_IN -> Preamp -> Tone -> [Reverb blend] -> Tremolo -> MRB -> Power Amp -> Speaker.\nInter-sheet nets use global labels. Routing among effects is a documented assumption where the recovered notes are silent (see kicad/SCHEMATIC-BUILD.md)."
-		(exclude_from_sim no)
-		(at 30 25 0)
-		(effects
-			(font
-				(size 2 2)
-			)
-			(justify left)
-		)
-		(uuid "cbb60e39-334c-445d-a594-0e16f17afbb7")
-	)
-	(sheet
-		(at 110 110)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "0478b308-222e-4d48-944d-6f8f802c7acc")
-		(property "Sheetname" "MRB"
-			(at 110 109 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "mrb.kicad_sch"
-			(at 110 141 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "7")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 40 110)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "0955cca0-21cc-4df0-8f1f-390067c9ac53")
-		(property "Sheetname" "Tremolo"
-			(at 40 109 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "tremolo.kicad_sch"
-			(at 40 141 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "6")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 180 110)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "196b7099-4876-408f-b0e5-a4e0cdd63801")
-		(property "Sheetname" "Power Amp"
-			(at 180 109 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "power_amp.kicad_sch"
-			(at 180 141 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "8")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 40 60)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "6a9b1ca9-934d-4e1c-814c-e252f41698ac")
-		(property "Sheetname" "Power Supply"
-			(at 40 59 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "power_supply.kicad_sch"
-			(at 40 91 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "2")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 250 60)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "863e1583-8d60-4001-a2df-2bf301897584")
-		(property "Sheetname" "Reverb"
-			(at 250 59 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "reverb.kicad_sch"
-			(at 250 91 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "5")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 180 60)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "c23a8123-8954-4ef1-92ba-73910d27c26b")
-		(property "Sheetname" "Tone Stack"
-			(at 180 59 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "tone_stack.kicad_sch"
-			(at 180 91 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "4")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 250 110)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "c561e223-4ada-4c7e-b5d8-ef7bae3a41b8")
-		(property "Sheetname" "Switching / I-O"
-			(at 250 109 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "switching.kicad_sch"
-			(at 250 141 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "9")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 110 60)
-		(size 50 30)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "edf8b494-acc8-4bfa-bc3f-1bea0c889dcd")
-		(property "Sheetname" "Preamp"
-			(at 110 59 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.5 1.5)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "preamp.kicad_sch"
-			(at 110 91 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.2 1.2)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "cambridge_reverb"
-				(path "/d3516e47-2fb3-48ff-90cc-77528bd2645a"
-					(page "3")
-				)
-			)
-		)
-	)
-	(sheet_instances
-		(path "/"
-			(page "1")
-		)
-	)
-	(embedded_fonts no)
+(kicad_sch (version 20230121) (generator cambridge_reverb_gen)
+  (uuid 1d53263f-7de0-451a-8949-6c4f9fdeb3ee)
+  (paper "A3")
+  (title_block (title "Vox Cambridge Reverb -- Root") (company "Reconstructed"))
+  (lib_symbols)
+  (text "Signal flow: GUITAR_IN -> Preamp -> Tone -> [Reverb blend] -> Tremolo -> MRB -> Power Amp -> Speaker.\nInter-sheet nets use global labels. Routing among effects is a documented assumption where the recovered notes are silent (see kicad/SCHEMATIC-BUILD.md)." (at 30 25 0) (effects (font (size 2 2)) (justify left)) (uuid 570f6d0c-6179-474d-af7a-e6d136f78192))
+  (sheet (at 40 60) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid eead2a77-064c-433b-945d-c91e261e734f)
+    (property "Sheetname" "Power Supply" (at 40 59 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "power_supply.kicad_sch" (at 40 91 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "2"))))
+  )
+  (sheet (at 110 60) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid e6264bec-7e62-439f-ad94-60aa16a89091)
+    (property "Sheetname" "Preamp" (at 110 59 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "preamp.kicad_sch" (at 110 91 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "3"))))
+  )
+  (sheet (at 180 60) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid 17185805-95a9-4b43-b310-37b04a629e62)
+    (property "Sheetname" "Tone Stack" (at 180 59 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "tone_stack.kicad_sch" (at 180 91 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "4"))))
+  )
+  (sheet (at 250 60) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid bab74a76-61ec-4489-81c7-44269ae57b3e)
+    (property "Sheetname" "Reverb" (at 250 59 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "reverb.kicad_sch" (at 250 91 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "5"))))
+  )
+  (sheet (at 40 110) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid 3b1e3226-5142-4025-b364-16ce3fb8da2c)
+    (property "Sheetname" "Tremolo" (at 40 109 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "tremolo.kicad_sch" (at 40 141 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "6"))))
+  )
+  (sheet (at 110 110) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid cbcee270-1594-4b7a-9d96-57407c3f3a78)
+    (property "Sheetname" "MRB" (at 110 109 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "mrb.kicad_sch" (at 110 141 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "7"))))
+  )
+  (sheet (at 180 110) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid 16807cb2-e862-422f-adfd-67fb02c9ece6)
+    (property "Sheetname" "Power Amp" (at 180 109 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "power_amp.kicad_sch" (at 180 141 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "8"))))
+  )
+  (sheet (at 250 110) (size 50 30) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid)) (fill (color 0 0 0 0.0000))
+    (uuid a496ec92-c50c-4d97-8a54-43d0132da2f8)
+    (property "Sheetname" "Switching / I-O" (at 250 109 0) (effects (font (size 1.5 1.5)) (justify left bottom)))
+    (property "Sheetfile" "switching.kicad_sch" (at 250 141 0) (effects (font (size 1.2 1.2)) (justify left top)))
+    (instances (project "cambridge_reverb" (path "/1d53263f-7de0-451a-8949-6c4f9fdeb3ee" (page "9"))))
+  )
+  (sheet_instances
+    (path "/" (page "1"))
+  )
 )
