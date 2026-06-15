@@ -77,12 +77,12 @@ window quoted in Part 2 §setup and the Part 3 troubleshooting table.
 
 ## Issue 11 — Net-class table is missing a high-current (speaker/PA) class
 Part 4's net-class table defines only **Default (0.30 mm)** and **Power
-(1.50 mm)** and assigns +33V5/+27V/+17V/GND/SPKR± all to Power. But the Part 4
+(1.50 mm)** and assigns +33V5/VREG_IN/+17V/GND/SPK_P/SPK_N all to Power. But the Part 4
 pre-order checklist *and* `netlist-notes.txt` both call for **2.5 mm** on the
 speaker / power-amp current path. The single 1.5 mm Power class can't satisfy
 that. **Resolution:** add a third **HighCurrent (2.50 mm)** class for
 `+33V5`, `SPKR+`, `SPKR-`, and the LM1875 output; keep **Power (1.50 mm)** for
-`+27V`, `+17V`, `GND`. This three-class split is encoded in
+`VREG_IN`, `+17V`, `GND`. This three-class split is encoded in
 `kicad/cambridge_reverb.kicad_pro`.
 **Severity:** MEDIUM.
 

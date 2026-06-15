@@ -9,10 +9,15 @@ deliverables produced during the design phase.
   single-points-of-failure are the JFETs and the LM1875 — buy spares); **DIP
   op-amp sockets made REQUIRED** (machined-pin) with the power TO-220s staying
   heatsink-mounted; per-rail current budget + LM317/LM1875 dissipation + ~50 VA
-  transformer sizing; noise review. Finding: the **+27 V dropper (47 Ω) is
-  mis-sized** for the modern ~15 mA load (node sits ~32.8 V, not 27 V) — recommend
-  feeding the LM317 directly from +33.5 V or re-sizing to ~390–470 Ω. BOM updated
-  (socket P/N, JFET/LM1875 availability flags).
+  transformer sizing; noise review. BOM updated (socket P/N, JFET/LM1875
+  availability flags).
+- **+27 V → VREG_IN pre-filter:** the "27 V rail" was a misnomer — under the
+  modern ~15 mA load the node sits at ~32 V. The R_27V/C_filt1 element is kept (it
+  pre-filters the LM317 input *and* decouples the preamp supply from power-amp rail
+  transients — a noise feature, not a dropper), **bumped 47 Ω→100 Ω / 2 W→1 W** for
+  ~6 dB more ripple rejection, and the net **renamed `+27V`→`VREG_IN`** with the
+  troubleshooting voltages corrected (~31–33 V). Schematic + PCB + Part 1/2/3/4 +
+  errata + BOM updated; ERC 0, demo DRC 0.
 - **Schematic pages centered:** the generator now defers emission, computes each
   sheet's content bounding box, and translates it to the page center (snapped to
   the 1.27 mm grid). All 8 sheets centered; ERC still 0 violations.
@@ -113,7 +118,7 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 ### Power-section routing demo + chassis-fit check (2026-06-14)
 - **Routed power demo** (kicad/power_section_demo.kicad_pcb): the +33V5 (2.5 mm
   HighCurrent) and +17V (1.5 mm Power) rails + LM317 ADJ node routed over a GND
-  pour. kicad-cli pcb drc -> 0 violations. +27V/VRAW left as ratsnest (the +27V
+  pour. kicad-cli pcb drc -> 0 violations. VREG_IN/VRAW left as ratsnest (the VREG_IN
   cross-row link needs a via — documented).
 - **Chassis-fit packing-density check** in gen_pcb.py: ~51% on 190×115 (original
   PCB size, feasible-but-tight) vs ~88% on the Part 7 155×90 safe-bet — i.e. the

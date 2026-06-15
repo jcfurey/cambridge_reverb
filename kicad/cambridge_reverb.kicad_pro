@@ -592,7 +592,7 @@
       },
       {
         "netclass": "Power",
-        "pattern": "+27V"
+        "pattern": "VREG_IN"
       },
       {
         "netclass": "Power",

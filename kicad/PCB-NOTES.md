@@ -67,7 +67,7 @@ and +17V rails** of the supply over a GND pour, to show the net-class widths in
 real copper: `+33V5` at **2.5 mm** (HighCurrent), `+17V` at **1.5 mm** (Power),
 plus the LM317 `ADJ17` set node. `kicad-cli pcb drc` → **0 violations**. Two nets
 are left as a ratsnest on purpose: `VRAW` (its other end is off this demo board)
-and `+27V` — which has to cross the +17V trunk, i.e. on a single free layer
+and `VREG_IN` — which has to cross the +17V trunk, i.e. on a single free layer
 (bottom is the GND pour) it needs a **via**. That via-jump is exactly the kind of
 decision the full-board routing has to make throughout.
 
@@ -77,8 +77,8 @@ decision the full-board routing has to make throughout.
 2. **Place** components into the floor-plan zones (Part 5): Input/Preamp → Tone →
    Reverb/Tremolo → Power Amp → PSU, left→right; off-board pads on one edge.
 3. **Route** — top layer for signals, keep the bottom GND pour continuous; use
-   the HighCurrent class (2.5 mm) for `+33V5`/`SPKR±`/`PA_OUT`, Power (1.5 mm)
-   for the other rails (Part 4).
+   the HighCurrent class (2.5 mm) for `+33V5`/`SPK_P`/`SPK_N`/`PA_OUT`, Power
+   (1.5 mm) for `VREG_IN`/`+17V`/`GND` (Part 4).
 4. **DRC** to zero, then Gerbers per `docs/04-jlcpcb-fabrication.md` and the
    `production/CHECKLIST.md`.
 

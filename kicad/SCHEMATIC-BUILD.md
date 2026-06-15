@@ -22,7 +22,7 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   (`VTL5C1`, `Reverb_Tank_4FB2A1C`, `Footswitch_DIN6`) come from
   `symbols/cambridge_reverb.kicad_sym`.
 - **Label-based connectivity.** Each pin gets a short wire stub to a net label —
-  `global_label` for rails and cross-sheet signals (`+33V5`, `+17V`, `+27V`,
+  `global_label` for rails and cross-sheet signals (`+33V5`, `+17V`, `VREG_IN`,
   `GND`, `SPK_P/N`, `GUITAR_IN`, `PREAMP_OUT`, `TONE_OUT`, `DRY`, `WET`,
   `BLEND`, `TREM_OUT`, `MRB_OUT`, `PA_IN`, `FX_RET`, `FS_*`), `label` for
   intra-sheet nets. This yields a correct netlist without fragile point-to-point

@@ -77,7 +77,7 @@ here because it means shipping a custom power-device footprint.
 ## 4. Net classes & design rules
 - Three classes: **Default 0.5 mm / Power 1.5 mm / HighCurrent 2.5 mm**.
 - Patterns now correctly target `+33V5`, `SPK_P`, `SPK_N`, `PA_OUT` (HighCurrent)
-  and `+27V`, `+17V`, `GND` (Power) — the `SPKR±`→`SPK_P/SPK_N` bug was fixed in
+  and `VREG_IN`, `+17V`, `GND` (Power) — the `SPKR±`→`SPK_P/SPK_N` bug was fixed in
   the review round. Verified the patterns match real nets.
 - Rules (from Part 4) are conservative and JLCPCB-safe **except** the 0.15 mm min
   annular vs the LM1875 footprint (§1). Vias are pre-sized per class (0.4/0.8/1.0

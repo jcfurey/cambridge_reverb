@@ -187,7 +187,7 @@ def power_demo():
     route_trunk("+33V5", 2.5, 9.0)     # HighCurrent rail, trunk above its row
     route_trunk("+17V",  1.5, 37.0)    # Power rail, trunk above its row
     route_trunk("ADJ17", 0.5, 61.0)    # LM317 set node, trunk below the row
-    # +27V links the two rows -- on a single free layer (bottom is the GND pour)
+    # VREG_IN links the two rows -- on a single free layer (bottom is the GND pour)
     # it would have to cross the +17V trunk, i.e. it needs a via. Left as a
     # ratsnest here: the point a real layout makes the jump with a via.
 

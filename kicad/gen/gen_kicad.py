@@ -320,7 +320,7 @@ def load_custom():
         SYMS.setdefault(name, dict(pins=pins))
 
 GLOBAL_NETS = {
- "+33V5","+27V","+17V","GND","SPK_P","SPK_N",
+ "+33V5","VREG_IN","+17V","GND","SPK_P","SPK_N",
  "GUITAR_IN","PREAMP_OUT","TONE_OUT","DRY","WET","BLEND","TREM_OUT","PA_IN",
  "MRB_OUT","FX_RET","VBIAS","FS_REV","FS_TREM","FS_MRB",
 }
@@ -341,12 +341,13 @@ def build():
     s.comp("FUSE","F1","1A SB",120,40,{"1":"VRAW","2":"+33V5"})
     s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"GND"})
     s.comp("R","R_bleed","10k/5W",150,70,{"1":"+33V5","2":"GND"})
-    s.comp("R","R_27V","47R/2W",120,100,{"1":"+33V5","2":"+27V"})
-    s.comp("CP","C_filt1","1000uF/50V",150,100,{"1":"+27V","2":"GND"})
-    s.comp("LM317","U1","LM317T",90,140,{"3":"+27V","2":"+17V","1":"ADJ17"})
+    s.note("VREG_IN: LM317-input RC pre-filter (100R + C_filt1) -- ripple + power-amp decoupling; ~32V under load (not a 27V rail)",40,18)
+    s.comp("R","R_27V","100R/1W",120,100,{"1":"+33V5","2":"VREG_IN"})
+    s.comp("CP","C_filt1","1000uF/50V",150,100,{"1":"VREG_IN","2":"GND"})
+    s.comp("LM317","U1","LM317T",90,140,{"3":"VREG_IN","2":"+17V","1":"ADJ17"})
     s.comp("R","R_reg1","240R",130,130,{"1":"+17V","2":"ADJ17"})
     s.comp("R","R_reg2","3.09k",130,160,{"1":"ADJ17","2":"GND"})
-    s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"+27V","2":"GND"})
+    s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"VREG_IN","2":"GND"})
     s.comp("CP","C_reg_out1","10uF/25V",160,140,{"1":"+17V","2":"GND"})
     s.comp("C","C_reg_out2","100nF",185,140,{"1":"+17V","2":"GND"})
     # Mid-rail reference for single-supply op-amps (DESIGN ADDITION; not recovered)
@@ -355,7 +356,7 @@ def build():
     s.comp("R","R_vb2","100k",110,220,{"1":"VBIAS","2":"GND"})
     s.comp("CP","C_vb","10uF/25V",150,207,{"1":"VBIAS","2":"GND"})
     s.comp("PWR_FLAG","#FLG1","",40,30,{"1":"+33V5"})
-    s.comp("PWR_FLAG","#FLG2","",70,30,{"1":"+27V"})
+    s.comp("PWR_FLAG","#FLG2","",70,30,{"1":"VREG_IN"})
     s.comp("PWR_FLAG","#FLG3","",100,30,{"1":"+17V"})
     s.comp("PWR_FLAG","#FLG4","",130,30,{"1":"GND"})
 

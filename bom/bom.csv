@@ -46,7 +46,7 @@ R_gain,PA gain set,1K 1% 1/4W,axial,,,1,Av = 23x
 R_zobel,Zobel resistor,10R 1W,axial,,,1,
 R_reg1,LM317 set resistor,240R 1% 1/4W,axial,,603-MFR-25FBF52-240R,1,
 R_reg2,LM317 set resistor,3.09K 1% 1/4W,axial,,,1,Was 3.0K (gave 16.9V); 3.09K E96 -> 17.34V (errata #10)
-R_27V,27V rail dropper,47R 2W metal oxide,axial,,603-MOS2CT52A47R0J,1,
+R_27V,LM317-input pre-filter / power-amp decoupling (net VREG_IN ~32V),100R 1W metal oxide,axial,,,1,Was 47R/2W '27V dropper'; re-purposed as RC pre-filter w/ C_filt1 (see component-availability-audit)
 R_led,LFO LED current limiter,1K 1/4W,axial,,,1,
 R_trem1,Tremolo signal series R,10K 1% 1/4W,axial,,,1,
 L1,MRB inductor,1H toroid,,,,1,Reuse original or 2x 0.5H Fasel wah

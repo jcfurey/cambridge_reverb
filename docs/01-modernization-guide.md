@@ -35,10 +35,15 @@ Key improvements over the original:
 
 ## Section 1: Power supply — modernized
 
-KBP410G bridge rectifier feeding the 33.5 V main rail; 27 V tap via a dropper
-resistor; 17 V preamp rail regulated by an LM317T. Rectifier snubbing caps
-across the diodes. The LM317 on the 17 V rail is the most impactful single
-change for noise. (Full values in Part 2.)
+KBP410G bridge rectifier feeding the 33.5 V main rail; an **RC pre-filter**
+(`R_27V` 100 Ω + `C_filt1` 1000 µF, net `VREG_IN`) feeds the LM317 input; the
+17 V preamp rail is regulated by an LM317T. Rectifier snubbing caps across the
+diodes. The LM317 on the 17 V rail is the most impactful single change for noise,
+and the `VREG_IN` pre-filter compounds it — it both attenuates main-rail ripple
+before the regulator and **decouples the preamp supply from the power amp's
+transient current draw** on the +33.5 V rail. (Note: under the modern light
+preamp load (~15 mA) `VREG_IN` sits at ~32 V — it is a pre-filter, **not** the
+original 27 V tap. Full values in Part 2.)
 
 ## Section 2: Preamp — modernized
 

@@ -46,9 +46,9 @@ Estimated cost: ~$2–7 for 5 boards + ~$5–15 shipping. Under $25 total.
 | Net class | Track width | Clearance | Via drill | Use for |
 |-----------|------------|-----------|-----------|---------|
 | Default | 0.30 mm | 0.20 mm | 0.3 mm | All signal traces |
-| Power | 1.50 mm | 0.30 mm | 0.5 mm | +33.5V, +27V, +17V, GND power rails |
+| Power | 1.50 mm | 0.30 mm | 0.5 mm | +33.5V, VREG_IN, +17V, GND power rails |
 
-- **Power class:** +33V5, +27V, +17V, GND, SPKR+, SPKR-
+- **Power class:** +33V5, VREG_IN, +17V, GND (HighCurrent class: SPK_P, SPK_N, PA_OUT)
 - **Default class:** everything else
 
 ## Wiring pads — recovered verbatim

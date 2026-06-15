@@ -71,16 +71,22 @@ Estimated operating currents per rail (verify on the bench):
   ~15 mA satisfies it — but if effects are depopulated during bring-up, add a
   small bleed (or the existing load suffices). Worth a bench check.
 
-### +27 V tap — ⚠️ finding (the dropper is mis-sized for the modern load)
-- In this rebuild the only thing on +27 V is the **LM317 input** (the op-amps run
-  off +17 V, the power amp off +33.5 V). That's ~15 mA.
-- `R_27V = 47 Ω` drops only **15 mA × 47 Ω ≈ 0.7 V**, so the node sits at ~32.8 V,
-  **not 27 V**. The 47 Ω implies a ~140 mA load that no longer exists.
-- **Recommendation:** either (a) **delete R_27V and feed the LM317 directly from
-  +33.5 V** (dissipation rises to a harmless ~0.24 W; LM317 in-out diff 16 V ≪ 40 V
-  max), or (b) if you want a genuine ~27 V pre-regulation point (lower LM317
-  dissipation / pre-filtered), size `R_27V ≈ 390–470 Ω` (≈7 V drop at 15 mA) and
-  rate ~½ W. Option (a) is simpler and recommended.
+### `VREG_IN` (LM317 input) — RESOLVED: keep it as a pre-filter, not a "27 V rail"
+- In this rebuild the only thing on this node is the **LM317 input** (the op-amps
+  run off +17 V, the power amp off +33.5 V) — only ~15 mA. The original `R_27V`
+  (47 Ω) drops just **0.7 V** at that current, so the node sits at ~32.8 V, **not
+  27 V**: the "27 V rail / 26–28 V" naming was a leftover misnomer.
+- **But the resistor is not useless — it's a feature.** `R_27V` + `C_filt1`
+  (1000 µF) is an **RC pre-filter on the LM317 input**, and the series R
+  **decouples the preamp supply from the power amp's transient current draw** on
+  the +33.5 V rail (the LM317's PSRR alone falls off at higher frequency).
+  Deleting it would *hurt* noise.
+- **Done:** kept the element, **bumped 47 Ω → 100 Ω** (≈6 dB more 120 Hz ripple
+  attenuation; only ~1.5 V drop at 15 mA, LM317 in-out diff 14.7 V ≪ 40 V max,
+  dissipation 0.02 W), **right-sized 2 W → 1 W**, and **renamed the net `+27V` →
+  `VREG_IN`** with the docs/troubleshooting voltage corrected to ~31–33 V. (If you
+  ever want a true lower-voltage pre-reg point to cut LM317 dissipation, ~390–470 Ω
+  gives ~27 V — but it isn't needed here.)
 
 ### +33.5 V main rail (power amp)
 - LM1875 quiescent ~50 mA; at **18 W into 8 Ω**, peak output current
@@ -129,8 +135,9 @@ Estimated operating currents per rail (verify on the bench):
 ## Action items
 - **Sockets:** done in BOM (machined-pin DIP for IC1/IC2; power devices stay
   heatsink-mounted).
-- **+27 V dropper:** decide (a) delete R_27V → LM317 off +33.5 V (recommended), or
-  (b) re-size to ~390–470 Ω. **Update the schematic + Part 1/2 once chosen.**
+- **+27 V dropper → `VREG_IN` pre-filter (DONE):** kept the element (it's a noise
+  feature), bumped 47 Ω→100 Ω / 2 W→1 W, renamed the net, corrected the docs &
+  troubleshooting voltage (~32 V, not 27 V). Schematic/PCB regenerated.
 - **Stock risk:** buy spare **JFETs** and a spare **LM1875**; qualify one JFET
   substitute for all three positions.
 - **LED_rate decoupling:** add a local RC on the indicator branch.
