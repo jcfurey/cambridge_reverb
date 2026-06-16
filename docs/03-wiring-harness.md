@@ -38,7 +38,7 @@ pads on the PCB: FS_REV, FS_TREM, FS_MRB, FS_GND.
 | AC at T1 secondary | ~48 VAC (or ~24 VAC) | Transformer is dead — replace |
 | DC at C_main (+) | 33–35 VDC | Check bridge rectifier, fuse F1 |
 | DC at 17V rail | 17.0–17.5 V | Check LM317, R_reg1, R_reg2 |
-| DC at 27V rail | 26–28 V | Check R_27V dropper resistor |
+| DC at LM317 input (VREG_IN) | ~31–33 V | Check R_27V (100Ω) + C_filt1 pre-filter |
 | DC at LM1875 pin 5 | ~33.5 V | Check wiring to V+ rail |
 | DC at LM1875 pin 4 | ~16–17 V (V+/2) | IC may be bad or oscillating |
 | Signal at Q1 gate | Guitar signal present | Check input jack, C1, R1 |

@@ -1,96 +1,125 @@
-ref,description,value,package,digikey_pn,mouser_pn,qty,notes
-Q1,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Use SOT-23 to TO-92 adapter; or J113 TO-92 (J113-ND) with adjusted bias
-Q2,N-ch JFET preamp,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,Bias targets 2N5457 specs
-Q_rec,N-ch JFET reverb recovery,MMBF5457,SOT-23+adapter,MMBF5457CT-ND,863-MMBF5457,1,
-IC1,Dual JFET op-amp (reverb driver),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
-IC2,Dual JFET op-amp (tremolo LFO),TL072CP,DIP-8,296-1775-5-ND,595-TL072CP,1,
-IC_PA,Power amplifier,LM1875T/NOPB,TO-220,LM1875T/NOPB-ND,926-LM1875T/NOPB,1,Heatsink <=2.5 C/W; mica insulator
-U1,Voltage regulator 17V rail,LM317T,TO-220,LM317T/NOPB-ND,926-LM317T/NOPB,1,
-BR1,Bridge rectifier,KBP410G 4A 1000V,inline-4,KBP410G-ND,821-KBP410G,1,Or 4x 1N4007
-D1,Output clamp to V+,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
-D2,Output clamp to GND,1N4007,DO-41,1N4007-E3/54GICT-ND,625-1N4007-E3,1,
-D_lfo1,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,Back-to-back with D_lfo2
-D_lfo2,LFO amplitude clamp,1N4148,DO-35,1N4148FS-ND,512-1N4148,1,
-VTL1,Optocoupler tremolo,Xvive VTL5C1,inline-4,,,1,Or DIY LED+LDR; source from Amplified Parts/Banzai
-LED_rate,Diagnostic rate LED,3mm red,T-1,160-1127-ND,,1,On-board; not panel
-C_main,Main filter cap,4700uF 50V low-ESR,radial,,667-EEU-FC1H472,1,Part7: optionally 2x 2200uF if PCB-mounted (errata #16)
-C_filt1,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
-C_filt2,Secondary filter,1000uF 50V low-ESR,radial,,667-EEU-FC1H102,1,
-C101,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
-C102,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
-C103,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
-C104,Rectifier snubber,10nF 100V ceramic,disc,,594-K104Z15Y5VF5TL2,1,
-C_in_pa,Power amp input coupling,1uF 50V film,radial,,,1,
-C_out_pa,Power amp output coupling,2200uF 35V,radial,,,1,REQUIRED for single-supply (errata #7)
-C_gain_pa,Power amp gain LF rolloff,22uF 25V,radial,,,1,
-C_fb_hf,Power amp HF rolloff across R_fb,1nF,film,,,1,7.2 kHz bandwidth limit (absent from .cir; see cross-check)
-C_zobel,Zobel cap,100nF 100V film,radial,,,1,
-C_byp1,V+ bypass MLCC,100nF 50V,disc,,594-K104K15X7RF5TL2,1,
-C_byp2,V+ bypass electrolytic,10uF 50V,radial,,,1,
-C_pres,Presence rolloff at Q2 drain,100pF,disc,,,1,Guitar-frequency optimization
-C_treble,Vox chime treble cap,470pF,disc,,,1,
-C_lfo1,Wien bridge timing,100nF 50V film,radial,,,1,
-C_lfo2,Wien bridge timing,100nF 50V film,radial,,,1,
-C_mrb_600,MRB 600Hz default,68nF 50V film,radial,,,1,Default position with 1H
-C_mrb_450,MRB 450Hz optional,120nF 50V film,radial,,,1,
-C_mrb_750,MRB 750Hz optional,47nF 50V film,radial,,,1,
-C_mrb_in,MRB input coupling,100nF 50V film,radial,,,1,
-C_mrb_out,MRB output coupling,100nF 50V film,radial,,,1,
-C_reg_in,Regulator input cap,10uF 50V tantalum,radial,,581-TAP106K050SCS,1,
-C_reg_out1,Regulator output cap,10uF 25V tantalum,radial,,581-TAP106K025SCS,1,
-C_reg_out2,Regulator output bypass,100nF 50V MLCC,disc,,594-K104K15X7RF5TL2,1,
-R_bias1,PA input bias high,22K 1% 1/4W,axial,,,1,
-R_bias2,PA input bias low,22K 1% 1/4W,axial,,,1,
-R_fb,PA feedback,22K 1% 1/4W,axial,,,1,
-R_gain,PA gain set,1K 1% 1/4W,axial,,,1,Av = 23x
-R_zobel,Zobel resistor,10R 1W,axial,,,1,
-R_reg1,LM317 set resistor,240R 1% 1/4W,axial,,603-MFR-25FBF52-240R,1,
-R_reg2,LM317 set resistor,3.09K 1% 1/4W,axial,,,1,Was 3.0K (gave 16.9V); 3.09K E96 -> 17.34V (errata #10)
-R_27V,27V rail dropper,47R 2W metal oxide,axial,,603-MOS2CT52A47R0J,1,
-R_led,LFO LED current limiter,1K 1/4W,axial,,,1,
-R_trem1,Tremolo signal series R,10K 1% 1/4W,axial,,,1,
-L1,MRB inductor,1H toroid,,,,1,Reuse original or 2x 0.5H Fasel wah
-REVPAN,Reverb pan,Accutronics 4FB2A1C ~1475ohm,,,,1,NOT 4AB3C1B (8ohm incompatible)
-F1,Secondary fuse,1A 250V slow-blow,5x20mm,,576-0273001.H,1,
-F1_holder,Fuse holder,PCB mount 5x20mm,,,534-3557,1,
-T1,Power transformer,reuse original / AnTek AS-0524,,,,1,Test secondary ~48VAC before reuse
-R_bleed,Filter-cap bleeder/discharge,10K 5W,axial,,,1,Across C_main for safe discharge (Part1 safety)
-R_g1,Q1 gate bias to GND,1M 1/4W,axial,,,1,High-Z guitar input [Part2 reconstructed]
-R_d1,Q1 drain load,10K 1/4W,axial,,,1,Set Vd 8-9V [Part2 reconstructed]
-R_s1,Q1 source self-bias,2K2 1/4W,axial,,,1,Recovered 2K2 biases Vd~12V; ~1-1.2K -> 8-9V target (errata #15) - trim per device
-C_s1,Q1 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
-C_in_pre,Preamp input coupling,47nF film,radial,,,1,~47nF [Part2 reconstructed]
-R_g2,Q2 gate bias to GND,1M 1/4W,axial,,,1,[Part2 reconstructed]
-R_d2,Q2 drain load,10K 1/4W,axial,,,1,[Part2 reconstructed]
-R_s2,Q2 source self-bias,2K2 1/4W,axial,,,1,See R_s1: ~1-1.2K for 8-9V drain (errata #15)
-C_s2,Q2 source bypass,10uF 25V,radial,,,1,[Part2 reconstructed]
-TONE_STACK,Vox tone-stack passives,TBD,,,,,Values NOT recovered; replicate original 25-5274-2 top-boost network
-R_drv1,Reverb driver feedback,100K 1/4W,axial,,,1,Driver gain 11x [netlist sheet4]
-R_drv2,Reverb driver gain-set to GND,10K 1/4W,axial,,,1,[netlist sheet4]
-R_drv3,Tank drive series R,10R 1/4W,axial,,,1,[netlist sheet4]
-C_rev1,Tank drive coupling,1uF 50V film,radial,,,1,[netlist sheet4]
-C_rev2,Tank return coupling,10nF film,radial,,,1,[netlist sheet4]
-R_rec_bias,Recovery JFET gate bias,1M 1/4W,axial,,,1,[netlist sheet4]
-R_rec1,Recovery JFET drain load,10K 1/4W,axial,,,1,[netlist sheet4]
-R_rec2,Recovery JFET source bias,2K2 1/4W,axial,,,1,[netlist sheet4]
-C_rec_byp,Recovery source bypass,10uF 25V,radial,,,1,[netlist sheet4]
-C_rev4,Reverb wet output coupling,100nF 50V film,radial,,,1,[netlist sheet4]
-POT_REV,Reverb mix pot,reuse original,,,,1,Original panel pot (verify taper)
-R_lfo_ser,Wien-bridge series R,100K 1/4W,axial,,,1,Limits max LFO freq [netlist sheet5]
-R_lfo1,Wien-bridge fixed R,33K 1/4W,axial,,,1,[netlist sheet5]
-R_lfo_fb1,LFO feedback divider,10K 1/4W,axial,,,1,[netlist sheet5]
-R_lfo_fb2,LFO feedback divider,4K7 1/4W,axial,,,1,[netlist sheet5]
-R_led_diag,Diagnostic LED limiter,2K2 1/4W,axial,,,1,[netlist sheet5]
-C_dc_blk,LFO DC blocking,10uF 25V,radial,,,1,[netlist sheet5]
-C_trem_out,Tremolo output coupling,100nF 50V film,radial,,,1,[netlist sheet5]
-POT_SPD,Tremolo speed,500K lin,,,,1,Reuse original panel pot
-POT_DPT,Tremolo depth,100K lin,,,,1,Reuse original panel pot
-R_fx_pad,FX-loop send/return pad,10K 1/4W,axial,,,1,Internal effects loop via IN3 (Part2)
-POT_VOL,Volume pot,reuse original,,,,1,Original panel; FX-send tapped at wiper
-POT_TONE,Tone/treble pot,reuse original,,,,1,Original panel
-J_IN,Input jacks,reuse original,,,,3,IN1/IN2 normal; IN3 repurposed for internal FX loop
-FS_DIN,6-pin DIN footswitch jack,reuse original,,,,1,Rev/Trem/MRB + GND
-HS_LM1875,Heatsink for LM1875,<=2.5 C/W,,,,1,Reuse original bracket; mica + shoulder washer
-INS_MICA,TO-220 mica insulator + bushing,,,,,1,For LM1875
-SOCKET_IC,8-pin DIP socket,,,,,2,For IC1/IC2 (recommended)
+# GENERATED from the schematic by kicad/gen/gen_bom.py -- do not hand-edit.
+# Electrical rows are 1:1 with the KiCad netlist; mechanical/off-board items follow.
+ref,description,value,footprint,digikey_pn,mouser_pn,qty,notes
+C_mrb_450,Capacitor (film/ceramic),120nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_mrb_600,Capacitor (film/ceramic),68nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_mrb_750,Capacitor (film/ceramic),47nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_mrb_in,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_mrb_out,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+L1,MRB tank inductor (reused/off-board),1H toroid,Inductor_MRB_1H_Toroid,,,1,"reuse original ~1H, or 2x 0.5H Fasel"
+R_fs_mrb,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_mrb_ser,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+C_byp1,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_byp2,Capacitor (electrolytic),10uF/50V,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_fb_hf,Capacitor (film/ceramic),1nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_gain,Capacitor (electrolytic),22uF/25V,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_in_pa,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_out,Capacitor (electrolytic),2200uF/35V,CP_Radial_D8.0mm_P3.50mm,,,1,REQUIRED for single-supply (errata #7)
+C_zobel,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+D1,Diode,1N4007,D_DO-41_SOD81_P10.16mm_Horizontal,1N4007-E3/54GICT-ND,625-1N4007-E3,1,output clamp
+D2,Diode,1N4007,D_DO-41_SOD81_P10.16mm_Horizontal,1N4007-E3/54GICT-ND,625-1N4007-E3,1,output clamp
+IC_PA,Power amplifier,LM1875T,TO-220-5_Vertical,LM1875T/NOPB-ND,926-LM1875T/NOPB,1,Single-source (TI) - buy a spare. Heatsink <=2.5 C/W + mica; NOT socketed
+R_bias1,Resistor,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_bias2,Resistor,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_fb,Resistor,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_gain,Resistor,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_zobel,Resistor,10R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+BR1,Bridge rectifier,KBP410G,PinHeader_1x04_P2.54mm_Vertical,KBP410G-ND,821-KBP410G,1,Or 4x 1N4007
+C101,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
+C102,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
+C103,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
+C104,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
+C_filt1,Capacitor (electrolytic),1000uF/50V,CP_Radial_D8.0mm_P3.50mm,,667-EEU-FC1H102,1,low-ESR pre-filter bulk
+C_filt2,Capacitor (electrolytic),1000uF/50V,CP_Radial_D8.0mm_P3.50mm,,667-EEU-FC1H102,1,low-ESR pre-filter bulk
+C_main,Capacitor (electrolytic),4700uF/50V,CP_Radial_D8.0mm_P3.50mm,,667-EEU-FC1H472,1,low-ESR; or 2x2200uF if PCB-mounted (errata #16)
+C_reg_in,Capacitor (electrolytic),10uF/50V,CP_Radial_D8.0mm_P3.50mm,,581-TAP106K050SCS,1,tantalum
+C_reg_out1,Capacitor (electrolytic),10uF/25V,CP_Radial_D8.0mm_P3.50mm,,581-TAP106K025SCS,1,tantalum
+C_reg_out2,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_vbr,Capacitor (electrolytic),47uF/25V,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_vbt,Capacitor (electrolytic),47uF/25V,CP_Radial_D8.0mm_P3.50mm,,,1,
+F1,Fuse,1A SB,Fuseholder_Clip-5x20mm_Eaton_1A5601-01_Inline_P20.80x6.76mm_D1.70mm_Horizontal,,576-0273001.H,1,secondary fuse; prefer AC-secondary placement (roast R5)
+R_27V,Resistor,100R/1W,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,"LM317-input RC pre-filter w/ C_filt1 (VREG_IN ~32V, roast R2)"
+R_bleed,Resistor,10k/5W,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_reg1,Resistor,240R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,603-MFR-25FBF52-240R,1,
+R_reg2,Resistor,3.09k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,3.09k E96 -> 17.34V (errata #10)
+R_vbr1,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_vbr2,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_vbt1,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_vbt2,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+T1,Power transformer (reused/off-board),reuse / AnTek AS-0524,PinHeader_1x03_P2.54mm_Vertical,,,1,reuse original (test ~48VAC) or AnTek AS-0524 50VA
+U1,+17V rail regulator,LM317T,TO-220-3_Vertical,LM317T/NOPB-ND,926-LM317T/NOPB,1,
+C_cpl12,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_in_pre,Capacitor (film/ceramic),47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_pres,Capacitor (film/ceramic),100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_s1,Capacitor (electrolytic),10uF/25V,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_s2,Capacitor (electrolytic),10uF/25V,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_treble,Capacitor (film/ceramic),470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+Q1,Preamp JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. SOT-23->TO-92 adapter or J113
+Q2,Preamp JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,see Q1
+R_d1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_d2,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_g1,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_g2,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_s1,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,"2K2 biases Vd~12V; ~1-1.2k -> 8-9V target (errata #15), trim per device"
+R_s2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,see R_s1 (errata #15)
+C_drvin,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_drymix,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_rec_byp,Capacitor (electrolytic),10uF,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_rev1,Capacitor (electrolytic),1uF,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_rev2,Capacitor (film/ceramic),10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_rev4,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_wetmix,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+IC1,Dual op-amp: reverb tank driver + wet/dry summer,TL072CP,DIP-8_W7.62mm,296-1775-5-ND,595-TL072CP,1,DIP-8; use a machined-pin SOCKET_IC
+POT_REV,Reverb level (reused/off-board),reuse,PinHeader_1x03_P2.54mm_Vertical,,,1,
+Q_rec,Reverb-recovery JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,see Q1
+REV1,Reverb pan (high-Z input) (reused/off-board),4FB2A1C,PinHeader_1x04_P2.54mm_Vertical,,,1,Accutronics/Belton 4FB2A1C ~1475ohm - NOT 4AB3C1B (8ohm)
+R_drv1,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_drv2,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_drv3,Resistor,10R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_drvbias,Resistor,220k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_drymix,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_fs_rev,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_mixfb,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_rec1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_rec2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_rec_bias,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_wetmix,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+FS1,Footswitch DIN connector (reused/off-board),DIN-6,PinHeader_1x06_P2.54mm_Vertical,,,1,
+J_IN1,"1/4in jack (panel, reused)",Input 1,PinHeader_1x02_P2.54mm_Vertical,,,1,
+J_IN2,"1/4in jack (panel, reused)",Input 2,PinHeader_1x02_P2.54mm_Vertical,,,1,
+J_IN3,"1/4in jack (panel, reused)",IN3 / FX return,PinHeader_1x02_P2.54mm_Vertical,,,1,
+LS1,10in speaker (reused/off-board),10in Bulldog,PinHeader_1x02_P2.54mm_Vertical,,,1,
+R_spk_rtn,Resistor,0R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+C_cut,Capacitor (film/ceramic),10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+POT_TONE,Tone (reused/off-board),100k lin,PinHeader_1x03_P2.54mm_Vertical,,,1,
+POT_VOL,Volume (reused/off-board),250k log,PinHeader_1x03_P2.54mm_Vertical,,,1,
+R_fx_pad,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D8.0mm_P3.50mm,,,1,
+C_lfo1,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_lfo2,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_obuf_in,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+D_lfo1,Diode,1N4148,D_DO-41_SOD81_P10.16mm_Horizontal,1N4148FS-ND,512-1N4148,1,LFO amplitude clamp
+D_lfo2,Diode,1N4148,D_DO-41_SOD81_P10.16mm_Horizontal,1N4148FS-ND,512-1N4148,1,LFO amplitude clamp
+IC2,Dual op-amp: tremolo LFO + output buffer,TL072CP,DIP-8_W7.62mm,296-1775-5-ND,595-TL072CP,1,DIP-8; use a machined-pin SOCKET_IC
+LED_rate,LED,3mm red,LED_D3.0mm,160-1127-ND,,1,"on-board diagnostic, not panel"
+POT_DPT,Tremolo depth (reused/off-board),100k lin,PinHeader_1x03_P2.54mm_Vertical,,,1,
+POT_SPD,Tremolo speed (reused/off-board),500k lin,PinHeader_1x03_P2.54mm_Vertical,,,1,
+R_fs_trem,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_led,Resistor,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_led_diag,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo1,Resistor,33k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo_fb1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo_fb2,Resistor,4.7k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo_ser,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_obuf_b,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_trem1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+VTL1,Tremolo optocoupler,VTL5C1,VTL5C1,,,1,Xvive VTL5C1 (single-source) or DIY LED+LDR
+# --- off-board / mechanical (not in netlist) ---,,,,,,,
+F_MAINS,MAINS PRIMARY fuse (SAFETY),T800mA 250V slow-blow,5x20mm,,,1,"IEC inlet primary fuse (120V; ~T400mA@230V). REQUIRED, was missing (roast R1). Off-board"
+F_MAINS_holder,Fused IEC inlet / panel fuse holder,,panel,,,1,carries the mains fuse
+F1_holder,Secondary fuse holder,5x20mm,PCB/panel,,534-3557,1,
+SOCKET_IC,8-pin DIP machined-pin socket,turned-pin,DIP-8,ED3008-5-ND,575-193308,2,"REQUIRED for IC1/IC2 (machined, not stamped)"
+SOCKET_U1,TO-220 socket (optional),3-pin,TO-220,,,0,optional LM317 field-swap; LM1875 stays soldered
+HS_LM1875,Heatsink for LM1875,<=2.5 C/W,bracket,,,1,reuse original bracket; mica + shoulder washer
+INS_MICA,TO-220 mica insulator + bushing,,,,,1,for LM1875
 STANDOFF,Nylon standoffs + screws,,,,,4,PCB mounting

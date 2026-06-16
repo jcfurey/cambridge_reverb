@@ -19,17 +19,26 @@ the remaining hand-work.
 - **GND plane** poured on B.Cu; the three net classes (Default / Power /
   HighCurrent, errata #11) carry over from the project file for routing.
 
+> **Full layout audit:** see `PCB-AUDIT.md` for a detailed, category-by-category
+> audit (footprints, placement, net classes, copper, routing) with prioritized
+> fixes. Summary below.
+
 ## DRC status (`kicad-cli 8.0.9 pcb drc`)
 Run: `kicad-cli pcb drc kicad/cambridge_reverb.kicad_pcb`. Current report is
 dominated by the expected consequences of an unrouted, densely auto-placed board:
 
-| Category | Count | Meaning |
-|----------|------:|---------|
-| `unconnected_items` | 130 | Signal nets not routed yet (GND is poured). **Expected** — routing is the next step. |
-| `silk_overlap` / `silk_over_copper` | ~150 | Footprint silkscreen outlines collide at chassis-size density. Cosmetic; resolved during manual placement. |
-| `courtyards_overlap` | 4 | A few footprints still too close. Manual nudge. |
-| `annular_width` | 5 | Stock TO-220 (LM1875) pads vs the conservative 0.15 mm rule; JLCPCB-fine. |
-| `copper_edge_clearance` / `hole_near_hole` | 2 | Edge/placement artifacts. |
+| Category | Count | Severity | Meaning |
+|----------|------:|----------|---------|
+| `unconnected_items` | 131 | error | Signal nets not routed yet (GND is poured). **Expected** — routing is next. |
+| `silk_overlap` / `silk_over_copper` | 144 / 8 | warning | Footprint silk outlines collide at density. Cosmetic; refs/values hidden. |
+| `annular_width` | 5 | error | All on LM1875 (TO-220-5): 1.275 mm pad on 1.1 mm drill → 0.0875 mm. See PCB-AUDIT §1. |
+| `courtyards_overlap` | 2 | error | Two neighbours too close at grid density. |
+| `copper_edge_clearance` / `hole_near_hole` | 1 / 1 | error | Edge/placement artifacts. |
+
+**Non-routing errors: 9.** Cosmetic warnings: ~155. The `power_section_demo`
+board is **0 violations**. This pass also: switched the 5 reused/off-board pots
+from a 16 mm panel-pot footprint to 3-pad wiring connectors (correctness + cut
+silk overlap; packing 51 %→48 %), and centered the component grid.
 
 None of these are wiring errors — the netlist is correct (it came from the
 ERC-clean schematic). They are layout-finishing items.
@@ -58,7 +67,7 @@ and +17V rails** of the supply over a GND pour, to show the net-class widths in
 real copper: `+33V5` at **2.5 mm** (HighCurrent), `+17V` at **1.5 mm** (Power),
 plus the LM317 `ADJ17` set node. `kicad-cli pcb drc` → **0 violations**. Two nets
 are left as a ratsnest on purpose: `VRAW` (its other end is off this demo board)
-and `+27V` — which has to cross the +17V trunk, i.e. on a single free layer
+and `VREG_IN` — which has to cross the +17V trunk, i.e. on a single free layer
 (bottom is the GND pour) it needs a **via**. That via-jump is exactly the kind of
 decision the full-board routing has to make throughout.
 
@@ -68,8 +77,8 @@ decision the full-board routing has to make throughout.
 2. **Place** components into the floor-plan zones (Part 5): Input/Preamp → Tone →
    Reverb/Tremolo → Power Amp → PSU, left→right; off-board pads on one edge.
 3. **Route** — top layer for signals, keep the bottom GND pour continuous; use
-   the HighCurrent class (2.5 mm) for `+33V5`/`SPKR±`/`PA_OUT`, Power (1.5 mm)
-   for the other rails (Part 4).
+   the HighCurrent class (2.5 mm) for `+33V5`/`SPK_P`/`SPK_N`/`PA_OUT`, Power
+   (1.5 mm) for `VREG_IN`/`+17V`/`GND` (Part 4).
 4. **DRC** to zero, then Gerbers per `docs/04-jlcpcb-fabrication.md` and the
    `production/CHECKLIST.md`.
 

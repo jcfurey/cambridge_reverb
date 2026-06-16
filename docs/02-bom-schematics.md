@@ -31,7 +31,7 @@
 | C_reg_in | Regulator input cap | 10µF 50V tantalum | Radial | 581-TAP106K050SCS | $0.80 |
 | C_reg_out1 | Regulator output cap | 10µF 25V tantalum | Radial | 581-TAP106K025SCS | $0.60 |
 | C_reg_out2 | Regulator output bypass | 100nF 50V MLCC | Disc/radial | 594-K104K15X7RF5TL2 | $0.10 |
-| R_27V | 27V rail dropper | 47Ω 2W metal oxide | Axial | 603-MOS2CT52A47R0J | $0.30 |
+| R_27V | LM317-input pre-filter / power-amp decoupling (net `VREG_IN`, ~32 V) | 100Ω 1W metal oxide | Axial | — | $0.20 |
 | F1 | Secondary fuse | 1A 250V slow-blow | PCB mount | 576-0273001.H | $0.40 |
 | F1_holder | Fuse holder | PCB mount 5×20mm | — | 534-3557 | $0.60 |
 
@@ -157,6 +157,7 @@
 ### Step 1: Power-supply verification (no signal)
 1. Apply power through a 60 W incandescent bulb in series with AC mains (current limiter).
 2. Main rail: 33–35 VDC.
-3. 27 V rail: 26–28 VDC.
+3. LM317 input (`VREG_IN`, after the R_27V/C_filt1 pre-filter): ~31–33 VDC (this
+   node is *not* a regulated 27 V — it tracks the main rail minus ~1 V).
 4. Regulated 17 V rail: 17.0–17.5 VDC.
 5. Confirm before proceeding to signal stages.

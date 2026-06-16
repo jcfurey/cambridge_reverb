@@ -1,0 +1,41 @@
+Reverb wet/dry active summer (IC1-B) -- single-supply, RAIL-AWARE (roast R3/R7)
+* The redesigned mixer: inverting summer on one TL072 half, referenced to
+* VBIAS_R (~8.5V on the +17V rail). Out = -(dry + wet) about VBIAS_R, low-Z.
+* Verifies what the rail-less model could NOT: correct mid-rail bias, unity sum,
+* and real headroom / clipping.
+
+.include models/opamp_rail.sub
+
+Vcc   vcc 0 17
+Vbias vb  0 8.5                       ; VBIAS_R (ideal divider stand-in)
+
+* dry and wet program sources (AC-coupled in, like the real C_drymix/C_wetmix)
+Vdry  d 0 SIN(0 {amp} 1000) AC 1
+Vwet  w 0 SIN(0 {amp} 1000 0 0 90)   ; wet ~quadrature, same level
+
+.param amp=0.3                        ; per-source peak (V); override below
+
+Cdry  d  dm   1u
+Rdry  dm sumj 100k
+Cwet  w  wm   1u
+Rwet  wm sumj 100k
+Rfb   sumj out 100k                   ; unity inverting summer
+X1    vb sumj out vcc 0 OPAMP_RAIL
+Rload out 0 47k
+
+.control
+* (1) DC operating point: output must sit at the mid-rail reference (~8.5 V)
+op
+print v(out)
+* (2) summing gain at 1 kHz -- expect ~0 dB (unity inverting summer)
+ac dec 50 10 100k
+meas ac gain_1k FIND vdb(out) AT=1000
+* (3) headroom / clipping: heavy overdrive must clip at [vsat, Vcc-vsat] = [1.5, 15.5]
+alter @vdry[sin] = [ 0 6 1000 ]
+alter @vwet[sin] = [ 0 6 1000 0 0 90 ]
+tran 10u 60m                 ; long enough for the 1u/100k input caps to settle
+meas tran vmax_od MAX v(out) FROM=40m TO=60m
+meas tran vmin_od MIN v(out) FROM=40m TO=60m
+print gain_1k vmax_od vmin_od
+.endc
+.end

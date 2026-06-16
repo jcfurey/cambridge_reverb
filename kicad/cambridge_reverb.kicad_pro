@@ -162,11 +162,10 @@
       },
       "teardrop_options": [
         {
-          "td_onpthpad": true,
+          "td_onpadsmd": true,
           "td_onroundshapesonly": false,
-          "td_onsmdpad": true,
           "td_ontrackend": false,
-          "td_onvia": true
+          "td_onviapad": true
         }
       ],
       "teardrop_parameters": [
@@ -513,7 +512,7 @@
   },
   "meta": {
     "filename": "cambridge_reverb.kicad_pro",
-    "version": 3
+    "version": 1
   },
   "net_settings": {
     "classes": [
@@ -528,10 +527,8 @@
         "microvia_drill": 0.1,
         "name": "Default",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.5,
-        "tuning_profile": "",
         "via_diameter": 0.8,
         "via_drill": 0.4,
         "wire_width": 6
@@ -547,10 +544,8 @@
         "microvia_drill": 0.1,
         "name": "HighCurrent",
         "pcb_color": "rgb(194, 0, 0)",
-        "priority": 0,
         "schematic_color": "rgb(194, 0, 0)",
         "track_width": 2.5,
-        "tuning_profile": "",
         "via_diameter": 1.6,
         "via_drill": 1.0,
         "wire_width": 6
@@ -566,17 +561,15 @@
         "microvia_drill": 0.1,
         "name": "Power",
         "pcb_color": "rgb(255, 132, 0)",
-        "priority": 1,
         "schematic_color": "rgb(255, 132, 0)",
         "track_width": 1.5,
-        "tuning_profile": "",
         "via_diameter": 1.4,
         "via_drill": 0.8,
         "wire_width": 6
       }
     ],
     "meta": {
-      "version": 5
+      "version": 3
     },
     "net_colors": null,
     "netclass_assignments": null,
@@ -599,7 +592,7 @@
       },
       {
         "netclass": "Power",
-        "pattern": "+27V"
+        "pattern": "VREG_IN"
       },
       {
         "netclass": "Power",

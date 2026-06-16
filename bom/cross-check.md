@@ -61,11 +61,16 @@ The sims also surfaced two real findings (both folded into errata):
 - **Preamp bias is cold with Rs = 2.2 kΩ** (Vd ≈ 12 V vs the 8–9 V target);
   **Rs ≈ 1–1.2 kΩ** lands it. See errata Issue 15. (BOM note added on R_s1/R_s2.)
 
-## 4. Still unverified — tone-stack values
-The Vox "top-boost" tone-stack passive values were **not recovered**. A single
-`TONE_STACK` placeholder row (value `TBD`) is in the BOM as a flag. Derive these
-from the original 25-5274-2 tone network before ordering (Part 1 §2 preserves the
-original tone-stack topology and voicing).
+## 4. Tone stack — designed substitute (original values not recovered)
+The Vox "top-boost" tone-stack passive values from the original 25-5274-2 were
+**not recovered**. The tone sheet now implements a **designed substitute**: a
+Volume pot + a passive Vox-style **treble "cut"** (`C_cut` 10 nF + `POT_TONE`
+100 k to ground). Its response is simulated in `spice/ac_tonestack.cir` — flat at
+the bright end (−1.6 dB), a musical treble cut at the dark end (−9 dB @ 5 kHz,
+−14 dB @ 10 kHz). The "chime" lives in the preamp (`C_pres` 100 pF / `C_treble`
+470 pF). **If you recover the original 25-5274-2 tone network** (which may have had
+separate Treble/Bass), swap it in; the substitute is a working stand-in, not the
+factory voicing.
 
 ## 5. Value change applied from the consistency pass
 `R_reg2` changed **3.0 kΩ → 3.09 kΩ (E96)** so the LM317 lands inside the stated

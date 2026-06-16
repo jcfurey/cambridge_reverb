@@ -91,10 +91,75 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 ### Power-section routing demo + chassis-fit check (2026-06-14)
 - **Routed power demo** (kicad/power_section_demo.kicad_pcb): the +33V5 (2.5 mm
   HighCurrent) and +17V (1.5 mm Power) rails + LM317 ADJ node routed over a GND
-  pour. kicad-cli pcb drc -> 0 violations. +27V/VRAW left as ratsnest (the +27V
+  pour. kicad-cli pcb drc -> 0 violations. VREG_IN/VRAW left as ratsnest (the VREG_IN
   cross-row link needs a via — documented).
 - **Chassis-fit packing-density check** in gen_pcb.py: ~51% on 190×115 (original
   PCB size, feasible-but-tight) vs ~88% on the Part 7 155×90 safe-bet — i.e. the
   102-part through-hole design does NOT fit the smaller chassis comfortably.
   Recorded in kicad/PCB-NOTES.md (ties to errata #9): measure the real chassis,
   or move passives to SMD, before committing to a board size.
+
+### Audit, sockets, schematic centering & VREG_IN pass (2026-06-15)
+- **Availability / sockets / current / noise audit** (docs/component-availability-
+  audit.md): parts tiered by sourceability (JFETs + LM1875 are the single-points-
+  of-failure); DIP op-amp sockets made REQUIRED (machined-pin); per-rail current
+  budget; noise review. (Power-budget numbers were later corrected — see roast R2.)
+- **+27V → VREG_IN:** kept the R_27V/C_filt1 element as an LM317-input RC pre-filter
+  + power-amp decoupler (a noise feature), bumped 47Ω→100Ω/2W→1W, renamed the net
+  and corrected the "27V rail" misnomer (~32V) across schematic/PCB/docs.
+- **Schematic pages centered**; **PCB layout audit** (kicad/PCB-AUDIT.md) with the
+  off-board-pot footprint fix + grid centering; **SPICE audit** (block-level).
+
+### Roast pass (2026-06-16) — see docs/roast-2026-06-16.md
+- 🔴 **R1 added a MAINS PRIMARY FUSE** (was missing — only a secondary fuse
+  existed; a mains-powered amp needs primary fusing). BOM + Part 1 safety/Part 3.
+- 🔴 **R2 corrected the power spec:** 18 W is unreachable on the 33.5 V single rail
+  (needs 17.0 V peak, only 16.75 V available) → real ceiling ~12 W. Fixed Part 1,
+  Part 5 thermal, and the availability audit (which I'd built on the bad 18 W).
+- 🟠 **R3** rebalanced the broken reverb mixer (R_dry_tap 1M→220k) and flagged that
+  the unbuffered inter-effect chain needs a real summing stage before fab.
+- 🟠 **R4** marked the orphaned `Wiring_Edge_Array_35` footprint as unused.
+- 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
+  SPICE scope caveat, and this CHANGELOG cleanup — all documented.
+
+### BOM value normalization + README refresh (2026-06-16)
+- Generator now normalizes value strings (2K2→2.2k, 4K7→4.7k, drop " film") so the
+  grouped BOM consolidates cleanly. ERC/DRC/SPICE unaffected.
+- Rewrote the top-level **README** to match the current state: the generated +
+  tool-verified KiCad/BOM/SPICE flow, the ~12 W power ceiling, the mains-fuse
+  safety note, the 190×115 board / chassis-fit caveat, and the honesty/provenance
+  framing. (Was still describing the original reconstructed-docs state.)
+
+### Tone stack designed + verified (2026-06-16)
+- The `TONE_STACK` placeholder (TBD) is replaced by a **working passive Vox-style
+  tone**: Volume pot + a treble "cut" (C_cut 10 nF + POT_TONE 100 k to ground),
+  since the original 25-5274-2 values were never recovered. Response simulated in
+  `spice/ac_tonestack.cir`: flat at bright (−1.6 dB), musical treble cut at the
+  dark end (−9 dB @ 5 kHz, −14 dB @ 10 kHz). Flagged as a designed substitute
+  (the original panel may have had separate Treble/Bass). ERC 0; BOM regenerated.
+
+### Schematic completion + generated BOM (2026-06-16)
+- **Completed the schematic** — added parts that were in Part 2/the BOM but never
+  placed: the four rectifier snubbers (C101–C104), the 2nd pre-filter cap
+  (C_filt2), and the tremolo **speed/depth pots** (POT_SPD as a rheostat in the
+  Wien arm, POT_DPT scaling the LFO into the LED). 117 components, ERC 0.
+- **BOM is now GENERATED from the schematic** (`kicad/gen/gen_bom.py`): every
+  reference is 1:1 with the netlist (no more drift — the hand BOM had ~20 missing
+  and ~20 stale rows), merged with curated P/Ns + notes and an explicit
+  off-board/mechanical section. Added `bom/bom-grouped.csv` (by value, for
+  ordering). Density rose to 53 % / 90 % (190×115 / 155×90) — reinforces the
+  chassis-fit finding.
+
+### Effects-chain redesign (2026-06-16) — resolves roast R3 + R6
+- **Active reverb wet/dry summer** on the spare IC1-B half (inverting summer about
+  VBIAS_R: dry always on, wet via POT_REV, unity each). Removed the broken passive
+  R_dry_tap/R_blend1/R_blend2 mixer.
+- **Output buffer** on the spare IC2-B half drives PA_IN from the post-MRB node
+  (removed the unbuffered R_painput 1 M and the dead C_trem_out/R_trem_pass branch).
+- **Split bias:** VBIAS → independent **VBIAS_R / VBIAS_T** dividers (100k/100k +
+  47 µF each) so the LFO can't modulate the reverb reference.
+- **Rail-aware verification:** new `models/opamp_rail.sub` (output clamped to the
+  supplies) + `spice/tran_reverb_mixer.cir` confirm single-supply mid-rail bias
+  (8.50 V), unity sum, and ±7 V headroom before clipping — the kind of large-signal
+  check the rail-less model couldn't do (roast R7).
+- ERC 0; full board regenerated (106 footprints); demo DRC 0; BOM updated.

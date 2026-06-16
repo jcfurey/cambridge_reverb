@@ -14,10 +14,12 @@ thermal grease.
 **LM317 needs no heatsink** — it dissipates ~0.25 W powering the preamp. Bolt it
 to the chassis if convenient, but thermally it's a non-issue.
 
-`[RECONSTRUCTED]` Worst-case LM1875 dissipation at 18 W into 8 Ω is on the order
-of ~15–20 W; with a junction-to-case path plus a ≤2.5 °C/W sink and mica
-insulator, junction temperature stays within the device limit at normal playing
-levels. Verify against the LM1875 datasheet SOA/thermal curves for your duty cycle.
+`[RECONSTRUCTED]` **Corrected (roast R2):** the earlier "18 W into 8 Ω" premise is
+unreachable on the 33.5 V single rail — the real output ceiling is **~12 W**. At
+~12 W the LM1875's worst-case dissipation is *lower* than the old 15–20 W figure,
+so with a ≤2.5 °C/W sink + mica the junction stays comfortably within limits (the
+sink is over-spec'd, which is safe). Thermal shutdown backstops sustained drive.
+Still verify against the LM1875 datasheet SOA/thermal curves for your duty cycle.
 
 ## Component placement floor plan (recovered verbatim)
 ```

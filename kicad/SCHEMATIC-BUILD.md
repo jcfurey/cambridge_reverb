@@ -22,7 +22,7 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   (`VTL5C1`, `Reverb_Tank_4FB2A1C`, `Footswitch_DIN6`) come from
   `symbols/cambridge_reverb.kicad_sym`.
 - **Label-based connectivity.** Each pin gets a short wire stub to a net label —
-  `global_label` for rails and cross-sheet signals (`+33V5`, `+17V`, `+27V`,
+  `global_label` for rails and cross-sheet signals (`+33V5`, `+17V`, `VREG_IN`,
   `GND`, `SPK_P/N`, `GUITAR_IN`, `PREAMP_OUT`, `TONE_OUT`, `DRY`, `WET`,
   `BLEND`, `TREM_OUT`, `MRB_OUT`, `PA_IN`, `FX_RET`, `FS_*`), `label` for
   intra-sheet nets. This yields a correct netlist without fragile point-to-point
@@ -56,9 +56,23 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   exact pedal switching topology follows the original footswitch; these nets are
   represented as defined control lines so they aren't single-ended.
 
+## Effects chain — redesigned 2026-06-16 (roast R3/R6 resolved)
+- **Active wet/dry summer** on the spare **IC1-B** half (inverting summer about
+  `VBIAS_R`: dry always on, wet via `POT_REV`, unity each). Output `BLEND` is
+  low-Z. Replaces the old broken passive `R_dry_tap`/`R_blend*` mixer.
+- **Output buffer** on the spare **IC2-B** half drives `PA_IN` from the post-MRB
+  node (replaces the unbuffered `R_painput` 1 M).
+- **Split bias:** `VBIAS_R` (reverb) and `VBIAS_T` (tremolo) are independent
+  100 k/100 k + 47 µF dividers — no shared reference, so no LFO→reverb bleed.
+- **Verified rail-aware** (`spice/tran_reverb_mixer.cir`): mid-rail bias 8.50 V,
+  unity sum, ±7 V headroom before clipping. ERC 0.
+
 ## Still to finish before a build
 - **Tone stack** values are `TBD` (cross-check §4) — the sheet has the pots and a
   placeholder; fill from the original 25-5274-2 top-boost network.
+- The tremolo's passive LDR shunt + MRB sit *between* the two buffered nodes
+  (BLEND→ … →PA_IN); levels there are reasonable but bench-tune the tremolo depth
+  and MRB blend.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented
   assumption where the recovered notes are silent; see the note on the root sheet.
 - **PCB:** a placed starter board (`cambridge_reverb.kicad_pcb`, all footprints

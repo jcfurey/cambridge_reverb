@@ -35,10 +35,15 @@ Key improvements over the original:
 
 ## Section 1: Power supply — modernized
 
-KBP410G bridge rectifier feeding the 33.5 V main rail; 27 V tap via a dropper
-resistor; 17 V preamp rail regulated by an LM317T. Rectifier snubbing caps
-across the diodes. The LM317 on the 17 V rail is the most impactful single
-change for noise. (Full values in Part 2.)
+KBP410G bridge rectifier feeding the 33.5 V main rail; an **RC pre-filter**
+(`R_27V` 100 Ω + `C_filt1` 1000 µF, net `VREG_IN`) feeds the LM317 input; the
+17 V preamp rail is regulated by an LM317T. Rectifier snubbing caps across the
+diodes. The LM317 on the 17 V rail is the most impactful single change for noise,
+and the `VREG_IN` pre-filter compounds it — it both attenuates main-rail ripple
+before the regulator and **decouples the preamp supply from the power amp's
+transient current draw** on the +33.5 V rail. (Note: under the modern light
+preamp load (~15 mA) `VREG_IN` sits at ~32 V — it is a pre-filter, **not** the
+original 27 V tap. Full values in Part 2.)
 
 ## Section 2: Preamp — modernized
 
@@ -82,6 +87,14 @@ The IC includes thermal shutdown, short-circuit protection, and SOA limiting.
 Mount it on the existing heatsink bracket under the chassis where the germanium
 transistors were.
 
+> **Power ceiling (roast R2):** on a single **33.5 V** rail the LM1875 can only
+> swing ~16.75 V peak to the rail, so the maximum into 8 Ω is **~12 W clean
+> (~14 W at clipping), an absolute ceiling of 17.5 W — it will not reach the
+> original 18 W** (that needs 17.0 V peak). This is ~1.8 dB down, still plenty for
+> a 10″ combo. If full 18 W is required it needs a different topology (bridged
+> LM1875, or LM3886/TDA7293 on a higher rail). Thermal/transformer sizing below is
+> based on the real ~12 W, not 18 W.
+
 > **Note on alternatives:** A discrete TIP41C/TIP42C complementary output stage
 > was mentioned during design as a reference alternative for "vintage" breakup,
 > but it is **not** carried through the rest of the document set (no BOM, SPICE,
@@ -120,6 +133,11 @@ panel holes. (Errata Issue 8.)
 
 ## Safety
 
+- **Fit a MAINS (primary) fuse (roast R1).** The design's only fuse (F1) is on the
+  secondary DC rail, which does **not** protect against a primary/transformer/
+  bridge fault. Add a primary-side fuse in the IEC inlet — **T800 mA 250 V slow-blow
+  at 120 V (≈ T400 mA at 230 V)** for the ~50 VA transformer. This is a fire-safety
+  requirement, not optional.
 - **Always discharge filter capacitors** before working on the circuit (10 kΩ/5 W resistor across each cap).
 - **Never work on the amp with power applied** unless experienced with live-chassis work and using one hand only.
 - **Install a proper 3-wire grounded power cord** if the original was 2-prong; bond the safety ground to the chassis.
