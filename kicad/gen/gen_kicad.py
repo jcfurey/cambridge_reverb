@@ -16,6 +16,17 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 def U(): return str(uuid.uuid4())
 def SNAP(v): return round(round(v / 1.27) * 1.27, 4)   # snap to 50-mil grid
 
+import re as _re
+def NV(v):
+    """Normalize a value string for a tidy/consolidated BOM (cosmetic only):
+    drop the ' film' descriptor (footprint conveys it) and standardize resistor
+    k-notation (2K2 -> 2.2k, 4K7 -> 4.7k, 100K -> 100k)."""
+    s = v.strip().replace(" film", "")
+    m = _re.fullmatch(r'(\d+)K(\d+)', s)
+    if m: return f"{m.group(1)}.{m.group(2)}k"
+    if _re.fullmatch(r'\d+K', s): return s[:-1] + "k"
+    return s
+
 # ----------------------------------------------------------------------------
 # Primitive symbol database.
 # pins: (number, name, ex, ey, ox, oy)  in SYMBOL (y-up) coords.
@@ -157,6 +168,7 @@ class Sheet:
     def comp(self, libsym, ref, value, x, y, nets, mirror=None):
         """Place a component and attach labels to pins per nets={pinnum:netname}."""
         x = SNAP(x); y = SNAP(y)     # keep pins/wires on KiCad's 1.27mm connection grid
+        value = NV(value)            # normalize value strings for a tidy BOM
         self.used.add(libsym)
         fp = FOOTPRINTS.get(libsym, "")
         COMPONENTS.append(dict(ref=ref, libsym=libsym, value=value, fp=fp,

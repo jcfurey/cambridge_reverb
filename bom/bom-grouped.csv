@@ -14,8 +14,7 @@ qty,value,footprint,refs
 4,10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,C101 C102 C103 C104
 1,120nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_450
 1,1nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_fb_hf
-3,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_drymix C_obuf_in C_wetmix
-1,1uF film,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_in_pa
+4,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_drymix C_in_pa C_obuf_in C_wetmix
 1,470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_treble
 1,47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_in_pre
 1,47nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_750
@@ -46,13 +45,13 @@ qty,value,footprint,refs
 1,10k/5W,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_bleed
 3,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_g1 R_g2 R_rec_bias
 2,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_gain R_led
+4,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_led_diag R_rec2 R_s1 R_s2
 1,220k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_drvbias
 3,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_bias1 R_bias2 R_fb
 1,240R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg1
-4,2K2,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_led_diag R_rec2 R_s1 R_s2
 1,3.09k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg2
 1,33k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo1
-1,4K7,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo_fb2
+1,4.7k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo_fb2
 1,LM317T,TO-220-3_Vertical,U1
 1,LM1875T,TO-220-5_Vertical,IC_PA
 3,MMBF5457,TO-92_Inline,Q1 Q2 Q_rec

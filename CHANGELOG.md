@@ -122,6 +122,14 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
   SPICE scope caveat, and this CHANGELOG cleanup — all documented.
 
+### BOM value normalization + README refresh (2026-06-16)
+- Generator now normalizes value strings (2K2→2.2k, 4K7→4.7k, drop " film") so the
+  grouped BOM consolidates cleanly. ERC/DRC/SPICE unaffected.
+- Rewrote the top-level **README** to match the current state: the generated +
+  tool-verified KiCad/BOM/SPICE flow, the ~12 W power ceiling, the mains-fuse
+  safety note, the 190×115 board / chassis-fit caveat, and the honesty/provenance
+  framing. (Was still describing the original reconstructed-docs state.)
+
 ### Tone stack designed + verified (2026-06-16)
 - The `TONE_STACK` placeholder (TBD) is replaced by a **working passive Vox-style
   tone**: Volume pot + a treble "cut" (C_cut 10 nF + POT_TONE 100 k to ground),
