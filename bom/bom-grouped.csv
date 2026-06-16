@@ -10,7 +10,7 @@ qty,value,footprint,refs
 2,47uF/25V,CP_Radial_D8.0mm_P3.50mm,C_vbr C_vbt
 10,100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_byp1 C_cpl12 C_drvin C_lfo1 C_lfo2 C_mrb_in C_mrb_out C_reg_out2 C_rev4 C_zobel
 1,100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_pres
-1,10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_rev2
+2,10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_cut C_rev2
 4,10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,C101 C102 C103 C104
 1,120nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_450
 1,1nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_fb_hf
@@ -20,7 +20,6 @@ qty,value,footprint,refs
 1,47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_in_pre
 1,47nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_750
 1,68nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_600
-1,TBD,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_tone_tbd
 2,TL072CP,DIP-8_W7.62mm,IC1 IC2
 2,1N4007,D_DO-41_SOD81_P10.16mm_Horizontal,D1 D2
 2,1N4148,D_DO-41_SOD81_P10.16mm_Horizontal,D_lfo1 D_lfo2
@@ -31,9 +30,10 @@ qty,value,footprint,refs
 1,IN3 / FX return,PinHeader_1x02_P2.54mm_Vertical,J_IN3
 1,Input 1,PinHeader_1x02_P2.54mm_Vertical,J_IN1
 1,Input 2,PinHeader_1x02_P2.54mm_Vertical,J_IN2
-1,100k lin,PinHeader_1x03_P2.54mm_Vertical,POT_DPT
+2,100k lin,PinHeader_1x03_P2.54mm_Vertical,POT_DPT POT_TONE
+1,250k log,PinHeader_1x03_P2.54mm_Vertical,POT_VOL
 1,500k lin,PinHeader_1x03_P2.54mm_Vertical,POT_SPD
-3,reuse,PinHeader_1x03_P2.54mm_Vertical,POT_REV POT_TONE POT_VOL
+1,reuse,PinHeader_1x03_P2.54mm_Vertical,POT_REV
 1,reuse / AnTek AS-0524,PinHeader_1x03_P2.54mm_Vertical,T1
 1,4FB2A1C,PinHeader_1x04_P2.54mm_Vertical,REV1
 1,KBP410G,PinHeader_1x04_P2.54mm_Vertical,BR1

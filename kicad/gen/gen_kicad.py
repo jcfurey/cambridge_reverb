@@ -391,11 +391,11 @@ def build():
 
     # ---- Sheet 3: Tone Stack ----
     s=Sheet("Tone Stack","tone_stack.kicad_sch"); sheets.append(s)
-    s.note("TONE STACK -- Vox top-boost network. VALUES TBD (cross-check #4): replicate 25-5274-2.",40,20)
-    s.comp("POT","POT_VOL","reuse",70,70,{"1":"PREAMP_OUT","2":"VOL_W","3":"GND"})
-    s.comp("POT","POT_TONE","reuse",140,70,{"1":"VOL_W","2":"TONE_OUT","3":"GND"})
-    s.comp("R","R_fx_pad","10k",110,120,{"1":"VOL_W","2":"FX_RET"})
-    s.comp("C","C_tone_tbd","TBD",170,110,{"1":"TONE_OUT","2":"GND"})
+    s.note("TONE -- Volume + passive Vox 'cut' (treble). DESIGNED SUBSTITUTE: original 25-5274-2 tone values not recovered (cross-check #4); response verified in spice/ac_tonestack.cir. Original panel may have had separate Treble/Bass.",40,18)
+    s.comp("POT","POT_VOL","250k log",70,70,{"1":"PREAMP_OUT","2":"TONE_OUT","3":"GND"})  # volume; wiper = TONE_OUT
+    s.comp("R","R_fx_pad","10k",70,110,{"1":"TONE_OUT","2":"FX_RET"})                       # internal FX send tap (IN3)
+    s.comp("C","C_cut","10nF",140,70,{"1":"TONE_OUT","2":"TCW"})                            # treble-cut cap
+    s.comp("POT","POT_TONE","100k lin",185,70,{"1":"TCW","2":"GND","3":"GND"})              # CUT: C_cut -> variable R -> GND
 
     # ---- Sheet 4: Reverb (netlist-notes sheet 4) ----
     s=Sheet("Reverb","reverb.kicad_sch"); sheets.append(s)

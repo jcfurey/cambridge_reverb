@@ -17,12 +17,15 @@ documented in `../docs/06b-spice-simulations.md`.
 | `dc_preamp_jfet.cir` | ngspice | Preamp | JFET bias point + midband gain |
 | `tran_tremolo_lfo.cir` | ngspice | Tremolo LFO | Oscillation + frequency |
 | `tran_reverb_mixer.cir` | ngspice | Reverb summer | **Rail-aware**: single-supply mid-rail bias, unity sum, headroom/clipping |
+| `ac_tonestack.cir` | ngspice | Tone | Vox treble-cut response (bright vs full-cut) |
 | `models/opamp1p.sub` | — | shared | One-pole op-amp macromodel (small-signal, **no rails**) |
 | `models/opamp_rail.sub` | — | shared | **Rail-aware** one-pole op-amp (output clamped to the supplies) |
 | `models/jfet_2n5457.lib` | — | shared | 2N5457/MMBF5457 JFET model |
 | `run_all.sh` | — | — | Runs every ngspice block and prints key numbers |
 
-Tone stack has no sim — its values were not recovered (cross-check §4).
+The original 25-5274-2 tone values were not recovered (cross-check §4); the tone
+sheet uses a **designed Vox-style treble-cut substitute**, whose response *is*
+now simulated (`ac_tonestack.cir`).
 
 ## Verified results (ngspice-42)
 Run `./run_all.sh`. Measured vs. documented:
@@ -38,6 +41,8 @@ Run `./run_all.sh`. Measured vs. documented:
 | Preamp drain Vd | **12.1 V** (Rs = 2.2 k) | 8–9 V target | ⚠️ see note below |
 | Reverb summer bias (rail-aware) | **8.50 V** mid-rail | VBIAS_R ≈ 8.5 V | ✅ single-supply biasing correct |
 | Reverb summer gain / headroom | **0.0 dB** unity, clips **15.5/1.5 V** | unity, ±7 V swing | ✅ headroom verified (roast R3) |
+| Tone: bright (pot max) | **−1.6 dB** flat 1k→10k | ~flat | ✅ minimal insertion loss |
+| Tone: full cut | **−9 dB @ 5 kHz, −14 dB @ 10 kHz** | progressive treble cut | ✅ musical Vox cut |
 
 ### Findings the sims surfaced (folded into errata / cross-check)
 - **Power-amp LF corner is ~17 Hz, not 7.2 Hz.** The docs' 7.2 Hz counts only the

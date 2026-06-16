@@ -1,0 +1,31 @@
+Tone stack -- passive Vox 'cut' (treble) control response (designed substitute)
+* Volume wiper (source ~10k from the preamp) feeds a treble-cut shunt:
+*   TONE_OUT --C_cut(22n)--> --POT_TONE(0..100k to GND)
+* Driving the reverb/dry op-amp loads (~100k). Sweeps the tone pot from full-bright
+* (100k, ~flat) to full-cut (1k) and reports the rolloff. (Original 25-5274-2
+* values were not recovered -- this is a working substitute, cross-check #4.)
+
+V_in  IN 0 AC 1
+R_src IN TONE_OUT 10k         ; preamp drain / volume-wiper source impedance
+C_cut TONE_OUT TCW 10n
+R_tone TCW 0 {rt}             ; tone pot (rheostat), swept
+R_load TONE_OUT 0 100k        ; downstream op-amp input load
+.param rt=100k
+
+.control
+* full-bright (tone pot = 100k, minimal cut)
+alterparam rt=100k
+reset
+ac dec 100 20 20k
+meas ac br_1k  FIND vdb(TONE_OUT) AT=1000
+meas ac br_10k FIND vdb(TONE_OUT) AT=10000
+* full-cut (tone pot ~ 1k)
+alterparam rt=1k
+reset
+ac dec 100 20 20k
+meas ac cut_1k  FIND vdb(TONE_OUT) AT=1000
+meas ac cut_5k  FIND vdb(TONE_OUT) AT=5000
+meas ac cut_10k FIND vdb(TONE_OUT) AT=10000
+print br_1k br_10k cut_1k cut_5k cut_10k
+.endc
+.end

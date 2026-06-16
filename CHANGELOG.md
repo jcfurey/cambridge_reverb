@@ -122,6 +122,14 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
   SPICE scope caveat, and this CHANGELOG cleanup — all documented.
 
+### Tone stack designed + verified (2026-06-16)
+- The `TONE_STACK` placeholder (TBD) is replaced by a **working passive Vox-style
+  tone**: Volume pot + a treble "cut" (C_cut 10 nF + POT_TONE 100 k to ground),
+  since the original 25-5274-2 values were never recovered. Response simulated in
+  `spice/ac_tonestack.cir`: flat at bright (−1.6 dB), musical treble cut at the
+  dark end (−9 dB @ 5 kHz, −14 dB @ 10 kHz). Flagged as a designed substitute
+  (the original panel may have had separate Treble/Bass). ERC 0; BOM regenerated.
+
 ### Schematic completion + generated BOM (2026-06-16)
 - **Completed the schematic** — added parts that were in Part 2/the BOM but never
   placed: the four rectifier snubbers (C101–C104), the 2nd pre-filter cap
