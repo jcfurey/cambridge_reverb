@@ -10,7 +10,10 @@ KiCad project files.
 - `symbols/cambridge_reverb.kicad_sym` — custom symbols: `VTL5C1`,
   `Reverb_Tank_4FB2A1C`, `Footswitch_DIN6`.
 - `footprints/cambridge_reverb.pretty/` — `VTL5C1`, `Inductor_MRB_1H_Toroid`
-  (2-pad, 25 mm), `Wiring_Edge_Array_35` (35 pads, 3 mm / 1.5 mm drill, labeled).
+  (2-pad, 25 mm). `Wiring_Edge_Array_35` (35-pad edge connector) is also in the
+  library but **currently unused** — `gen_pcb.py` places individual pin-header
+  connectors instead; it's kept as a reference for a future single-edge wiring
+  layout (roast R4).
 - `sym-lib-table` / `fp-lib-table` — register the project libraries (`${KIPRJMOD}`).
 - `netlist-notes.txt` — recovered per-sheet connections (power amp, reverb,
   tremolo, MRB).

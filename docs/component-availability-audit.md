@@ -88,16 +88,19 @@ Estimated operating currents per rail (verify on the bench):
   ever want a true lower-voltage pre-reg point to cut LM317 dissipation, ~390–470 Ω
   gives ~27 V — but it isn't needed here.)
 
-### +33.5 V main rail (power amp)
-- LM1875 quiescent ~50 mA; at **18 W into 8 Ω**, peak output current
-  ≈ √(2·18/8) = **2.1 A**, average supply current at full sine ≈ peak/π ≈ **0.7 A**
+### +33.5 V main rail (power amp) — corrected (roast R2)
+> Earlier this section used 18 W; that's unreachable on a 33.5 V single rail
+> (needs 17.0 V peak, only 16.75 V available). The real ceiling is **~12 W clean**.
+- LM1875 quiescent ~50 mA; at the real **~12 W into 8 Ω**, peak output current
+  ≈ √(2·12/8) = **1.7 A**, average supply current at full sine ≈ peak/π ≈ **0.5 A**
   (guitar program is far lower on average — transient peaks).
-- **LM1875 worst-case dissipation ~15–20 W** → the **≤ 2.5 °C/W heatsink + mica**
-  is mandatory; Tj stays under the 150 °C limit at program levels and thermal
-  shutdown protects sustained full power (Part 5). C_out (2200 µF) and C_main
-  (4700 µF) are sized for this current.
-- **Transformer:** ~18 W out + losses ⇒ ~28 W draw ⇒ **~50 VA**; AnTek AS-0524
-  (50 VA, 2×24 V @ 1.04 A) matches, and 1.04 A > 0.7 A avg. Bridge KBP410G (4 A) ok.
+- **LM1875 worst-case dissipation** (≈ Vcc²/(2π²·RL) for the single-supply output)
+  is **lower than the earlier 15–20 W estimate** at this rail/power, so the
+  **≤ 2.5 °C/W heatsink + mica is comfortable** (over-spec'd = safe); thermal
+  shutdown still backstops it. C_out (2200 µF) and C_main (4700 µF) are fine.
+- **Transformer:** ~12 W out + losses ⇒ ~20 W draw ⇒ **~30 VA minimum**; the
+  AnTek AS-0524 (50 VA, 2×24 V @ 1.04 A) is **comfortable headroom** (1.04 A ≫
+  0.5 A avg), not a tight match. Bridge KBP410G (4 A) is ample.
 
 ---
 ## 4. Noise

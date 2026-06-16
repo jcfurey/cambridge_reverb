@@ -409,7 +409,7 @@ def build():
     s.comp("POT","POT_REV","reuse",200,150,{"1":"REVWCW","2":"WET","3":"GND"})
     s.comp("R","R_blend1","220k",60,60,{"1":"DRY","2":"BLEND"})
     s.comp("R","R_blend2","220k",60,90,{"1":"WET","2":"BLEND"})
-    s.comp("R","R_dry_tap","1M",30,40,{"1":"TONE_OUT","2":"DRY"})
+    s.comp("R","R_dry_tap","220k",30,40,{"1":"TONE_OUT","2":"DRY"})  # was 1M (roast R3: balanced w/ wet 220k; mixer still needs a buffer)
     s.comp("R","R_fs_rev","100k",30,170,{"1":"FS_REV","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 5: Tremolo (netlist-notes sheet 5) ----

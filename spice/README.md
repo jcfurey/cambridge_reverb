@@ -71,4 +71,11 @@ Full pass over every netlist + model; all five blocks run under ngspice-42
 - `power_amp_lm1875.cir` is **LTspice-only** (UniversalOpamp2 + `opamp.sub`) and
   will not run under ngspice — kept verbatim for provenance; the `ac_*` files are
   the runnable companions.
-No correctness issues found.
+No correctness issues found **in what is modelled** — but see the scope limit:
+
+> **Scope caveat (roast R7):** `opamp1p.sub` is **rail-less**, so the sims cover
+> only small-signal gain/bandwidth of *isolated* blocks. Single-supply
+> headroom/clipping, the reverb driver's actual swing, op-amp biasing margins, and
+> the real power-amp output ceiling (~12 W, not 18 W — roast R2) are **not
+> simulated**. "Tool-verified" here means small-signal, block-level — **not** a
+> validated integrated, large-signal circuit.

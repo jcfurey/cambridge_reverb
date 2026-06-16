@@ -51,7 +51,9 @@ R_led,LFO LED current limiter,1K 1/4W,axial,,,1,
 R_trem1,Tremolo signal series R,10K 1% 1/4W,axial,,,1,
 L1,MRB inductor,1H toroid,,,,1,Reuse original or 2x 0.5H Fasel wah
 REVPAN,Reverb pan,Accutronics 4FB2A1C ~1475ohm,,,,1,NOT 4AB3C1B (8ohm incompatible)
-F1,Secondary fuse,1A 250V slow-blow,5x20mm,,576-0273001.H,1,
+F_MAINS,MAINS PRIMARY fuse (SAFETY - was missing),T800mA 250V slow-blow,5x20mm,,,1,Primary-side fuse in the IEC inlet (120V; ~T400mA at 230V). REQUIRED for mains fire safety (roast R1). Off-board/panel
+F_MAINS_holder,Fused IEC inlet or panel fuse holder,5x20mm,,,,1,Off-board; carries the mains fuse
+F1,Secondary fuse (consider AC-secondary placement),1A 250V slow-blow,5x20mm,,576-0273001.H,1,Rail fuse; if kept on the DC side it sees C_main inrush - prefer AC secondary before the bridge (roast R5)
 F1_holder,Fuse holder,PCB mount 5x20mm,,,534-3557,1,
 T1,Power transformer,reuse original / AnTek AS-0524,,,,1,Test secondary ~48VAC before reuse
 R_bleed,Filter-cap bleeder/discharge,10K 5W,axial,,,1,Across C_main for safe discharge (Part1 safety)

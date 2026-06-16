@@ -57,6 +57,15 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   represented as defined control lines so they aren't single-ended.
 
 ## Still to finish before a build
+- **⚠️ The inter-effect signal chain is wired for ERC, not designed (roast R3).**
+  The reverb dry/wet blend and the tremolo hand-off are arbitrary high-impedance
+  passive nodes (`R_dry_tap`/`R_blend1/2` into an unbuffered `BLEND` node feeding a
+  10 k tremolo stage). `R_dry_tap` was rebalanced 1 M→220 k, but the mix still
+  needs a **buffered/op-amp summing stage** (use the spare TL072 halves) with
+  matched levels/impedances. **Do not fab the effects chain as drawn.**
+- **⚠️ Shared `VBIAS` (roast R6):** one divider biases both IC1 (reverb) and IC2
+  (tremolo LFO); the LFO can modulate the shared reference (C_vb corner ~0.3 Hz, LFO
+  is 1–16 Hz) → tremolo bleed into reverb. Split `VBIAS` per stage, or buffer it.
 - **Tone stack** values are `TBD` (cross-check §4) — the sheet has the pots and a
   placeholder; fill from the original 25-5274-2 top-boost network.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented

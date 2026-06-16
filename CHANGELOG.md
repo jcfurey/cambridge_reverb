@@ -3,33 +3,6 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
-## Audit pass (2026-06-14)
-- **Component availability / sockets / current-draw / noise audit**
-  (`docs/component-availability-audit.md`): parts tiered by sourceability (the two
-  single-points-of-failure are the JFETs and the LM1875 — buy spares); **DIP
-  op-amp sockets made REQUIRED** (machined-pin) with the power TO-220s staying
-  heatsink-mounted; per-rail current budget + LM317/LM1875 dissipation + ~50 VA
-  transformer sizing; noise review. BOM updated (socket P/N, JFET/LM1875
-  availability flags).
-- **+27 V → VREG_IN pre-filter:** the "27 V rail" was a misnomer — under the
-  modern ~15 mA load the node sits at ~32 V. The R_27V/C_filt1 element is kept (it
-  pre-filters the LM317 input *and* decouples the preamp supply from power-amp rail
-  transients — a noise feature, not a dropper), **bumped 47 Ω→100 Ω / 2 W→1 W** for
-  ~6 dB more ripple rejection, and the net **renamed `+27V`→`VREG_IN`** with the
-  troubleshooting voltages corrected (~31–33 V). Schematic + PCB + Part 1/2/3/4 +
-  errata + BOM updated; ERC 0, demo DRC 0.
-- **Schematic pages centered:** the generator now defers emission, computes each
-  sheet's content bounding box, and translates it to the page center (snapped to
-  the 1.27 mm grid). All 8 sheets centered; ERC still 0 violations.
-- **PCB layout audit** (`kicad/PCB-AUDIT.md`): category-by-category review.
-  Fixes applied: the 5 reused/off-board pots moved from a 16 mm panel-pot
-  footprint to 3-pad wiring connectors (correctness + less silk overlap; packing
-  51 %→48 %), and the component grid centered. Findings documented: LM1875
-  TO-220-5 annular (0.0875 mm), KBP410G placeholder footprint, density as the root
-  cause of silk/courtyard overlaps. Non-routing DRC errors: 9; demo board 0.
-- **SPICE audit** (`spice/README.md`): all five blocks re-verified under
-  ngspice-42 (exit 0, numbers match); no correctness issues found.
-
 ## Design deliverables
 
 - **Part 1 — Modernization Guide:** all circuit sections, safety.
@@ -125,3 +98,26 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
   102-part through-hole design does NOT fit the smaller chassis comfortably.
   Recorded in kicad/PCB-NOTES.md (ties to errata #9): measure the real chassis,
   or move passives to SMD, before committing to a board size.
+
+### Audit, sockets, schematic centering & VREG_IN pass (2026-06-15)
+- **Availability / sockets / current / noise audit** (docs/component-availability-
+  audit.md): parts tiered by sourceability (JFETs + LM1875 are the single-points-
+  of-failure); DIP op-amp sockets made REQUIRED (machined-pin); per-rail current
+  budget; noise review. (Power-budget numbers were later corrected — see roast R2.)
+- **+27V → VREG_IN:** kept the R_27V/C_filt1 element as an LM317-input RC pre-filter
+  + power-amp decoupler (a noise feature), bumped 47Ω→100Ω/2W→1W, renamed the net
+  and corrected the "27V rail" misnomer (~32V) across schematic/PCB/docs.
+- **Schematic pages centered**; **PCB layout audit** (kicad/PCB-AUDIT.md) with the
+  off-board-pot footprint fix + grid centering; **SPICE audit** (block-level).
+
+### Roast pass (2026-06-16) — see docs/roast-2026-06-16.md
+- 🔴 **R1 added a MAINS PRIMARY FUSE** (was missing — only a secondary fuse
+  existed; a mains-powered amp needs primary fusing). BOM + Part 1 safety/Part 3.
+- 🔴 **R2 corrected the power spec:** 18 W is unreachable on the 33.5 V single rail
+  (needs 17.0 V peak, only 16.75 V available) → real ceiling ~12 W. Fixed Part 1,
+  Part 5 thermal, and the availability audit (which I'd built on the bad 18 W).
+- 🟠 **R3** rebalanced the broken reverb mixer (R_dry_tap 1M→220k) and flagged that
+  the unbuffered inter-effect chain needs a real summing stage before fab.
+- 🟠 **R4** marked the orphaned `Wiring_Edge_Array_35` footprint as unused.
+- 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
+  SPICE scope caveat, and this CHANGELOG cleanup — all documented.
