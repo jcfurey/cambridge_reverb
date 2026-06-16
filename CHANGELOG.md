@@ -121,3 +121,17 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - 🟠 **R4** marked the orphaned `Wiring_Edge_Array_35` footprint as unused.
 - 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
   SPICE scope caveat, and this CHANGELOG cleanup — all documented.
+
+### Effects-chain redesign (2026-06-16) — resolves roast R3 + R6
+- **Active reverb wet/dry summer** on the spare IC1-B half (inverting summer about
+  VBIAS_R: dry always on, wet via POT_REV, unity each). Removed the broken passive
+  R_dry_tap/R_blend1/R_blend2 mixer.
+- **Output buffer** on the spare IC2-B half drives PA_IN from the post-MRB node
+  (removed the unbuffered R_painput 1 M and the dead C_trem_out/R_trem_pass branch).
+- **Split bias:** VBIAS → independent **VBIAS_R / VBIAS_T** dividers (100k/100k +
+  47 µF each) so the LFO can't modulate the reverb reference.
+- **Rail-aware verification:** new `models/opamp_rail.sub` (output clamped to the
+  supplies) + `spice/tran_reverb_mixer.cir` confirm single-supply mid-rail bias
+  (8.50 V), unity sum, and ±7 V headroom before clipping — the kind of large-signal
+  check the rail-less model couldn't do (roast R7).
+- ERC 0; full board regenerated (106 footprints); demo DRC 0; BOM updated.

@@ -148,7 +148,7 @@ def power_demo():
     DW, DH = 120.0, 70.0
     rows = {
       ("+33V5", 2.5, 20.0): ["F1", "C_main", "R_bleed", "R_27V"],     # HighCurrent
-      ("+17V",  1.5, 48.0): ["U1", "R_reg1", "C_reg_out1", "R_vb1"],  # Power
+      ("+17V",  1.5, 48.0): ["U1", "R_reg1", "C_reg_out1", "R_vbr1"],  # Power
     }
     board = pcbnew.NewBoard(OUT_DEMO)
     refs = [r for grp in rows.values() for r in grp]

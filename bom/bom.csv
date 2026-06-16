@@ -84,7 +84,6 @@ R_lfo_fb1,LFO feedback divider,10K 1/4W,axial,,,1,[netlist sheet5]
 R_lfo_fb2,LFO feedback divider,4K7 1/4W,axial,,,1,[netlist sheet5]
 R_led_diag,Diagnostic LED limiter,2K2 1/4W,axial,,,1,[netlist sheet5]
 C_dc_blk,LFO DC blocking,10uF 25V,radial,,,1,[netlist sheet5]
-C_trem_out,Tremolo output coupling,100nF 50V film,radial,,,1,[netlist sheet5]
 POT_SPD,Tremolo speed,500K lin,,,,1,Reuse original panel pot
 POT_DPT,Tremolo depth,100K lin,,,,1,Reuse original panel pot
 R_fx_pad,FX-loop send/return pad,10K 1/4W,axial,,,1,Internal effects loop via IN3 (Part2)
@@ -97,3 +96,16 @@ INS_MICA,TO-220 mica insulator + bushing,,,,,1,For LM1875
 SOCKET_IC,8-pin DIP machined-pin socket,turned-pin,DIP-8,ED3008-5-ND,575-193308,2,REQUIRED for IC1/IC2 (TL072); machined/turned-pin not stamped (see component-availability-audit)
 SOCKET_U1,TO-220 socket (optional),3-pin,TO-220,,,0,Optional for LM317 field-swap; LM1875 stays soldered+bolted to heatsink
 STANDOFF,Nylon standoffs + screws,,,,,4,PCB mounting
+R_mixfb,Reverb wet/dry summer feedback (IC1-B),100k 1/4W,axial,,,1,Active mixer redesign (roast R3)
+R_drymix,Reverb summer dry input,100k 1/4W,axial,,,1,roast R3
+R_wetmix,Reverb summer wet input,100k 1/4W,axial,,,1,roast R3
+C_drymix,Reverb summer dry coupling,1uF 50V film,radial,,,1,roast R3
+C_wetmix,Reverb summer wet coupling,1uF 50V film,radial,,,1,roast R3
+R_obuf_b,Output buffer bias (IC2-B),100k 1/4W,axial,,,1,Post-MRB buffer drives PA_IN (roast R3)
+C_obuf_in,Output buffer input coupling,1uF 50V film,radial,,,1,roast R3
+R_vbr1,VBIAS_R divider top,100k 1/4W,axial,,,1,Reverb mid-rail ref (split bias - roast R6)
+R_vbr2,VBIAS_R divider bottom,100k 1/4W,axial,,,1,roast R6
+C_vbr,VBIAS_R bypass,47uF 25V,radial,,,1,roast R6
+R_vbt1,VBIAS_T divider top,100k 1/4W,axial,,,1,Tremolo mid-rail ref (split bias - roast R6)
+R_vbt2,VBIAS_T divider bottom,100k 1/4W,axial,,,1,roast R6
+C_vbt,VBIAS_T bypass,47uF 25V,radial,,,1,roast R6

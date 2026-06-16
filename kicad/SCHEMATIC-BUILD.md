@@ -56,18 +56,23 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   exact pedal switching topology follows the original footswitch; these nets are
   represented as defined control lines so they aren't single-ended.
 
+## Effects chain — redesigned 2026-06-16 (roast R3/R6 resolved)
+- **Active wet/dry summer** on the spare **IC1-B** half (inverting summer about
+  `VBIAS_R`: dry always on, wet via `POT_REV`, unity each). Output `BLEND` is
+  low-Z. Replaces the old broken passive `R_dry_tap`/`R_blend*` mixer.
+- **Output buffer** on the spare **IC2-B** half drives `PA_IN` from the post-MRB
+  node (replaces the unbuffered `R_painput` 1 M).
+- **Split bias:** `VBIAS_R` (reverb) and `VBIAS_T` (tremolo) are independent
+  100 k/100 k + 47 µF dividers — no shared reference, so no LFO→reverb bleed.
+- **Verified rail-aware** (`spice/tran_reverb_mixer.cir`): mid-rail bias 8.50 V,
+  unity sum, ±7 V headroom before clipping. ERC 0.
+
 ## Still to finish before a build
-- **⚠️ The inter-effect signal chain is wired for ERC, not designed (roast R3).**
-  The reverb dry/wet blend and the tremolo hand-off are arbitrary high-impedance
-  passive nodes (`R_dry_tap`/`R_blend1/2` into an unbuffered `BLEND` node feeding a
-  10 k tremolo stage). `R_dry_tap` was rebalanced 1 M→220 k, but the mix still
-  needs a **buffered/op-amp summing stage** (use the spare TL072 halves) with
-  matched levels/impedances. **Do not fab the effects chain as drawn.**
-- **⚠️ Shared `VBIAS` (roast R6):** one divider biases both IC1 (reverb) and IC2
-  (tremolo LFO); the LFO can modulate the shared reference (C_vb corner ~0.3 Hz, LFO
-  is 1–16 Hz) → tremolo bleed into reverb. Split `VBIAS` per stage, or buffer it.
 - **Tone stack** values are `TBD` (cross-check §4) — the sheet has the pots and a
   placeholder; fill from the original 25-5274-2 top-boost network.
+- The tremolo's passive LDR shunt + MRB sit *between* the two buffered nodes
+  (BLEND→ … →PA_IN); levels there are reasonable but bench-tune the tremolo depth
+  and MRB blend.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented
   assumption where the recovered notes are silent; see the note on the root sheet.
 - **PCB:** a placed starter board (`cambridge_reverb.kicad_pcb`, all footprints

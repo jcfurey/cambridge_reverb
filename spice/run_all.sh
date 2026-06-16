@@ -21,5 +21,6 @@ run ac_reverb_driver.cir
 run ac_mrb.cir
 run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
+run tran_reverb_mixer.cir
 
 exit "$fail"

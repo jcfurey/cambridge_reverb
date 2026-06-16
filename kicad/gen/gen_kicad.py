@@ -321,8 +321,8 @@ def load_custom():
 
 GLOBAL_NETS = {
  "+33V5","VREG_IN","+17V","GND","SPK_P","SPK_N",
- "GUITAR_IN","PREAMP_OUT","TONE_OUT","DRY","WET","BLEND","TREM_OUT","PA_IN",
- "MRB_OUT","FX_RET","VBIAS","FS_REV","FS_TREM","FS_MRB",
+ "GUITAR_IN","PREAMP_OUT","TONE_OUT","BLEND","TREM_OUT","PA_IN",
+ "MRB_OUT","FX_RET","VBIAS_R","VBIAS_T","FS_REV","FS_TREM","FS_MRB",
 }
 # FS_REV/FS_TREM/FS_MRB are footswitch control lines: they leave the DIN
 # connector (switching sheet) and land on their effect sheet via a control
@@ -350,11 +350,16 @@ def build():
     s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"VREG_IN","2":"GND"})
     s.comp("CP","C_reg_out1","10uF/25V",160,140,{"1":"+17V","2":"GND"})
     s.comp("C","C_reg_out2","100nF",185,140,{"1":"+17V","2":"GND"})
-    # Mid-rail reference for single-supply op-amps (DESIGN ADDITION; not recovered)
-    s.note("VBIAS = mid-rail (~8.5V) reference for single-supply TL072 stages [design addition]",40,180)
-    s.comp("R","R_vb1","100k",110,195,{"1":"+17V","2":"VBIAS"})
-    s.comp("R","R_vb2","100k",110,220,{"1":"VBIAS","2":"GND"})
-    s.comp("CP","C_vb","10uF/25V",150,207,{"1":"VBIAS","2":"GND"})
+    # Mid-rail references for single-supply op-amps. SPLIT into VBIAS_R (reverb)
+    # and VBIAS_T (tremolo) so LFO current on the tremolo ref cannot modulate the
+    # reverb stage (roast R6). Each: 100k/100k + 47uF bypass.
+    s.note("VBIAS_R / VBIAS_T = separate mid-rail (~8.5V) refs for reverb / tremolo ICs (split, roast R6)",40,180)
+    s.comp("R","R_vbr1","100k",110,195,{"1":"+17V","2":"VBIAS_R"})
+    s.comp("R","R_vbr2","100k",110,220,{"1":"VBIAS_R","2":"GND"})
+    s.comp("CP","C_vbr","47uF/25V",150,207,{"1":"VBIAS_R","2":"GND"})
+    s.comp("R","R_vbt1","100k",185,195,{"1":"+17V","2":"VBIAS_T"})
+    s.comp("R","R_vbt2","100k",185,220,{"1":"VBIAS_T","2":"GND"})
+    s.comp("CP","C_vbt","47uF/25V",225,207,{"1":"VBIAS_T","2":"GND"})
     s.comp("PWR_FLAG","#FLG1","",40,30,{"1":"+33V5"})
     s.comp("PWR_FLAG","#FLG2","",70,30,{"1":"VREG_IN"})
     s.comp("PWR_FLAG","#FLG3","",100,30,{"1":"+17V"})
@@ -388,13 +393,14 @@ def build():
 
     # ---- Sheet 4: Reverb (netlist-notes sheet 4) ----
     s=Sheet("Reverb","reverb.kicad_sch"); sheets.append(s)
-    s.note("REVERB -- TL072 driver (gain 11x) + JFET recovery; drives 4FB2A1C directly.",40,20)
+    s.note("REVERB -- IC1-A: TL072 tank driver (11x) + JFET recovery. IC1-B: active wet/dry summer (roast R3). All on VBIAS_R.",40,20)
+    # IC1-A = tank driver (pins 1,2,3) ; IC1-B = wet/dry summing mixer (pins 5,6,7)
     s.comp("OPAMP8","IC1","TL072CP",110,80,{"3":"DRVP","2":"R_INV","1":"R_DRVO",
-            "8":"+17V","4":"GND","5":"VBIAS","6":"SP1N","7":"SP1N"})
+            "8":"+17V","4":"GND","5":"VBIAS_R","6":"SUMJ","7":"BLEND"})
     s.comp("C","C_drvin","100nF",40,165,{"1":"TONE_OUT","2":"DRVP"})   # AC couple in
-    s.comp("R","R_drvbias","220k",75,165,{"1":"DRVP","2":"VBIAS"})     # mid-rail bias
+    s.comp("R","R_drvbias","220k",75,165,{"1":"DRVP","2":"VBIAS_R"})   # mid-rail bias
     s.comp("R","R_drv1","100k",150,55,{"1":"R_INV","2":"R_DRVO"})
-    s.comp("R","R_drv2","10k",150,110,{"1":"R_INV","2":"VBIAS"})       # AC gnd via VBIAS
+    s.comp("R","R_drv2","10k",150,110,{"1":"R_INV","2":"VBIAS_R"})     # AC gnd via VBIAS_R
     s.comp("CP","C_rev1","1uF",160,80,{"1":"R_DRVO","2":"TKDRV"})
     s.comp("R","R_drv3","10R",195,80,{"1":"TKDRV","2":"TANK_IN"})
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
@@ -406,33 +412,39 @@ def build():
     s.comp("R","R_rec2","2K2",110,170,{"1":"QRS","2":"GND"})
     s.comp("CP","C_rec_byp","10uF",150,170,{"1":"QRS","2":"GND"})
     s.comp("C","C_rev4","100nF",150,140,{"1":"QRD","2":"REVWCW"})
-    s.comp("POT","POT_REV","reuse",200,150,{"1":"REVWCW","2":"WET","3":"GND"})
-    s.comp("R","R_blend1","220k",60,60,{"1":"DRY","2":"BLEND"})
-    s.comp("R","R_blend2","220k",60,90,{"1":"WET","2":"BLEND"})
-    s.comp("R","R_dry_tap","220k",30,40,{"1":"TONE_OUT","2":"DRY"})  # was 1M (roast R3: balanced w/ wet 220k; mixer still needs a buffer)
+    s.comp("POT","POT_REV","reuse",200,150,{"1":"REVWCW","2":"WET","3":"GND"})  # reverb-level (wet send)
+    # IC1-B active inverting summer (roast R3): dry always on, wet via POT_REV.
+    # Out = -(dry + wet) about VBIAS_R, low-Z. Unity each (all 100k).
+    s.comp("R","R_mixfb","100k",90,55,{"1":"SUMJ","2":"BLEND"})        # summer feedback
+    s.comp("C","C_drymix","1uF",20,40,{"1":"TONE_OUT","2":"DRMX"})     # dry in (AC)
+    s.comp("R","R_drymix","100k",55,40,{"1":"DRMX","2":"SUMJ"})        # dry -> summer
+    s.comp("C","C_wetmix","1uF",230,150,{"1":"WET","2":"WMX"})         # wet in (post POT_REV)
+    s.comp("R","R_wetmix","100k",265,150,{"1":"WMX","2":"SUMJ"})       # wet -> summer
     s.comp("R","R_fs_rev","100k",30,170,{"1":"FS_REV","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 5: Tremolo (netlist-notes sheet 5) ----
     s=Sheet("Tremolo","tremolo.kicad_sch"); sheets.append(s)
-    s.note("TREMOLO -- Wien-bridge LFO (TL072) drives VTL5C1; ~16 Hz at 100k/100n (sim).",40,20)
+    s.note("TREMOLO -- IC2-A: Wien LFO (~16Hz) -> VTL5C1. IC2-B: post-MRB output buffer -> PA_IN. All on VBIAS_T.",40,20)
+    # IC2-A = LFO (pins 1,2,3) ; IC2-B = output buffer (pins 5,6,7), follower to PA_IN
     s.comp("OPAMP8","IC2","TL072CP",110,90,{"3":"LFO_P","2":"LFO_N","1":"LFO_OUT",
-            "8":"+17V","4":"GND","5":"VBIAS","6":"SP2N","7":"SP2N"})
+            "8":"+17V","4":"GND","5":"OBUF_IN","6":"PA_IN","7":"PA_IN"})
+    s.comp("C","C_obuf_in","1uF",30,40,{"1":"MRB_OUT","2":"OBUF_IN"})  # post-MRB into buffer
+    s.comp("R","R_obuf_b","100k",30,70,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
     s.comp("R","R_lfo_ser","100k",150,60,{"1":"LFO_OUT","2":"WN1"})
     s.comp("C","C_lfo1","100nF",185,60,{"1":"WN1","2":"LFO_P"})
-    s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"VBIAS"})   # LFO biased to mid-rail
-    s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"VBIAS"})
+    s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"VBIAS_T"})  # LFO biased to mid-rail
+    s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
-    s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS"})  # AC gnd via VBIAS
+    s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS_T"}) # AC gnd via VBIAS_T
     s.comp("D","D_lfo1","1N4148",40,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("D","D_lfo2","1N4148",40,100,{"1":"LFO_N","2":"LFO_OUT"})
     s.comp("R","R_led","1k",150,150,{"1":"LFO_OUT","2":"VLED"})
     s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"1":"VLED","2":"GND","3":"TREM_S","4":"GND"})
     s.comp("R","R_led_diag","2K2",150,180,{"1":"LFO_OUT","2":"DLED"})
     s.comp("LED","LED_rate","3mm red",195,180,{"1":"DLED","2":"GND"})
-    s.comp("R","R_trem1","10k",60,150,{"1":"BLEND","2":"TREM_OUT"})
+    s.comp("R","R_trem1","10k",60,150,{"1":"BLEND","2":"TREM_OUT"})  # series; VTL1 LDR shunts to GND
     s.comp("CP","C_dc_blk","10uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
-    s.comp("C","C_trem_out","100nF",100,150,{"1":"TREM_OUT","2":"MRB_FEED"})
-    s.comp("R","R_trem_pass","1M",100,180,{"1":"MRB_FEED","2":"GND"})
+    # (removed dead C_trem_out/R_trem_pass MRB_FEED branch -- TREM_OUT feeds MRB directly)
     s.comp("R","R_fs_trem","100k",30,180,{"1":"FS_TREM","2":"GND"})   # footswitch control tap
 
     # ---- Sheet 6: MRB (netlist-notes sheet 6) ----
@@ -476,7 +488,7 @@ def build():
             {"1":"FS_REV","2":"FS_TREM","3":"FS_MRB","4":"GND","5":"GND","6":"GND"})
     s.comp("SPEAKER","LS1","10in Bulldog",210,150,{"1":"SPK_P","2":"SPK_N"})
     s.comp("R","R_spk_rtn","0R",170,150,{"1":"SPK_N","2":"GND"})
-    s.comp("R","R_painput","1M",110,150,{"1":"MRB_OUT","2":"PA_IN"})
+    # (R_painput removed -- IC2-B buffer now drives PA_IN from MRB_OUT, roast R3)
 
     return sheets
 

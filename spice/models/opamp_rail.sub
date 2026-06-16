@@ -1,0 +1,15 @@
+* Rail-aware one-pole op-amp macromodel (ngspice).
+* Unlike opamp1p.sub, the output is clamped to [Vee+vsat, Vcc-vsat], so
+* single-supply headroom and CLIPPING are modelled -- which is the whole point of
+* re-simulating the redesigned effects chain (roast R7).
+*
+* Pins: inp inn out vcc vee.  Defaults ~ TL072 on a single +17V rail.
+.subckt OPAMP_RAIL inp inn out vcc vee PARAMS: aol=2e5 gbw=3e6 rout=75 vsat=1.5
+Rin  inp inn 1G
+Gm   0 p  inp inn 1m
+Rp   p 0  {aol/1m}
+Cp   p 0  {1m/(2*3.141592653589793*gbw)}
+* clamp the high-gain node to within vsat of each rail, then buffer through rout
+Bout o 0  V = min(max(V(p), V(vee)+vsat), V(vcc)-vsat)
+Rout o out {rout}
+.ends OPAMP_RAIL
