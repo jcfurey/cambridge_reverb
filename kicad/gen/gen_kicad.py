@@ -341,9 +341,15 @@ def build():
     s.comp("FUSE","F1","1A SB",120,40,{"1":"VRAW","2":"+33V5"})
     s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"GND"})
     s.comp("R","R_bleed","10k/5W",150,70,{"1":"+33V5","2":"GND"})
+    # rectifier snubbers across the four bridge diodes (Part 2 C101-104)
+    s.comp("C","C101","10nF/100V",55,35,{"1":"AC1","2":"VRAW"})
+    s.comp("C","C102","10nF/100V",55,48,{"1":"AC2","2":"VRAW"})
+    s.comp("C","C103","10nF/100V",55,82,{"1":"AC1","2":"GND"})
+    s.comp("C","C104","10nF/100V",55,95,{"1":"AC2","2":"GND"})
     s.note("VREG_IN: LM317-input RC pre-filter (100R + C_filt1) -- ripple + power-amp decoupling; ~32V under load (not a 27V rail)",40,18)
     s.comp("R","R_27V","100R/1W",120,100,{"1":"+33V5","2":"VREG_IN"})
     s.comp("CP","C_filt1","1000uF/50V",150,100,{"1":"VREG_IN","2":"GND"})
+    s.comp("CP","C_filt2","1000uF/50V",180,100,{"1":"VREG_IN","2":"GND"})  # extra pre-filter bulk
     s.comp("LM317","U1","LM317T",90,140,{"3":"VREG_IN","2":"+17V","1":"ADJ17"})
     s.comp("R","R_reg1","240R",130,130,{"1":"+17V","2":"ADJ17"})
     s.comp("R","R_reg2","3.09k",130,160,{"1":"ADJ17","2":"GND"})
@@ -430,15 +436,17 @@ def build():
             "8":"+17V","4":"GND","5":"OBUF_IN","6":"PA_IN","7":"PA_IN"})
     s.comp("C","C_obuf_in","1uF",30,40,{"1":"MRB_OUT","2":"OBUF_IN"})  # post-MRB into buffer
     s.comp("R","R_obuf_b","100k",30,70,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
-    s.comp("R","R_lfo_ser","100k",150,60,{"1":"LFO_OUT","2":"WN1"})
-    s.comp("C","C_lfo1","100nF",185,60,{"1":"WN1","2":"LFO_P"})
+    s.comp("R","R_lfo_ser","10k",140,55,{"1":"LFO_OUT","2":"SPD_A"})   # min-R floor
+    s.comp("POT","POT_SPD","500k lin",170,55,{"1":"SPD_A","2":"WN1","3":"WN1"})  # SPEED: rheostat in Wien series arm
+    s.comp("C","C_lfo1","100nF",200,60,{"1":"WN1","2":"LFO_P"})
     s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"VBIAS_T"})  # LFO biased to mid-rail
     s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS_T"}) # AC gnd via VBIAS_T
     s.comp("D","D_lfo1","1N4148",40,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("D","D_lfo2","1N4148",40,100,{"1":"LFO_N","2":"LFO_OUT"})
-    s.comp("R","R_led","1k",150,150,{"1":"LFO_OUT","2":"VLED"})
+    s.comp("POT","POT_DPT","100k lin",115,150,{"1":"LFO_OUT","2":"DPT_W","3":"VBIAS_T"})  # DEPTH: scales LFO into the LED
+    s.comp("R","R_led","1k",155,150,{"1":"DPT_W","2":"VLED"})
     s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"1":"VLED","2":"GND","3":"TREM_S","4":"GND"})
     s.comp("R","R_led_diag","2K2",150,180,{"1":"LFO_OUT","2":"DLED"})
     s.comp("LED","LED_rate","3mm red",195,180,{"1":"DLED","2":"GND"})

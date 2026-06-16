@@ -122,6 +122,18 @@ issues flagged: discontinued JFET part numbers, output coupling cap, and related
 - 🟡 **R5–R8:** F1 inrush-path placement, shared-VBIAS tremolo bleed, the rail-less
   SPICE scope caveat, and this CHANGELOG cleanup — all documented.
 
+### Schematic completion + generated BOM (2026-06-16)
+- **Completed the schematic** — added parts that were in Part 2/the BOM but never
+  placed: the four rectifier snubbers (C101–C104), the 2nd pre-filter cap
+  (C_filt2), and the tremolo **speed/depth pots** (POT_SPD as a rheostat in the
+  Wien arm, POT_DPT scaling the LFO into the LED). 117 components, ERC 0.
+- **BOM is now GENERATED from the schematic** (`kicad/gen/gen_bom.py`): every
+  reference is 1:1 with the netlist (no more drift — the hand BOM had ~20 missing
+  and ~20 stale rows), merged with curated P/Ns + notes and an explicit
+  off-board/mechanical section. Added `bom/bom-grouped.csv` (by value, for
+  ordering). Density rose to 53 % / 90 % (190×115 / 155×90) — reinforces the
+  chassis-fit finding.
+
 ### Effects-chain redesign (2026-06-16) — resolves roast R3 + R6
 - **Active reverb wet/dry summer** on the spare IC1-B half (inverting summer about
   VBIAS_R: dry always on, wet via POT_REV, unity each). Removed the broken passive
