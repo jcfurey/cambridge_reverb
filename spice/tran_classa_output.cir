@@ -1,0 +1,36 @@
+Class-A vs class-AB output stage -- single +33.5V supply, push-pull followers
+* Demonstrates WHY Class A matters here: with a small (AB) idle bias the push-pull
+* output handoff leaves a crossover notch; biasing the idle current above the peak
+* load current (Class A) removes it. Also reports the standing (idle) current that
+* sets the continuous heat -- the Class-A tax.
+*
+* Driven at ~0.7 W into 8 ohm (3 Vpk at the followers -> ~0.38 A peak load).
+.model QN NPN(Bf=120 Is=2e-13 Vaf=100 Rb=2)
+.model QP PNP(Bf=120 Is=2e-13 Vaf=100 Rb=2)
+
+Vcc vcc 0 33.5
+Vdrv dc 0 DC 16.75 SIN(16.75 3 1000)      ; signal centred on the mid-rail
+.param vb=0.62
+Vbt bt dc {vb}                            ; bias spreader: bt = dc + vb
+Vbb dc bb {vb}                            ;               bb = dc - vb  (2*vb across the bases)
+Q1 vcc bt out QN                          ; top NPN emitter follower
+Q2 0   bb out QP                          ; bottom PNP emitter follower
+Cout out spk 2200u
+Rspk spk 0 8
+
+.control
+* ---- class AB: small idle bias -> crossover ----
+alterparam vb=0.62
+reset
+tran 5u 30m 10m
+meas tran iq_ab AVG i(vcc)                ; ~standing + signal current
+fourier 1000 v(spk)                       ; prints THD (crossover -> ~1%)
+* ---- Class A: idle current >= peak load current -> no crossover ----
+alterparam vb=0.74
+reset
+tran 5u 30m 10m
+meas tran iq_a AVG i(vcc)                 ; ~constant Class-A standing current
+fourier 1000 v(spk)                       ; THD collapses
+print iq_ab iq_a
+.endc
+.end
