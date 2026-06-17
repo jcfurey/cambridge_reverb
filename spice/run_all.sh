@@ -23,5 +23,6 @@ run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
 run tran_reverb_mixer.cir
 run ac_tonestack.cir
+run tran_classa_output.cir
 
 exit "$fail"

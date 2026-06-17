@@ -3,6 +3,17 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Class-A power-amp variant (2026-06-16)
+- Explored running the power amp in **Class A** (AC15-style). Sim
+  (`spice/tran_classa_output.cir`): Class A drops crossover THD from ~1.05% to
+  ~0.0025% -- the cost is ~16W continuous heat for ~1W of pure Class A (slides to
+  AB beyond), documented in `docs/classA-power-amp.md`.
+- Built it as a **variant alongside the AB amp** (user choice): standalone
+  ERC-clean `kicad/power_amp_classa.kicad_sch` (gen_classa.py) = the LM1875 stage
+  + an LM317 constant-current sink (R_set 2.5R -> 0.5A from output to GND) =>
+  single-ended Class A up to ~1W. Main board stays Class AB. Adds a 2nd LM317 +
+  R_set + bigger heatsinks; ERC 0.
+
 ## Design deliverables
 
 - **Part 1 — Modernization Guide:** all circuit sections, safety.
