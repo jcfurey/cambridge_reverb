@@ -22,6 +22,16 @@ Both are 4A/1000V; different packages (KBP410 inline 4-pin, KBU4M SIP 4-pin).
 PCB footprint should accommodate both. Part 8 prefers KBP410G for availability.
 **Severity:** LOW.
 
+**Update (2026-09-06):** the board now carries a real, datasheet-derived
+**KBP footprint** (`cambridge_reverb:Bridge_KBP_P3.81mm`, from Diodes DS39310
+KBP404G–KBP410G: 3.81 mm pitch, 0.86 × 0.55 mm leads → 1.2 mm drill, 14.5 × 3.5 mm
+body, pins **+ ~ ~ −** as marked). The schematic bridge symbol was renumbered to
+that physical order (pin 1 = +, 2 = ~, 3 = ~, 4 = −) so pad and pin numbers agree.
+One footprint **cannot** accommodate both parts: KBU is 5.08 mm pitch, and
+overlapping the two hole patterns would put holes 1.27 mm apart (violates the
+0.25 mm hole-to-hole rule). To build with a KBU4M instead, swap the `BRIDGE`
+footprint in `kicad/gen/gen_kicad.py` for a 5.08 mm-pitch one and regenerate.
+
 ## Issue 4 — Part 2 listed 2N5457 TO-92 (discontinued) — HIGH
 Through-hole 2N5457 is discontinued; the Mouser P/N would show no stock. Primary
 options are MMBF5457 on adapter or J113; keep 2N5457 only "if you find genuine."
@@ -85,6 +95,11 @@ that. **Resolution:** add a third **HighCurrent (2.50 mm)** class for
 `VREG_IN`, `+17V`, `GND`. This three-class split is encoded in
 `kicad/cambridge_reverb.kicad_pro`.
 **Severity:** MEDIUM.
+
+**Update (2026-09-06):** `VRAW` (bridge output → fuse → `C_main`) and the
+transformer secondary nets `AC1`/`AC2` carry the same current as `+33V5` (more,
+as RMS: rectifier charging pulses) but had fallen into the 0.5 mm Default class.
+They are now in **HighCurrent** too (`.kicad_pro` pattern list).
 
 ## Issue 12 — Via-drill specs disagree between Part 4 and netlist-notes
 Part 4 design rules give min via drill **0.3 mm** and a Power-class via drill of

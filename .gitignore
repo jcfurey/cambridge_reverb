@@ -44,3 +44,8 @@ __pycache__/
 
 # DRC/ERC reports
 *.rpt
+
+# --- Autorouting (kicad/gen/route_board.py) ---
+kicad/gen/freerouting.jar
+kicad/routing/
+freerouting.json

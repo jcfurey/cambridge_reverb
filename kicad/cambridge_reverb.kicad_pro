@@ -601,6 +601,18 @@
       {
         "netclass": "Power",
         "pattern": "GND"
+      },
+      {
+        "netclass": "HighCurrent",
+        "pattern": "VRAW"
+      },
+      {
+        "netclass": "HighCurrent",
+        "pattern": "AC1"
+      },
+      {
+        "netclass": "HighCurrent",
+        "pattern": "AC2"
       }
     ]
   },

@@ -69,9 +69,9 @@ SYMS = {
  "NJFET":dict(ref="Q", desc="N-channel JFET (D G S)", hide_nums=False,
             pins=[("2","G",-7.62,0,-1,0),("1","D",2.54,7.62,0,1),("3","S",2.54,-7.62,0,-1)],
             body=[(-2.54,-3.81,2.54,3.81)]),
- "BRIDGE":dict(ref="BR", desc="Bridge rectifier", hide_nums=False,
-            pins=[("1","~",-7.62,0,-1,0),("3","~",7.62,0,1,0),
-                  ("2","+",0,7.62,0,1),("4","-",0,-7.62,0,-1)],
+ "BRIDGE":dict(ref="BR", desc="Bridge rectifier (KBP pin order: 1=+ 2=~ 3=~ 4=-)", hide_nums=False,
+            pins=[("2","~",-7.62,0,-1,0),("3","~",7.62,0,1,0),
+                  ("1","+",0,7.62,0,1),("4","-",0,-7.62,0,-1)],
             body=[(-5.08,-5.08,5.08,5.08)]),
  "LM317":dict(ref="U", desc="LM317 adj regulator (3=IN 2=OUT 1=ADJ)", hide_nums=False,
             pins=[("3","IN",-10.16,0,-1,0),("2","OUT",10.16,0,1,0),("1","ADJ",0,-10.16,0,-1)],
@@ -170,7 +170,7 @@ class Sheet:
         x = SNAP(x); y = SNAP(y)     # keep pins/wires on KiCad's 1.27mm connection grid
         value = NV(value)            # normalize value strings for a tidy BOM
         self.used.add(libsym)
-        fp = FOOTPRINTS.get(libsym, "")
+        fp = footprint_for(libsym, ref, value)
         COMPONENTS.append(dict(ref=ref, libsym=libsym, value=value, fp=fp,
                                sheet=self.title, x=x, y=y, nets=dict(nets),
                                pins=PINS[libsym]))
@@ -276,22 +276,50 @@ FOOTPRINTS = {
  "D":   "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
  "LED": "LED_THT:LED_D3.0mm",
  "FUSE":"Fuse:Fuseholder_Clip-5x20mm_Eaton_1A5601-01_Inline_P20.80x6.76mm_D1.70mm_Horizontal",
- # Panel pots are reused/off-board (wired to the panel), so on the PCB they are a
- # 3-pad wiring connector, not an on-board panel-pot footprint.
- "POT": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+ # Off-board parts (panel pots, jacks, DIN, tank, speaker, transformer) are wired
+ # to solder pads on the board's wiring edge, sized per Part 4: signal pads 2.0 mm
+ # / 1.2 mm drill on 2.54 mm pitch, power pads (speaker, transformer) 3.0 mm /
+ # 1.5 mm drill on 5.08 mm pitch.
+ "POT": "cambridge_reverb:WirePad_1x03_P2.54mm_D1.2mm",
  "NJFET":"Package_TO_SOT_THT:TO-92_Inline",
- "BRIDGE":"Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
+ "BRIDGE":"cambridge_reverb:Bridge_KBP_P3.81mm",            # KBP410G, datasheet-derived (PCB-AUDIT s1)
  "LM317":"Package_TO_SOT_THT:TO-220-3_Vertical",
- "LM1875":"Package_TO_SOT_THT:TO-220-5_Vertical",
+ "LM1875":"cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875",  # wide-pad: fixes the annular-ring DRC error
  "OPAMP8":"Package_DIP:DIP-8_W7.62mm",
- "JACK":"Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
- "SPEAKER":"Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
- "XFMR":"Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+ "JACK":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",
+ "SPEAKER":"cambridge_reverb:WirePad_1x02_P5.08mm_D1.5mm",     # 3.0 mm power pads (Part 4)
+ "XFMR":"cambridge_reverb:WirePad_1x03_P5.08mm_D1.5mm",        # 3.0 mm power pads (Part 4)
  "PWR_FLAG":"",   # virtual, no board footprint
  "VTL5C1":"cambridge_reverb:VTL5C1",
- "Reverb_Tank_4FB2A1C":"Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
- "Footswitch_DIN6":"Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical",
+ "Reverb_Tank_4FB2A1C":"cambridge_reverb:WirePad_1x04_P2.54mm_D1.2mm",
+ "Footswitch_DIN6":"cambridge_reverb:WirePad_1x06_P2.54mm_D1.2mm",
 }
+
+# Value-aware footprint sizing: the generic CP/R footprints above are right for
+# small parts, but the bulk electrolytics and power resistors are physically much
+# bigger (Panasonic FC 4700uF/50V is D18 x L40; a 5 W wirewound is ~L20 x W6.4).
+# Sizes per the BOM part numbers / standard can sizes; pitch follows the can.
+def _uf(value):
+    m = _re.match(r'(\d+(?:\.\d+)?)\s*uF', value)
+    return float(m.group(1)) if m else None
+FP_BY_REF = {
+ "R_spk_rtn": "Resistor_THT:R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal",  # 0R link carries the full speaker current: fat pads, 1 W-size jumper
+ "C_reg_in":  "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",   # tantalum bead, 2.5 mm spacing (BOM)
+ "C_reg_out1":"Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
+}
+def footprint_for(libsym, ref, value):
+    if ref in FP_BY_REF: return FP_BY_REF[ref]
+    if libsym == "CP":
+        uf = _uf(value) or 0
+        if uf >= 4700: return "Capacitor_THT:CP_Radial_D18.0mm_P7.50mm"
+        if uf >= 2200: return "Capacitor_THT:CP_Radial_D16.0mm_P7.50mm"
+        if uf >= 1000: return "Capacitor_THT:CP_Radial_D12.5mm_P5.00mm"
+        if uf >= 47:   return "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm"
+        return "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm"
+    if libsym == "R":
+        if value.endswith("/5W"): return "Resistor_THT:R_Axial_Power_L20.0mm_W6.4mm_P25.40mm"
+        if value.endswith(("/1W", "/2W")): return "Resistor_THT:R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal"
+    return FOOTPRINTS.get(libsym, "")
 
 # Hierarchical instance path for a symbol living in sheet `sh`.
 # Toggle PATHMODE to experiment: "inst" -> /<sheetinst>, "root" -> /<root>/<sheetinst>
@@ -349,7 +377,7 @@ def build():
     s=Sheet("Power Supply","power_supply.kicad_sch"); sheets.append(s)
     s.note("POWER SUPPLY  -- bridge -> 33.5V main, 27V dropper, LM317 17V rail",50,20)
     s.comp("XFMR","T1","reuse / AnTek AS-0524",40,60,{"1":"AC1","2":"GND","3":"AC2"})
-    s.comp("BRIDGE","BR1","KBP410G",80,60,{"1":"AC1","3":"AC2","2":"VRAW","4":"GND"})
+    s.comp("BRIDGE","BR1","KBP410G",80,60,{"1":"VRAW","2":"AC1","3":"AC2","4":"GND"})  # KBP pin order + ~ ~ -
     s.comp("FUSE","F1","1A SB",120,40,{"1":"VRAW","2":"+33V5"})
     s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"GND"})
     s.comp("R","R_bleed","10k/5W",150,70,{"1":"+33V5","2":"GND"})

@@ -1,105 +1,107 @@
 # PCB layout audit
 
-Full audit of `cambridge_reverb.kicad_pcb` (and the `power_section_demo`), done
-with KiCad 8.0.9 (`kicad-cli pcb drc`, `pcbnew` geometry queries). The board is a
-**generated, auto-placed, GND-poured starter** — placed, not signal-routed.
+Audit of `cambridge_reverb.kicad_pcb` (and the `power_section_demo`), done with
+KiCad 8.0.9 (`kicad-cli pcb drc`, `pcbnew` geometry queries). First pass
+2026-06-15 on the auto-grid starter board; **re-audited 2026-09-06** after the
+footprint fixes, the floor-plan placement and the Freerouting pass. Status and
+DRC numbers live in `PCB-NOTES.md`; this file is the category-by-category
+layout review.
 
-## Verdict
-Electrically faithful (netlist matches the ERC-clean schematic) and structurally
-sound (outline, GND pour, net classes). The open items are a **handful of real
-placement errors (9)**, a large pile of **cosmetic silkscreen warnings (≈155)**,
-and the **131 unrouted nets** — all of which trace back to one root cause: the
-board is **densely packed for all-through-hole** (see §3). None are wiring errors.
-
-## DRC summary (`kicad-cli pcb drc`)
-
-| Bucket | Count | Severity | Nature |
-|--------|------:|----------|--------|
-| `unconnected_items` | 131 | error | **Unrouted** signal nets (GND is poured). Expected — routing is the next step. |
-| `annular_width` | 5 | error | All on `IC_PA` (LM1875, TO-220-5). Stock footprint, see §1. |
-| `courtyards_overlap` | 2 | error | Two neighbours too close at grid density. |
-| `hole_near_hole` / `copper_edge_clearance` | 1 + 1 | error | Placement artifacts at the grid edges. |
-| `silk_overlap` + `silk_over_copper` | 144 + 8 | warning | Footprint outline silk colliding at density (refs/values already hidden). |
-| `text_height` / `text_thickness` / `silk_edge_clearance` | 3 | warning | Stray footprint fab/silk text. |
-
-So: **9 real (non-routing) errors**, ~155 cosmetic warnings, 131 unrouted.
-The `power_section_demo` board is **0 violations**.
+## Verdict (2026-09-06)
+Electrically faithful (netlist matches the ERC-clean schematic) and now
+**structurally clean before routing: 0 DRC errors, 0 warnings** on the placed
+board (was 9 real errors + ~155 silk warnings on the grid-placed board). The two
+real footprint defects from the first audit are fixed with datasheet-derived
+project footprints, the bulk parts carry their real can/body sizes, and
+placement follows the Part 5 floor plan. What remains is engineering judgement
+on the *autorouted* copper (see `PCB-NOTES.md`), not layout hygiene.
 
 ## 1. Footprints
-All 102 components carry a THT, hand-solderable footprint; pad numbers match the
+All 113 components carry a THT, hand-solderable footprint; pad numbers match the
 symbol pins (verified — netlist resolves with 0 unconnected at the schematic).
 
 | Class | Footprint | Verdict |
 |-------|-----------|---------|
-| R | `R_Axial_DIN0207…P5.08mm_Vertical` | ✅ compact vertical, good for density |
-| C / CP | `C_Disc_D7.5…` / `CP_Radial_D8.0_P3.5` | ✅ generic; bump CP size for the real 4700 µF `C_main` |
+| R (¼ W) | `R_Axial_DIN0207…P5.08mm_Vertical` | ✅ compact vertical |
+| R (1 W: `R_27V`) | `R_Axial_DIN0414_L11.9mm…P15.24mm` | ✅ **sized by value** (`gen_kicad.footprint_for`) |
+| R (5 W: `R_bleed`) | `R_Axial_Power_L20.0mm_W6.4mm_P25.40mm` | ✅ sized by value |
+| `R_spk_rtn` 0 Ω | `R_Axial_DIN0414…` (1 W-size link) | ✅ carries the full speaker current — fat pads, not a ¼ W jumper |
+| C (film/disc) | `C_Disc_D7.5…P5.00mm` | ✅ generic |
+| CP ≤ 22 µF / 47 µF | `CP_Radial_D5.0mm_P2.00mm` / `D6.3mm_P2.50mm` | ✅ sized by value; tantalums `C_reg_in`/`C_reg_out1` on 2.5 mm spacing |
+| CP 1000 µF / 2200 µF / 4700 µF | `CP_Radial_D12.5_P5.00` / `D16.0_P7.50` / `D18.0_P7.50` | ✅ **real can sizes** (Panasonic FC per BOM) — the old board had every can as D8 |
 | D / LED | `D_DO-41…` / `LED_D3.0mm` | ✅ |
 | JFET | `TO-92_Inline` | ✅ for J113 / SOT-23-on-adapter |
-| TL072 | `DIP-8_W7.62mm` | ✅ (add a socket in the real build) |
-| LM317 | `TO-220-3_Vertical` | ✅ annular 0.40 mm |
-| **LM1875** | `TO-220-5_Vertical` | ⚠️ **pads 1.275 mm on a 1.1 mm drill → 0.0875 mm annular**, below the 0.15 mm rule (and JLCPCB's 0.13 mm). See fix below. |
-| Fuse | `Fuseholder_Clip-5x20mm…` | ✅ large; give it room |
-| Bridge | `PinHeader_1x04` | ⚠️ **placeholder** — KBP410G has no stock footprint here; make a real 4-pin inline before fab |
-| **Pots ×5** | `PinHeader_1x03` | ✅ **fixed this pass** — the pots are reused/**off-board** (panel-mounted), so they are 3-pad wiring connectors now, not 16 mm panel-pot footprints (was a real mis-modeling and a big silk-overlap source) |
-| Jacks / speaker / DIN / tank / xfmr | pin headers | ✅ off-board wiring connectors (intentional) |
+| TL072 | `DIP-8_W7.62mm` | ✅ (socket in the real build) |
+| LM317 | `TO-220-3_Vertical` | ✅ |
+| **LM1875** | **`cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875`** | ✅ **FIXED.** TI NDH0005D inline TO-220-5 (1.70 mm pitch, 0.89 × 0.38 mm leads). 1.1 mm drill (as stock) with **1.45 mm pads → 0.175 mm annular** (rule 0.15, JLCPCB 0.13); pad-local clearance 0.2 mm so the 0.25 mm pad gap passes next to the 0.3 mm HighCurrent clearance. Stock footprint gave 0.0875 mm → 5 DRC errors. |
+| Fuse | `Fuseholder_Clip-5x20mm…` | ✅ |
+| **Bridge** | **`cambridge_reverb:Bridge_KBP_P3.81mm`** | ✅ **FIXED.** Real KBP outline from Diodes DS39310 (KBP404G–KBP410G): 3.81 mm pitch, 1.2 mm drill / 2.0 mm pads, body 14.5 × 3.5 mm, pins **+ ~ ~ −**. Schematic bridge symbol renumbered to match. Was a `PinHeader_1x04` placeholder. |
+| Pots ×5 / jacks / DIN / tank | **`WirePad_1x0N_P2.54mm_D1.2mm`** | ✅ Part 4 signal wire pads (2.0 mm / 1.2 mm drill) on the wiring edge; were 2.54 mm pin headers |
+| Speaker / transformer | **`WirePad_1x0N_P5.08mm_D1.5mm`** | ✅ Part 4 power wire pads (3.0 mm / 1.5 mm drill) |
+| Mounting | 4 × `MountingHole_3.2mm_M3` (NPTH, unique refs H1–H4) | ✅ new; 0.5 mm pour clearance |
 
-**LM1875 annular fix (recommended):** the TO-220-5 lead is ~0.9×0.5 mm, so the
-1.1 mm drill is generous. Options, best first: (a) a project TO-220-5 footprint
-with **1.4 mm pads** (annular 0.2 mm at 1.0 mm drill; pad-pad gap 0.3 mm at the
-1.7 mm pitch still meets clearance); (b) accept 0.0875 mm — TO-220 through-holes
-are mechanically robust, but it is below JLCPCB's 0.13 mm, so confirm with the fab;
-(c) relax the project rule to 0.13 mm (only helps with wider pads). Not auto-fixed
-here because it means shipping a custom power-device footprint.
+## 2. Placement — Part 5 floor plan, generated
+`gen_pcb.py` now places into the five documented **zones, left → right**:
 
-## 2. Placement
-- **Auto-grid**, centered horizontally this pass; off-board connectors on the
-  bottom **wiring edge**, the 25 mm toroid in a reserved right strip.
-- **Floor-plan adherence (Part 5):** the grid fills in schematic/sheet order, so
-  parts are *loosely* grouped by block (PSU, preamp, …) but not laid into the
-  documented L→R bands (Input/Preamp → Tone → Reverb/Trem → Power Amp → PSU).
-  Proper zoning is manual work.
-- **Silk/courtyard overlaps are a density symptom, not a wiring problem.** At the
-  ~13 mm grid pitch the larger parts (DIP-8, TO-220, electrolytics, fuseholder)
-  sit close enough that their silk outlines touch. Spreading them out doesn't fit
-  (see §3). References and values are already hidden to cut the noise.
+```
+INPUT/PREAMP | TONE | REVERB/TREMOLO (+MRB) | POWER AMP | POWER SUPPLY
+o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o o o
+```
+- Zone widths are balanced automatically so every column packs to about the
+  same height; inside a zone the parts keep their **sheet (signal-chain) order**,
+  sorted tallest-first within a sheet so the rows ("shelves") pack tightly with a
+  1.3 mm courtyard gap and 4 mm channels between zones.
+- **Heat-sinking devices on the top edge**, tab outward, with the Part 5 **10 mm
+  keep-out** below them: `IC_PA` (LM1875) above the power-amp zone, `U1` (LM317)
+  above the PSU zone — both reachable by a chassis bracket.
+- **All off-board wiring on the bottom edge** under its own zone (Part 5: board
+  flips up for service); `T1` (transformer) pinned to the far right, so the
+  nearest signal zone is a full PSU-zone width away (Part 5: "no signal traces
+  within 15 mm of transformer pads").
+- Reference/value text is hidden (silk clutter); showing refs is a GUI pass.
+- Not encoded: "no traces under LFO timing components" — an autorouter cannot
+  honour it; check the tremolo area by eye.
 
-## 3. Board outline & chassis fit ⚠️ (the headline)
+## 3. Board outline & chassis fit — figure corrected ⚠️
 - Outline: **190 × 115 mm**, matching the original 25-5274-2 (errata #9).
-- **Packing density** (Σ footprint bounding boxes ÷ usable area, printed by
-  `gen_pcb.py`): **~48 %** on 190 × 115 (was 51 % before the pot fix) — feasible
-  but **dense** for single-sided THT routing — and **~82 %** on the Part 7
-  155 × 90 "safe-bet", which is **not buildable** as drawn.
-- This density is the root cause of the silk/courtyard/edge items. **Before
-  committing to a board size: measure the real chassis** (it may exceed the
-  155 × 90 worst case), **and/or move the small passives to SMD** to roughly halve
-  the parts area and open up routing room.
+- **The earlier density numbers were inflated.** The old `gen_pcb.py` summed
+  `GetBoundingBox()` *including the hidden reference/value text boxes*, which
+  roughly doubles a resistor's footprint. Text-less bounding boxes give:
+
+| Board | Usable area | Parts area | Packing |
+|-------|------------:|-----------:|--------:|
+| 190 × 115 mm (original) | 16 150 mm² | ~5 290 mm² | **~33 %** (was reported 48–53 %) |
+| 155 × 90 mm (Part 7 "safe-bet") | 9 450 mm² | ~5 290 mm² | **~56 %** (was reported 82–90 %) |
+
+  So the 155 × 90 board is **no longer "not buildable"** — 56 % is dense but
+  realistic for THT (this board packs the 190 × 115 to only ~62 % of its
+  height). Errata #9 still stands: **measure the chassis first**, then set
+  `BW, BH` in `gen_pcb.py` and regenerate (the placer rebalances the zones).
 
 ## 4. Net classes & design rules
-- Three classes: **Default 0.5 mm / Power 1.5 mm / HighCurrent 2.5 mm**.
-- Patterns now correctly target `+33V5`, `SPK_P`, `SPK_N`, `PA_OUT` (HighCurrent)
-  and `VREG_IN`, `+17V`, `GND` (Power) — the `SPKR±`→`SPK_P/SPK_N` bug was fixed in
-  the review round. Verified the patterns match real nets.
-- Rules (from Part 4) are conservative and JLCPCB-safe **except** the 0.15 mm min
-  annular vs the LM1875 footprint (§1). Vias are pre-sized per class (0.4/0.8/1.0
-  mm drill).
+- Three classes: **Default 0.5 mm / Power 1.5 mm / HighCurrent 2.5 mm**, with
+  0.2 / 0.3 / 0.3 mm clearances; patterns target `+33V5`, `SPK_P`, `SPK_N`,
+  `PA_OUT` (HighCurrent) and `VREG_IN`, `+17V`, `GND` (Power). Verified to match
+  real nets, and **verified to survive the DSN export** (`route_board.py`), so
+  the autorouter uses these widths.
+- Rules (from Part 4) are conservative and JLCPCB-safe; the one exception (the
+  LM1875 annular ring, §1) is resolved.
 
 ## 5. Copper, GND pour, layers
-- 2-layer. **Bottom = continuous GND pour** (connects all 55 GND pads — that net
-  is effectively routed). Top is free for signal routing.
-- No isolated-copper or zone-fill DRC issues. Star-ground / stitching (Part 3/4)
-  are placement-time decisions for the manual pass.
+- 2-layer. **Bottom = GND pour** connecting all GND pads; refilled after routing.
+- Mounting holes keep 0.5 mm of pour clearance; no isolated-copper items.
+- Star-ground / stitching (Part 3/4) remain hand decisions on top of the pour.
 
-## 6. Routing status
-- **Signal nets: unrouted** (131 ratsnest connections) — KiCad has no headless
-  autorouter, so this is GUI hand-work.
-- **Demonstrated** in `power_section_demo.kicad_pcb`: `+33V5` (2.5 mm) and `+17V`
-  (1.5 mm) rails routed over a GND pour, **DRC 0 violations**.
+## 6. Routing
+- Done headlessly with **Freerouting** (`gen/route_board.py`), both in a two-layer
+  mode and a **top-only** mode (bottom declared a plane so signals stay on F.Cu,
+  the Part 4 intent). Results, unrouted counts and the DRC after import are in
+  **`PCB-NOTES.md`**.
+- An autorouter does not know audio: expect to tidy by hand the input/JFET-gate
+  runs, the LFO area, the speaker/`+33V5` loop and the ground return before fab.
 
 ## Prioritized actions for a fab-ready board
-1. **Resolve the size/density first** (measure chassis or go SMD) — everything
-   else depends on it.
-2. Place into the Part 5 floor-plan zones; that clears the silk/courtyard items.
-3. Fix the **LM1875 annular** (wider-pad TO-220-5) and make a **real KBP410G**
-   bridge footprint.
-4. Route (top signal, bottom GND), HighCurrent for the speaker/PA path.
-5. DRC to zero → Gerbers per `docs/04-jlcpcb-fabrication.md` + `production/CHECKLIST.md`.
+1. **Measure the chassis** and lock the outline (errata #9) — regenerate.
+2. Review the routed copper (§6) and hand-fix what an autorouter gets wrong.
+3. Show reference designators on silk; DRC to zero again.
+4. Gerbers per `docs/04-jlcpcb-fabrication.md` + `production/CHECKLIST.md`.

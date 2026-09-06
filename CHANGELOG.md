@@ -3,6 +3,55 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Footprint fixes, floor-plan placement, headless autoroute (2026-09-06)
+- **PCB-AUDIT §1 defects fixed with datasheet-derived project footprints:**
+  `TO-220-5_Vertical_P1.70mm_LM1875` (TI NDH0005D inline TO-220-5; 1.1 mm drill,
+  **1.45 mm pads → 0.175 mm annular**, was 0.0875 → the 5 `annular_width` DRC
+  errors are gone) and `Bridge_KBP_P3.81mm` (Diodes DS39310 KBP404G–KBP410G:
+  3.81 mm pitch, 1.2 mm drill, pins **+ ~ ~ −**; replaces the `PinHeader_1x04`
+  placeholder). The schematic bridge symbol is renumbered to the KBP physical
+  order (1=+ 2=~ 3=~ 4=−). One footprint cannot also take a KBU (5.08 mm pitch) —
+  errata #3 updated with the swap procedure.
+- **Value-aware footprint sizing** (`gen_kicad.footprint_for`): 4700 µF → D18 P7.5,
+  2200 µF → D16 P7.5, 1000 µF → D12.5 P5, 47 µF → D6.3, ≤22 µF → D5 (tantalums on
+  2.5 mm); 5 W `R_bleed` → 20 mm power axial, 1 W `R_27V` → DIN0414; the 0 Ω
+  speaker-return link `R_spk_rtn` gets 1 W-size pads (it carries the speaker
+  current). The old board had every can as D8 and every resistor as ¼ W.
+- **`gen_pcb.py` now places to the Part 5 floor plan**: five zones left→right
+  (Input/Preamp | Tone | Reverb/Trem+MRB | Power Amp | PSU), widths auto-balanced
+  so the columns pack to equal height, signal-chain order inside each zone;
+  LM1875/LM317 on the top edge with the 10 mm keep-out; every off-board connector
+  on the bottom wiring edge under its zone, `T1` far right; 4 × M3 mounting holes.
+  **DRC before routing: 0 errors, 0 warnings** (was 9 errors + ~155 silk warnings).
+- **Chassis-fit figure corrected:** the earlier 48–53 % / 82–90 % packing densities
+  summed bounding boxes *including hidden text*. Text-less: **~33 % on 190×115,
+  ~56 % on 155×90** — the "safe-bet" board is dense but no longer "not buildable"
+  (errata #9 still says measure first). Old `unconnected` counts (131) were also
+  from the 102-part board; the board is 113 parts / 145 connections now.
+- **Wiring edge per Part 4:** the off-board connectors are now project *wire pad*
+  footprints (`WirePad_1x0N_P2.54mm_D1.2mm`: 2.0 mm pads / 1.2 mm drill for jacks,
+  pots, tank, DIN; `WirePad_1x0N_P5.08mm_D1.5mm`: 3.0 mm pads / 1.5 mm drill for
+  the speaker and transformer) instead of 2.54 mm pin headers.
+- **Net classes:** `VRAW`, `AC1`, `AC2` (bridge/transformer, full supply current)
+  moved from Default 0.5 mm to **HighCurrent** (errata #11 updated).
+- **Headless autoroute** — `kicad/gen/route_board.py`: pcbnew DSN export → Freerouting
+  → SES import → pour refill. Findings: Freerouting **2.1.0** ignores every pass /
+  timeout limit in CLI mode and only writes output at 0 unrouted (and its
+  multi-threaded router crashed), so the script drives **1.9.0** under `xvfb-run`
+  (honours `-mp`, always writes the SES). The script injects Freerouting's
+  `autoroute_settings` into the DSN to make the bottom layer 6× more expensive
+  than the top, because a free two-layer run put ~2.4 m of copper on the bottom
+  and sliced the GND pour into islands (10–11 GND pads unconnected). The
+  LM1875's 1.70 mm pin pitch cannot take a 1.5/2.5 mm trace past its neighbours,
+  so `gen_pcb.py` pre-routes two **locked 0.9 mm escape stubs** (pins 4/5) that
+  export as fixed wires. Placement was tuned for
+  routability along the way (Tone stacked under Preamp, reverb block at the bottom
+  of its column next to the tank pads, VBIAS dividers and footswitch pull-downs
+  next to their loads, serpentine shelf rows so wrapped rows stay adjacent, a
+  wider power-amp column). **Committed board: 144/145 connections routed, 0 DRC
+  violations (`--severity-all`), 26 vias**; the one open `PA_OUT` link (blocked by
+  `R_bias1`) is documented in `PCB-NOTES.md` as a GUI finish.
+
 ### Class-A power-amp variant (2026-06-16)
 - Explored running the power amp in **Class A** (AC15-style). Sim
   (`spice/tran_classa_output.cir`): Class A drops crossover THD from ~1.05% to

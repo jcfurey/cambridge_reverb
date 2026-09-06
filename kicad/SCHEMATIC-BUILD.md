@@ -68,18 +68,18 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   unity sum, ±7 V headroom before clipping. ERC 0.
 
 ## Still to finish before a build
-- **Tone stack** values are `TBD` (cross-check §4) — the sheet has the pots and a
-  placeholder; fill from the original 25-5274-2 top-boost network.
+- **Tone stack** is a *designed substitute* (Volume + Vox-style treble cut,
+  verified in `spice/ac_tonestack.cir`) — the original 25-5274-2 values were never
+  recovered (cross-check §4); replace with the original network if it turns up.
 - The tremolo's passive LDR shunt + MRB sit *between* the two buffered nodes
   (BLEND→ … →PA_IN); levels there are reasonable but bench-tune the tremolo depth
   and MRB blend.
 - **Inter-effect routing order** (reverb→tremolo→MRB→power amp) is a documented
   assumption where the recovered notes are silent; see the note on the root sheet.
-- **PCB:** a placed starter board (`cambridge_reverb.kicad_pcb`, all footprints
-  assigned + a GND pour) now exists — see `PCB-NOTES.md`. Remaining work is manual
-  placement into the floor-plan zones and signal routing; after annotation you can
-  *Update PCB from schematic* or keep the generated board. Lay out per
-  `docs/04-jlcpcb-fabrication.md`.
+- **PCB:** `cambridge_reverb.kicad_pcb` is generated (floor-plan placement,
+  `gen/gen_pcb.py`) and autorouted (`gen/route_board.py`) — status, DRC and the
+  remaining hand-review in `PCB-NOTES.md`. After annotation you can *Update PCB
+  from schematic* or keep the generated board. Fab per `docs/04-jlcpcb-fabrication.md`.
 
 ## Per-sheet contents
 Values come from Part 2 + `netlist-notes.txt`; see those and `errata.md` for the
