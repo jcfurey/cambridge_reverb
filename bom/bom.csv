@@ -9,6 +9,7 @@ C_mrb_out,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 L1,MRB tank inductor (reused/off-board),1H toroid,Inductor_MRB_1H_Toroid,,,1,"reuse original ~1H, or 2x 0.5H Fasel"
 R_fs_mrb,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_mrb_ser,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+TP_MRB_OUT,Test point (header pin or wire loop),MRB,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_byp1,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_byp2,Capacitor (electrolytic),10uF/50V,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_fb_hf,Capacitor (film/ceramic),1nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
@@ -24,6 +25,10 @@ R_bias2,Resistor,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_fb,Resistor,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_gain,Resistor,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_zobel,Resistor,10R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+TP_GND_PA,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_PA_BIAS,Test point (header pin or wire loop),PA_B,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_PA_OUT,Test point (header pin or wire loop),PA_OUT,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_SPK,Test point (header pin or wire loop),SPK,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 BR1,Bridge rectifier,KBP410G,Bridge_KBP_P3.81mm,KBP410G-ND,821-KBP410G,1,Or 4x 1N4007
 C101,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
 C102,Capacitor (film/ceramic),10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,,594-K104Z15Y5VF5TL2,1,bridge snubber
@@ -47,6 +52,11 @@ R_vbr2,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_vbt1,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_vbt2,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 T1,Power transformer (reused/off-board),reuse / AnTek AS-0524,WirePad_1x03_P5.08mm_D1.5mm,,,1,reuse original (test ~48VAC) or AnTek AS-0524 50VA
+TP_17V,Test point (header pin or wire loop),+17V,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_33V5,Test point (header pin or wire loop),+33V5,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_GND_PSU,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_VRAW,Test point (header pin or wire loop),VRAW,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_VREG_IN,Test point (header pin or wire loop),VREG,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 U1,+17V rail regulator,LM317T,TO-220-3_Vertical,LM317T/NOPB-ND,926-LM317T/NOPB,1,
 C_cpl12,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_in_pre,Capacitor (film/ceramic),47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
@@ -62,6 +72,10 @@ R_g1,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_g2,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_s1,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,"2K2 biases Vd~12V; ~1-1.2k -> 8-9V target (errata #15), trim per device"
 R_s2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,see R_s1 (errata #15)
+TP_GND_PRE,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_PRE_OUT,Test point (header pin or wire loop),PRE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_Q1D,Test point (header pin or wire loop),Q1D,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_Q2D,Test point (header pin or wire loop),Q2D,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_drvin,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_drymix,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_rec_byp,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
@@ -84,6 +98,12 @@ R_rec1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec_bias,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_wetmix,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+TP_BLEND,Test point (header pin or wire loop),BLEND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_GND_REV,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_QRD,Test point (header pin or wire loop),QRD,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_TANK_IN,Test point (header pin or wire loop),TK_IN,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_TANK_OUT,Test point (header pin or wire loop),TK_OUT,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_VBIAS_R,Test point (header pin or wire loop),VB_R,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 FS1,Footswitch DIN connector (reused/off-board),DIN-6,WirePad_1x06_P2.54mm_D1.2mm,,,1,
 J_IN1,"1/4in jack (panel, reused)",Input 1,WirePad_1x02_P2.54mm_D1.2mm,,,1,
 J_IN2,"1/4in jack (panel, reused)",Input 2,WirePad_1x02_P2.54mm_D1.2mm,,,1,
@@ -94,6 +114,7 @@ C_cut,Capacitor (film/ceramic),10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 POT_TONE,Tone (reused/off-board),100k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,
 POT_VOL,Volume (reused/off-board),250k log,WirePad_1x03_P2.54mm_D1.2mm,,,1,
 R_fx_pad,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+TP_TONE_OUT,Test point (header pin or wire loop),TONE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_lfo1,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_lfo2,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
@@ -113,6 +134,11 @@ R_lfo_fb2,Resistor,4.7k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_lfo_ser,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_obuf_b,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_trem1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+TP_GND_TREM,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_LFO,Test point (header pin or wire loop),LFO,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_PA_IN,Test point (header pin or wire loop),PA_IN,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_TREM_OUT,Test point (header pin or wire loop),TREM,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_VBIAS_T,Test point (header pin or wire loop),VB_T,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 VTL1,Tremolo optocoupler,VTL5C1,VTL5C1,,,1,Xvive VTL5C1 (single-source) or DIY LED+LDR
 # --- off-board / mechanical (not in netlist) ---,,,,,,,
 F_MAINS,MAINS PRIMARY fuse (SAFETY),T800mA 250V slow-blow,5x20mm,,,1,"IEC inlet primary fuse (120V; ~T400mA@230V). REQUIRED, was missing (roast R1). Off-board"

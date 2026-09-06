@@ -23,7 +23,7 @@ CLASS_DESC = {
  "LM1875":"Power amplifier","OPAMP8":"Dual op-amp","JACK":"1/4in jack (panel, reused)",
  "SPEAKER":"Speaker (reused)","XFMR":"Power transformer (reused/AnTek)",
  "VTL5C1":"LED/LDR optocoupler","Reverb_Tank_4FB2A1C":"Reverb pan (off-board)",
- "Footswitch_DIN6":"6-pin DIN footswitch (panel)","PWR_FLAG":"",
+ "Footswitch_DIN6":"6-pin DIN footswitch (panel)","PWR_FLAG":"","TP":"Test point (header pin or wire loop)",
 }
 # per-ref description override (function), where it adds clarity
 DESC = {
@@ -97,6 +97,8 @@ def main():
     rows = []
     for c in sorted(comps, key=lambda c: (c["sheet"], c["ref"])):
         cur = CUR.get(c["ref"], {})
+        if c["libsym"] == "TP":
+            cur = dict(notes="bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net")
         rows.append([c["ref"], describe(c), c["value"], c["fp"].split(":")[-1] if c["fp"] else "",
                      cur.get("dk",""), cur.get("mou",""), 1, cur.get("notes","")])
     hdr = ["ref","description","value","footprint","digikey_pn","mouser_pn","qty","notes"]
@@ -112,7 +114,9 @@ def main():
     # grouped order-summary by (value, footprint)
     from collections import defaultdict
     grp = defaultdict(list)
-    for c in comps: grp[(c["value"], c["fp"].split(":")[-1] if c["fp"] else "")].append(c["ref"])
+    for c in comps:
+        val = "test point (label = net)" if c["libsym"] == "TP" else c["value"]   # 26 one-offs -> one order line
+        grp[(val, c["fp"].split(":")[-1] if c["fp"] else "")].append(c["ref"])
     gout = os.path.join(ROOT, "bom", "bom-grouped.csv")
     with open(gout, "w", newline="") as f:
         w = csv.writer(f); w.writerow(["qty","value","footprint","refs"])

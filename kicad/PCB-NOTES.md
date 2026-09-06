@@ -4,9 +4,10 @@
 
 1. **`gen/gen_pcb.py` — placement.** Every footprint from the schematic
    (`gen_kicad.py`'s component list) is placed into the **Part 5 floor plan**:
-   columns left → right `INPUT/PREAMP (+TONE below it) | REVERB/TREMOLO/MRB |
-   POWER AMP | POWER SUPPLY`, signal-chain order inside each zone, column widths
-   auto-balanced to equal height. `IC_PA` (LM1875) and `U1` (LM317) sit on the
+   columns left → right `INPUT/PREAMP (+TONE below it) | TREMOLO/MRB (+REVERB
+   below it, next to its tank pads) | POWER AMP | POWER SUPPLY`, signal-chain
+   order inside each zone, column widths auto-balanced to equal height, a
+   **labelled test-point strip** at the top of every zone (see *Test points*). `IC_PA` (LM1875) and `U1` (LM317) sit on the
    **top edge**, tab outward, with the Part 5 **10 mm keep-out**; all off-board
    wiring lands on **Part 4 wire pads along the bottom edge** (2.0 mm signal
    pads, 3.0 mm speaker/transformer pads), `T1` at the far right. 4 × M3 mounting
@@ -26,24 +27,74 @@ Regenerate: `python3 kicad/gen/gen_pcb.py && python3 kicad/gen/route_board.py`
 ## Routing result (`kicad-cli 8.0.9 pcb drc`, this commit)
 | Item | Result |
 |------|-------:|
-| Connections (ratsnest) | 145 |
-| **Routed** | **144 / 145** (`unconnected_items`: 1) |
+| Connections (ratsnest, incl. the 26 test points) | 166 |
+| **Routed** | **161 / 166** (`unconnected_items`: 5) |
 | DRC violations (errors + warnings, `--severity-all`) | **0** |
-| Track segments | 753 — **F.Cu 3 683 mm**, B.Cu 351 mm (short jumpers on 26 nets) |
-| Vias | 26 |
-| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×6, via cost 80 (`route_board.py` defaults) |
+| Track segments | 872 — **F.Cu 3 896 mm**, B.Cu 397 mm (short jumpers on 29 nets) |
+| Vias | 54 |
+| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×7, via cost 60 (`route_board.py --bottom-cost 7 --via-cost 60`) |
 
-**The one open connection is `PA_OUT`** in the power-amp column: the router left
-a 2.5 mm F.Cu run ending on `D1` pin 1 (≈ 113, 47 mm) and a B.Cu fragment at
-≈ (115, 55 mm) on the `C_out`/`R_zobel` side, with `R_bias1` sitting between
-them. Every straight or dog-leg link I tried shorts through `R_bias1` pin 2, so
-it is a 1-minute GUI job (nudge `R_bias1` or route around it) — not fudged here.
+**The five open connections** (all short, all in the power-amp / effects
+columns; finish in the GUI):
 
-A parameter sweep on this placement (150 passes each) shows how much the bottom
-cost matters: B.Cu cost ×3 → 7 unrouted, ×4 → 3 (+1 starved thermal), **×6 → 1**,
-×4 with via cost 40 → 7. Freerouting is also run-to-run sensitive: the same
-settings on earlier placements gave 5–10 open connections, so re-routing after a
-placement change means re-checking the count, not assuming it.
+| Net | Between | Where |
+|-----|---------|-------|
+| `PA_BIAS` | `TP_PA_BIAS` pad ↔ the PA_BIAS trace near `R_bias1`/`R_bias2` | PA column, (108,31)→(125,62) |
+| `PA_IN` | `C_in_pa` pin 1 ↔ the PA_IN trace from the IC2-B buffer | tremolo → PA column, (72,51)→(120,60) |
+| `PA_INV` | `IC_PA` pin 2 ↔ the feedback node (`R_fb`/`C_fb_hf`/`R_gain`) | PA column, (117,15)→(106,69) |
+| `R_INV` | `IC1` pin 2 ↔ `R_drv1`/`R_drv2` | reverb zone, (28,76)→(75,87) |
+| `TREM_OUT` | `R_trem1` pin 2 ↔ `C_dc_blk`/`TP_TREM_OUT` | tremolo zone, (34,62)→(50,47) |
+
+Sweep on this placement (150 passes unless noted): B.Cu ×6 → 4 open + 1
+starved thermal; ×6 / via 60 → 3 open + 1 starved thermal; **×7 / via 60 → 5
+open, DRC clean (committed)**; ×6 / via 70 / 250 passes → 3 open + 1 starved
+thermal. The DRC-clean board was preferred over one with fewer ratsnest lines
+plus a `starved_thermal` error (that is a hand fix too). Before the test points
+were added the same flow reached 144/145 (one `PA_OUT` link open); the 21 extra
+test-point connections cost a few more. Freerouting is run-to-run sensitive —
+after any placement change re-check the count, do not assume it.
+
+## Test points (bench bring-up, Part 5 order)
+26 labelled test points (`TP_*` in the schematic/BOM; footprint
+`TestPoint_THT_D2.0mm_Label`: 2.0 mm pad / 1.0 mm drill — fit a header pin or a
+bare 0.6 mm wire loop so a scope hook grabs it). They sit in a **strip across the
+top of each zone**, the silkscreen prints the alias, and every zone has a **GND**
+pin for the probe clip. Expected values are from Part 3's troubleshooting table,
+Part 2's set-up notes and the ngspice suite (`spice/README.md`).
+
+| Silk | Ref | Net | Zone | Expect (DC unless noted) | Source |
+|------|-----|-----|------|---------------------------|--------|
+| `VRAW` | TP_VRAW | VRAW | PSU | ~33–35 V unloaded, bridge output *before* F1 (fuse check: VRAW ≠ +33V5 → F1 open) | Part 2 |
+| `+33V5` | TP_33V5 | +33V5 | PSU | ~33.5 V | Part 3 |
+| `VREG` | TP_VREG_IN | VREG_IN | PSU | ~31–33 V (LM317 input after the 100 Ω/1000 µF pre-filter) | Part 3 |
+| `+17V` | TP_17V | +17V | PSU | 17.0–17.5 V (R_reg2 = 3.09 k; 16.9 V with 3.0 k) | Part 3, errata #10 |
+| `GND` | TP_GND_PSU | GND | PSU | probe ground | — |
+| `Q1D` | TP_Q1D | Q1D | Preamp | **8–9 V** target; ~12 V with the recovered Rs = 2.2 k → trim R_s1 (≈1–1.2 k) per device | errata #15, spice |
+| `Q2D` | TP_Q2D | Q2D | Preamp | 8–9 V target (same trim, R_s2) | errata #15 |
+| `PRE` | TP_PRE_OUT | PREAMP_OUT | Preamp | AC: amplified guitar signal (preamp gain ≈ 22 dB/stage in sim) | spice |
+| `GND` | TP_GND_PRE | GND | Preamp | probe ground | — |
+| `TONE` | TP_TONE_OUT | TONE_OUT | Tone | AC: volume-pot wiper; the internal FX-send tap (via R_fx_pad) | Part 1 §7 |
+| `VB_R` | TP_VBIAS_R | VBIAS_R | Reverb | ~8.5 V (mid-rail reference for IC1) | spice |
+| `TK_IN` | TP_TANK_IN | TANK_IN | Reverb | AC: tank drive, ≈ 11× the driver input; no DC (after C_rev1) | spice |
+| `TK_OUT` | TP_TANK_OUT | TANK_OUT | Reverb | AC: tank return, a few mV–tens of mV; silence → tank/cable | Part 9 |
+| `QRD` | TP_QRD | QRD | Reverb | 8–9 V target (recovery JFET drain; trim R_rec2 like R_s1) | errata #15 |
+| `BLEND` | TP_BLEND | BLEND | Reverb | ~8.5 V DC (summer output about VBIAS_R) + dry/wet mix AC, unity | spice (tran_reverb_mixer) |
+| `GND` | TP_GND_REV | GND | Reverb | probe ground | — |
+| `VB_T` | TP_VBIAS_T | VBIAS_T | Tremolo | ~8.5 V (mid-rail reference for IC2) | spice |
+| `LFO` | TP_LFO | LFO_OUT | Tremolo | AC: the LFO — ~16 Hz at the fast end (100 k/100 n), ~0.5 V amplitude in sim; speed pot sweeps it | spice (tran_tremolo_lfo) |
+| `TREM` | TP_TREM_OUT | TREM_OUT | Tremolo | AC: post-LDR signal, amplitude pumping at the LFO rate when tremolo is on | Part 1 §5 |
+| `PA_IN` | TP_PA_IN | PA_IN | Tremolo | ~8.5 V DC (IC2-B buffer about VBIAS_T) + the full effects-chain signal | roast R3 |
+| `GND` | TP_GND_TREM | GND | Tremolo | probe ground | — |
+| `MRB` | TP_MRB_OUT | MRB_OUT | MRB | AC: mid-boosted signal, peak ~580–600 Hz | spice (ac_mrb) |
+| `PA_B` | TP_PA_BIAS | PA_BIAS | Power amp | ~16.75 V (V+/2 from the 22 k/22 k divider) | Part 2 |
+| `PA_OUT` | TP_PA_OUT | PA_OUT | Power amp | **~16–17 V** (LM1875 pin 4, V+/2) — wrong → IC bad or oscillating | Part 3 |
+| `SPK` | TP_SPK | SPK_P | Power amp | ~0 V DC after C_out (any DC here → C_out); AC = speaker signal | errata #7 |
+| `GND` | TP_GND_PA | GND | Power amp | probe ground | — |
+
+Bring-up order (Part 5): rails (`VRAW`/`+33V5`/`VREG`/`+17V`) with the series
+light bulb → `PA_B`/`PA_OUT`/`SPK` DC with no signal → JFET drains (`Q1D`,
+`Q2D`, `QRD`) and trim → `VB_R`/`VB_T` → signal generator into IN1, follow
+`PRE` → `TONE` → `BLEND` → `TREM` → `MRB` → `PA_IN` → `SPK`.
 
 ## What the autorouter does NOT know — review by hand before fab
 - **Audio layout.** It routes by cost, not by ear: the JFET gate inputs

@@ -27,6 +27,7 @@
   (4-pin), 6-pin DIN footswitch connector.
 - Custom footprint library: VTL5C1 (4-pin inline), TO-220-5 wide-pad for the
   LM1875 (`TO-220-5_Vertical_P1.70mm_LM1875`), KBP bridge (`Bridge_KBP_P3.81mm`),
+  labelled test point (`TestPoint_THT_D2.0mm_Label`), wire pads (`WirePad_*`),
   MRB 1H toroid (2-pad, 25 mm
   spacing), 35-pad wiring edge array (3 mm pads, 1.5 mm drill, silkscreen-labeled).
 

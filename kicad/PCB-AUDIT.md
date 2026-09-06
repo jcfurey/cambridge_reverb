@@ -39,6 +39,7 @@ symbol pins (verified — netlist resolves with 0 unconnected at the schematic).
 | Pots ×5 / jacks / DIN / tank | **`WirePad_1x0N_P2.54mm_D1.2mm`** | ✅ Part 4 signal wire pads (2.0 mm / 1.2 mm drill) on the wiring edge; were 2.54 mm pin headers |
 | Speaker / transformer | **`WirePad_1x0N_P5.08mm_D1.5mm`** | ✅ Part 4 power wire pads (3.0 mm / 1.5 mm drill) |
 | Mounting | 4 × `MountingHole_3.2mm_M3` (NPTH, unique refs H1–H4) | ✅ new; 0.5 mm pour clearance |
+| Test points ×26 | **`cambridge_reverb:TestPoint_THT_D2.0mm_Label`** | ✅ 2.0 mm pad / 1.0 mm drill; silk label = the footprint value (net alias) |
 
 ## 2. Placement — Part 5 floor plan, generated
 `gen_pcb.py` now places into the five documented **zones, left → right**:
@@ -58,6 +59,9 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
   flips up for service); `T1` (transformer) pinned to the far right, so the
   nearest signal zone is a full PSU-zone width away (Part 5: "no signal traces
   within 15 mm of transformer pads").
+- **Test-point strip** across the top of each zone: 26 labelled `TP_*` pads
+  (footprint `TestPoint_THT_D2.0mm_Label`, value = net alias on silk), one GND
+  per zone — the bring-up nodes of Parts 3/5. Table in `PCB-NOTES.md`.
 - Reference/value text is hidden (silk clutter); showing refs is a GUI pass.
 - Not encoded: "no traces under LFO timing components" — an autorouter cannot
   honour it; check the tremolo area by eye.

@@ -28,6 +28,17 @@ deliverables produced during the design phase.
   ~56 % on 155×90** — the "safe-bet" board is dense but no longer "not buildable"
   (errata #9 still says measure first). Old `unconnected` counts (131) were also
   from the 102-part board; the board is 113 parts / 145 connections now.
+- **Bench test points (26).** One-pin `TP_*` symbols on each sheet (in the netlist
+  and BOM — one order line), project footprint `TestPoint_THT_D2.0mm_Label`
+  (2.0 mm pad / 1.0 mm drill for a header pin or wire loop) whose *value* prints
+  the net alias on the silkscreen. `gen_pcb.py` lays them in a strip across the
+  top of every zone with a GND pin per zone for the probe clip. Coverage follows
+  the Part 5 bring-up order: `VRAW`/`+33V5`/`VREG`/`+17V`, JFET drains `Q1D`/`Q2D`/
+  `QRD` (the errata #15 trim), `VB_R`/`VB_T`, `PRE`/`TONE`/`BLEND`/`TREM`/`MRB`/
+  `PA_IN`, `TK_IN`/`TK_OUT`, `LFO`, `PA_B`/`PA_OUT`/`SPK`. Expected values are
+  tabulated in `kicad/PCB-NOTES.md`.
+- `datasheets/SOURCES.md` records the package drawings used; Part 10 / kicad README
+  list the new footprints.
 - **Wiring edge per Part 4:** the off-board connectors are now project *wire pad*
   footprints (`WirePad_1x0N_P2.54mm_D1.2mm`: 2.0 mm pads / 1.2 mm drill for jacks,
   pots, tank, DIN; `WirePad_1x0N_P5.08mm_D1.5mm`: 3.0 mm pads / 1.5 mm drill for
@@ -48,9 +59,11 @@ deliverables produced during the design phase.
   routability along the way (Tone stacked under Preamp, reverb block at the bottom
   of its column next to the tank pads, VBIAS dividers and footswitch pull-downs
   next to their loads, serpentine shelf rows so wrapped rows stay adjacent, a
-  wider power-amp column). **Committed board: 144/145 connections routed, 0 DRC
-  violations (`--severity-all`), 26 vias**; the one open `PA_OUT` link (blocked by
-  `R_bias1`) is documented in `PCB-NOTES.md` as a GUI finish.
+  wider power-amp column). Before the test points the flow reached 144/145
+  routed with 0 DRC violations (one `PA_OUT` link blocked by `R_bias1`).
+  **Committed board (with the 26 test points): 161/166 connections routed, 0 DRC
+  violations (`--severity-all`), 54 vias**; the five open links are listed in
+  `PCB-NOTES.md` as a GUI finish.
 
 ### Class-A power-amp variant (2026-06-16)
 - Explored running the power amp in **Class A** (AC15-style). Sim

@@ -86,6 +86,9 @@ SYMS = {
                   ("1","OUT1",12.7,5.08,1,0),("7","OUT2",12.7,-5.08,1,0),
                   ("8","V+",0,10.16,0,1),("4","V-",0,-10.16,0,-1)],
             body=[(-7.62,-7.62,7.62,7.62)]),
+ "TP":  dict(ref="TP", desc="Test point (header pin / wire loop)", hide_nums=True,
+            pins=[("1","1",0,-2.54,0,-1)],
+            body=[(-1.27,0,1.27,2.54)]),
  "PWR_FLAG":dict(ref="#FLG", desc="Power flag", hide_nums=True, power=True,
             pins=[("1","pwr",0,0,0,1)], body=[], pin_type="power_out"),
  "JACK":dict(ref="J", desc="1/4in input jack (1=Tip 2=Sleeve)", hide_nums=False,
@@ -289,6 +292,7 @@ FOOTPRINTS = {
  "JACK":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",
  "SPEAKER":"cambridge_reverb:WirePad_1x02_P5.08mm_D1.5mm",     # 3.0 mm power pads (Part 4)
  "XFMR":"cambridge_reverb:WirePad_1x03_P5.08mm_D1.5mm",        # 3.0 mm power pads (Part 4)
+ "TP":  "cambridge_reverb:TestPoint_THT_D2.0mm_Label",   # value (= net alias) printed on silk
  "PWR_FLAG":"",   # virtual, no board footprint
  "VTL5C1":"cambridge_reverb:VTL5C1",
  "Reverb_Tank_4FB2A1C":"cambridge_reverb:WirePad_1x04_P2.54mm_D1.2mm",
@@ -368,6 +372,48 @@ GLOBAL_NETS = {
 # connector (switching sheet) and land on their effect sheet via a control
 # pulldown. Exact switching topology follows the original pedal; represented
 # here as defined control nets so they aren't single-ended.
+
+# Bench test points (Part 5 build order: rails -> preamp bias -> effects -> power
+# amp). One per node you actually put a meter/scope on, plus a GND pin per zone
+# for the probe clip. The LABEL is what the silkscreen prints (<= 6 chars);
+# expected values are tabulated in kicad/PCB-NOTES.md.
+TEST_POINTS = [
+  # sheet            ref            label     net
+  ("Power Supply",   "TP_VRAW",     "VRAW",   "VRAW"),
+  ("Power Supply",   "TP_33V5",     "+33V5",  "+33V5"),
+  ("Power Supply",   "TP_VREG_IN",  "VREG",   "VREG_IN"),
+  ("Power Supply",   "TP_17V",      "+17V",   "+17V"),
+  ("Power Supply",   "TP_GND_PSU",  "GND",    "GND"),
+  ("Preamp",         "TP_Q1D",      "Q1D",    "Q1D"),
+  ("Preamp",         "TP_Q2D",      "Q2D",    "Q2D"),
+  ("Preamp",         "TP_PRE_OUT",  "PRE",    "PREAMP_OUT"),
+  ("Preamp",         "TP_GND_PRE",  "GND",    "GND"),
+  ("Tone Stack",     "TP_TONE_OUT", "TONE",   "TONE_OUT"),
+  ("Reverb",         "TP_VBIAS_R",  "VB_R",   "VBIAS_R"),
+  ("Reverb",         "TP_TANK_IN",  "TK_IN",  "TANK_IN"),
+  ("Reverb",         "TP_TANK_OUT", "TK_OUT", "TANK_OUT"),
+  ("Reverb",         "TP_QRD",      "QRD",    "QRD"),
+  ("Reverb",         "TP_BLEND",    "BLEND",  "BLEND"),
+  ("Reverb",         "TP_GND_REV",  "GND",    "GND"),
+  ("Tremolo",        "TP_VBIAS_T",  "VB_T",   "VBIAS_T"),
+  ("Tremolo",        "TP_LFO",      "LFO",    "LFO_OUT"),
+  ("Tremolo",        "TP_TREM_OUT", "TREM",   "TREM_OUT"),
+  ("Tremolo",        "TP_PA_IN",    "PA_IN",  "PA_IN"),
+  ("Tremolo",        "TP_GND_TREM", "GND",    "GND"),
+  ("MRB",            "TP_MRB_OUT",  "MRB",    "MRB_OUT"),
+  ("Power Amp",      "TP_PA_BIAS",  "PA_B",   "PA_BIAS"),
+  ("Power Amp",      "TP_PA_OUT",   "PA_OUT", "PA_OUT"),
+  ("Power Amp",      "TP_SPK",      "SPK",    "SPK_P"),
+  ("Power Amp",      "TP_GND_PA",   "GND",    "GND"),
+]
+def add_test_points(s, y=250):
+    """Drop this sheet's test points in a row along the bottom of the sheet."""
+    tps = [t for t in TEST_POINTS if t[0] == s.title]
+    if not tps:
+        return
+    s.note("TEST POINTS -- header pin or wire loop; silk label = net alias (see PCB-NOTES.md for expected values)", 40, y - 12)
+    for i, (_, ref, label, net) in enumerate(tps):
+        s.comp("TP", ref, label, 40 + 25 * i, y, {"1": net})
 
 def build():
     load_custom()
@@ -538,6 +584,8 @@ def build():
     s.comp("R","R_spk_rtn","0R",170,150,{"1":"SPK_N","2":"GND"})
     # (R_painput removed -- IC2-B buffer now drives PA_IN from MRB_OUT, roast R3)
 
+    for sh in sheets:
+        add_test_points(sh)
     return sheets
 
 def write_root(sheets):

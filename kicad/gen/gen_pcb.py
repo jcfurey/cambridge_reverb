@@ -32,31 +32,36 @@ OUT_DEMO = os.path.join(REPO_KI, "power_section_demo.kicad_pcb")
 
 BW, BH = 190.0, 115.0      # full board (matches original 25-5274-2; errata #9)
 MARGIN = 10.0              # Part 4/5: 10 mm margin all round for the chassis / bracket
-GAP      = 1.7             # courtyard-to-courtyard spacing inside a zone (routing channel between parts)
-ZONE_GAP = 4.0             # empty channel between zones (routing room)
+GAP      = 1.3             # courtyard-to-courtyard spacing inside a zone (>= 1.9 mm pad-to-pad: a 0.5 mm trace + clearances fits)
+ZONE_GAP = 4.0             # empty channel between columns (routing room)
+ZONE_VGAP = 2.0            # gap between zones stacked in one column
 EDGE_Y   = BH - MARGIN - 2.5   # wiring-edge connector row (Part 5: "all pads on one edge")
 MAIN_TOP = MARGIN + 1.5
 MAIN_BOT = EDGE_Y - 6.0    # bodies stay above the connector row
 KEEPOUT  = 10.0            # Part 5: 10 mm clearance around the LM1875 / LM317 mounting area
+TP_W, TP_H = 6.5, 5.0      # test-point cell: 2 mm pad + its silk label, in a strip at the top of each zone
 
 # Part 5 floor plan: zones left -> right. Each zone takes the on-board parts of the
 # listed schematic sheets, in sheet (= signal-chain) order.
 ZONES = [
   ("INPUT / PREAMP", ["Preamp"]),
   ("TONE",           ["Tone Stack"]),
-  # MRB on top (no off-board wiring), tremolo in the middle, REVERB at the BOTTOM
-  # next to its tank / level-pot pads on the wiring edge (shortest TANK_IN/OUT runs)
-  ("REVERB / TREM",  ["MRB", "Tremolo", "Reverb"]),
+  # effects column, stacked: MRB + tremolo on top (no tank wiring), REVERB at the
+  # BOTTOM next to its tank / level-pot pads on the wiring edge (shortest
+  # TANK_IN/OUT runs); each zone gets its own test-point strip above its parts
+  ("TREMOLO / MRB",  ["MRB", "Tremolo"]),
+  ("REVERB",         ["Reverb"]),
   ("POWER AMP",      ["Power Amp"]),
   ("POWER SUPPLY",   ["Power Supply"]),
 ]
 # Off-board wiring connectors -> the zone whose stretch of the wiring edge they sit on
 EDGE_ZONE = {"J_IN1": 0, "J_IN2": 0, "J_IN3": 0,
              "POT_VOL": 1, "POT_TONE": 1,
-             "REV1": 2, "POT_REV": 2, "POT_SPD": 2, "POT_DPT": 2, "FS1": 2,
-             "LS1": 3,
-             "T1": 4}                      # transformer pads: far right, away from signal
-BODY_ZONE = {"R_spk_rtn": 3}                # switching-sheet part that lives on the board body
+             "POT_SPD": 2, "POT_DPT": 2,
+             "REV1": 3, "POT_REV": 3, "FS1": 3,
+             "LS1": 4,
+             "T1": 5}                      # transformer pads: far right, away from signal
+BODY_ZONE = {"R_spk_rtn": 4}                # switching-sheet part that lives on the board body
 # pack these with another sheet's parts: the footswitch pull-downs belong next to
 # the DIN pads on the wiring edge (reverb block = bottom of the effects column)
 SHEET_OVERRIDE = {"R_fs_trem": "Reverb", "R_fs_mrb": "Reverb",
@@ -64,12 +69,12 @@ SHEET_OVERRIDE = {"R_fs_trem": "Reverb", "R_fs_mrb": "Reverb",
                   # only the effects ICs: place them next to their loads
                   "R_vbr1": "Reverb", "R_vbr2": "Reverb", "C_vbr": "Reverb",
                   "R_vbt1": "Tremolo", "R_vbt2": "Tremolo", "C_vbt": "Tremolo"}
-HEATSINK  = {"IC_PA": 3, "U1": 4}           # top edge of their zone, tab outward, keep-out around
+HEATSINK  = {"IC_PA": 4, "U1": 5}           # top edge of their zone, tab outward, keep-out around
 # Board columns, left -> right; a column may stack several zones top -> bottom
 # (the 4-part TONE zone sits under INPUT/PREAMP instead of wasting a whole strip).
-COLUMNS = [[0, 1], [2], [3], [4]]
+COLUMNS = [[0, 1], [2, 3], [4], [5]]
 # extra width weight for zones that carry the fat HighCurrent/Power traces (routing room)
-ZONE_WEIGHT = {3: 1.35, 4: 1.05}
+ZONE_WEIGHT = {4: 1.2, 5: 1.05}
 
 def fp_libpath(fpid):
     lib, name = fpid.split(":")
@@ -96,6 +101,8 @@ def add_footprint(board, c, x, y, netmap, rot=0, hide_text=True):
     fp.SetReference(c["ref"]); fp.SetValue(c["value"])
     if hide_text:
         fp.Value().SetVisible(False); fp.Reference().SetVisible(False)
+    if c["libsym"] == "TP":                      # the value IS the silk label (net alias)
+        fp.Value().SetVisible(True)
     fp.SetPosition(V(x, y))
     if rot:
         fp.SetOrientationDegrees(rot)
@@ -220,8 +227,10 @@ def main():
     sheet_zone = {sh: i for i, (_, shs) in enumerate(ZONES) for sh in shs}
     sheet_order = [sh for _, shs in ZONES for sh in shs] + ["Switching / I-O"]
     zone_parts = [[] for _ in ZONES]; edge_parts = [[] for _ in ZONES]; hs = {}
+    tp_parts = [[] for _ in ZONES]
     for ref, (c, fp) in fps.items():
-        if ref in HEATSINK:      hs[ref] = (c, fp)
+        if c["libsym"] == "TP":  tp_parts[sheet_zone[c["sheet"]]].append((c, fp))
+        elif ref in HEATSINK:    hs[ref] = (c, fp)
         elif ref in EDGE_ZONE:   edge_parts[EDGE_ZONE[ref]].append((c, fp))
         elif ref in BODY_ZONE:   zone_parts[BODY_ZONE[ref]].append((c, fp))
         else:
@@ -240,14 +249,23 @@ def main():
                 w, h, _, _ = bbox_mm(hs[ref][1])
                 put(hs[ref][1], (x0 + x1) / 2, y + h / 2 + 1.0, 0)
                 y += h + 1.0 + KEEPOUT
+        # test-point strip: a row of labelled 2 mm pads across the top of the zone,
+        # where a probe reaches them without leaning over parts
+        tps = tp_parts[zi]
+        if tps:
+            per_row = max(1, int((x1 - x0 + GAP) // TP_W))
+            for i, (c, fp) in enumerate(tps):
+                r, k = divmod(i, per_row)
+                put(fp, x0 + k * TP_W + TP_W / 2, y + r * TP_H + 3.6, 0)
+            y += ((len(tps) - 1) // per_row + 1) * TP_H + GAP
         ybot, _ = shelf_pack(zone_parts[zi], x0, x1, y, MAIN_BOT)
         return ybot
 
     def pack_column(ci, x0, x1):
         y = MAIN_TOP
         for zi in COLUMNS[ci]:
-            y = pack_zone(zi, x0, x1, y) + ZONE_GAP
-        return y - ZONE_GAP
+            y = pack_zone(zi, x0, x1, y) + ZONE_VGAP
+        return y - ZONE_VGAP
 
     # column widths: start proportional to (weighted) padded part area, then
     # rebalance a few times so every column packs to about the same height,
@@ -256,7 +274,7 @@ def main():
     total_w = BW - 2 * MARGIN - ZONE_GAP * (ncol - 1)
     def padded(parts):
         return sum((bbox_mm(fp)[0] + GAP) * (bbox_mm(fp)[1] + GAP) for _, fp in parts)
-    zarea = [padded(p) for p in zone_parts]
+    zarea = [padded(p) + len(t) * TP_W * TP_H for p, t in zip(zone_parts, tp_parts)]
     for ref, z in HEATSINK.items():
         if ref in hs:
             w, h, _, _ = bbox_mm(hs[ref][1]); zarea[z] += (w + 2 * KEEPOUT) * (h + KEEPOUT)

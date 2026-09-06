@@ -12,8 +12,9 @@ KiCad project files.
 - `footprints/cambridge_reverb.pretty/` — `VTL5C1`, `Inductor_MRB_1H_Toroid`
   (2-pad, 25 mm), **`TO-220-5_Vertical_P1.70mm_LM1875`** (TI NDH inline TO-220-5
   with 1.45 mm pads — fixes the annular-ring DRC error of the stock footprint,
-  PCB-AUDIT §1) and **`Bridge_KBP_P3.81mm`** (Diodes KBP410G, DS39310, pins
-  + ~ ~ −). `Wiring_Edge_Array_35` (35-pad edge connector) is also in the
+  PCB-AUDIT §1), **`Bridge_KBP_P3.81mm`** (Diodes KBP410G, DS39310, pins
+  + ~ ~ −), **`TestPoint_THT_D2.0mm_Label`** (bench test point, value printed on
+  silk) and the **`WirePad_*`** wiring pads. `Wiring_Edge_Array_35` (35-pad edge connector) is also in the
   library but **currently unused** — `gen_pcb.py` places per-connector
   **`WirePad_1x0N_P2.54mm_D1.2mm` / `WirePad_1x0N_P5.08mm_D1.5mm`** pads (the Part 4
   signal / power wire-pad sizes) along the wiring edge instead; the 35-pad array
