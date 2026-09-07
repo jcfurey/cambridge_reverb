@@ -52,3 +52,7 @@ kicad/smd/routing/
 kicad/smd/*.kicad_prl
 kicad/*.kicad_prl
 freerouting.json
+
+# committed verification evidence (kicad/gen/check.sh)
+!kicad/reports/*.rpt
+!kicad/reports/*.json
