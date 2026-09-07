@@ -3,6 +3,38 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Mixed SMD/THT variant + JFET pin-number fix (2026-09-06)
+- 🔴 **Errata #18 — JFET pins.** The generated JFET symbol had 2 = Gate / 3 = Source;
+  the onsemi 2N5457 (TO-92) and MMBF5457 (SOT-23) datasheets both number the leads
+  **1 D / 2 S / 3 G**, so the THT board would have swapped gate and source on Q1,
+  Q2 and Q_rec. Symbol renumbered, both boards regenerated. Caught while adding
+  the SOT-23 footprint.
+- **Build profiles.** `gen_kicad.py`, `gen_pcb.py` and `gen_bom.py` take
+  `--profile tht|smd`: one schematic source, two footprint maps and board
+  parameter sets. `tht` is unchanged (`kicad/`, 190×115). **`smd` writes a
+  self-contained project to `kicad/smd/`** (`cambridge_reverb_smd.*`, lib tables
+  pointing one level up) sized **155×90 mm** — the Part 7 safe-bet chassis.
+- **What goes SMD (70 parts):** 0805 resistors (1206 for `R_reg2`), 1206 caps
+  ≤ 100 nF (C0G in the signal path), 1210 for the 120 nF / 1 µF / `C_zobel`,
+  SMA + SOD-123 diodes, SOT-23 JFETs fitted directly. **Deliberately THT:** power
+  parts, all electrolytics (a standing can uses less board than an SMD can — the
+  area check showed converting them *loses* 380 mm²), DIP-8 sockets for the
+  TL072s, the three bench-trimmed source resistors, LED, connectors, test points.
+  Parts area 4 560 mm² → 48 % of the 155×90 usable area (THT 60 %).
+- **THT board re-routed** after the pin fix (and a column-balance fix: the
+  power-amp width weight was starving the effects column): **166/166 connections,
+  0 DRC violations, 66 vias** — fully routed for the first time.
+- **SMD-profile placement:** 6 mm margin, 0.6 mm part gap, 3 mm channels, pad row
+  kept clear of the corner holes; pre-route DRC 0 errors. Routed with a **GND pour on both layers** (top
+  pour solid to the SMD ground pads only; the router is shown just the bottom plane
+  so it drops a via per SMD ground pad — with both planes visible it left 20 ground
+  pads on islands) and **2.0 / 1.0 mm HighCurrent / Power classes** for this board
+  (errata #11 addendum; the THT 2.5 / 1.5 mm traces starved the router to 9–11 open
+  links). **Committed SMD board: 165/167 routed, 1 DRC error (starved thermal),
+  109 vias**; the two open items are documented as GUI touches.
+- `bom/bom-smd*.csv` with spec notes (no invented part numbers) and
+  `production/smd/bom-jlcpcb.csv` + position file for JLCPCB assembly of the SMD side.
+
 ### Footprint fixes, floor-plan placement, headless autoroute (2026-09-06)
 - **PCB-AUDIT §1 defects fixed with datasheet-derived project footprints:**
   `TO-220-5_Vertical_P1.70mm_LM1875` (TI NDH0005D inline TO-220-5; 1.1 mm drill,

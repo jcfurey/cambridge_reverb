@@ -64,7 +64,7 @@ C_pres,Capacitor (film/ceramic),100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_s1,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_s2,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_treble,Capacitor (film/ceramic),470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
-Q1,Preamp JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. SOT-23->TO-92 adapter or J113
+Q1,Preamp JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. THT board: SOT-23 on a TO-92 adapter or J113 -- pads 1/2/3 = D/S/G (errata #18); SMD variant fits it directly
 Q2,Preamp JFET,MMBF5457,TO-92_Inline,MMBF5457CT-ND,863-MMBF5457,1,see Q1
 R_d1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_d2,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,

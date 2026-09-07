@@ -45,6 +45,15 @@ KiCad project files.
   import, GND pour refilled). Needs Java + the Freerouting jar (git-ignored; see
   the script docstring). Routing status and numbers: `PCB-NOTES.md`.
 
+## `smd/` — the mixed SMD/THT variant (same schematic, second footprint profile)
+- `smd/cambridge_reverb_smd.kicad_pro/.kicad_sch` + the 8 sheets, `smd/cambridge_reverb_smd.kicad_pcb`
+  (**155 × 90 mm**, the Part 7 safe-bet size): generated with `--profile smd` by the
+  same three scripts. Small passives and semis are SMD (0805 R, 1206/1210 C,
+  SMA/SOD-123 D, SOT-23 JFETs); power parts, all electrolytics, the socketed
+  TL072s, the bench-trimmed JFET source resistors, connectors and test points stay
+  THT. Lib tables point at the shared `../symbols` / `../footprints`.
+  Details and routing status: `PCB-NOTES.md` (SMD variant section).
+
 ## Still to do in the KiCad GUI
 - Review the autorouted result (it is an autorouter: expect to tidy the audio
   paths, star-ground, and the HighCurrent loop by hand), show reference

@@ -67,6 +67,34 @@ def freerouting_settings(work, passes, threads, job_timeout):
     with open(os.path.join(work, "freerouting.json"), "w") as f:
         json.dump(cfg, f, indent=2)
 
+def drop_planes(dsn, which):
+    """which = "top": hide the F.Cu pour only (SMD ground pads get vias to the
+    bottom pour). which = "all": hide both pours, so EVERY ground connection is
+    routed in copper (Power-class traces) and pour continuity can never leave a
+    pad on an island -- the pours become extra copper on refill. Costs routing room."""
+    lines = open(dsn).read().split("\n")
+    def is_plane(l):
+        t = l.lstrip()
+        return t.startswith("(plane ") and (which == "all" or "F.Cu" in l)
+    keep = [l for l in lines if not is_plane(l)]
+    if len(keep) != len(lines):
+        open(dsn, "w").write("\n".join(keep))
+        print(f"  dropped {len(lines) - len(keep)} plane(s) [{which}] from the DSN")
+
+def drop_top_plane(dsn):
+    """Hide an F.Cu GND pour from the router. Freerouting treats every exported
+    (plane ...) as *the* connection for that net and routes nothing to pads that
+    touch it; with pours on both layers that leaves SMD ground pads sitting on
+    islands once KiCad refills around the traces (20 of them in one trial). With
+    only the B.Cu plane visible the router must drop a via from every SMD ground
+    pad to the bottom pour -- real copper connectivity -- and the top pour is
+    just extra ground copper on refill."""
+    lines = open(dsn).read().split("\n")
+    keep = [l for l in lines if not (l.lstrip().startswith("(plane ") and "F.Cu" in l)]
+    if len(keep) != len(lines):
+        open(dsn, "w").write("\n".join(keep))
+        print(f"  dropped {len(lines) - len(keep)} F.Cu plane(s) from the DSN: SMD GND pads get vias to the bottom pour")
+
 def inject_autoroute_settings(dsn, a):
     """Freerouting reads its own (autoroute_settings ...) block from the DSN
     structure; KiCad does not write one, so we add it: per-layer active flags and
@@ -130,7 +158,10 @@ def main():
                     help="trace-cost multiplier for B.Cu (default 6: the bottom is used only for short "
                          "jumpers, so the GND pour stays whole; a sweep of 3/4/6 on this board gave "
                          "7/3/1 unrouted); 1.0 = both layers equal")
-    ap.add_argument("--via-cost", type=int, default=80, help="Freerouting via cost (default 80)")
+    ap.add_argument("--via-cost", type=int, default=60, help="Freerouting via cost (default 60; both committed boards used 60)")
+    ap.add_argument("--drop-planes", choices=("top", "all", "none"), default="top",
+                    help="pours hidden from the router: top (default; SMD GND pads get vias to the bottom pour), "
+                         "all (route every GND link in copper), none")
     a = ap.parse_args()
     dst = a.dst or a.src
     if not os.path.exists(JAR):
@@ -145,6 +176,8 @@ def main():
         sys.exit("DSN export failed")
     print(f"exported {dsn} ({os.path.getsize(dsn)//1024} kB)")
     inject_autoroute_settings(dsn, a)
+    if a.drop_planes != "none":
+        drop_planes(dsn, a.drop_planes)
 
     freerouting_settings(a.work, a.passes, a.threads, a.timeout)
     cmd = wrap_display(["java", "-Djava.awt.headless=false", "-jar", JAR, "-de", dsn, "-do", ses,

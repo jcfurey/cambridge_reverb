@@ -27,17 +27,35 @@ import gen_kicad as g
 
 REPO_KI = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SYS_FP  = "/usr/share/kicad/footprints"
-OUT      = os.path.join(REPO_KI, "cambridge_reverb.kicad_pcb")
 OUT_DEMO = os.path.join(REPO_KI, "power_section_demo.kicad_pcb")
 
-BW, BH = 190.0, 115.0      # full board (matches original 25-5274-2; errata #9)
-MARGIN = 10.0              # Part 4/5: 10 mm margin all round for the chassis / bracket
-GAP      = 1.3             # courtyard-to-courtyard spacing inside a zone (>= 1.9 mm pad-to-pad: a 0.5 mm trace + clearances fits)
+# Board parameters per build profile (see gen_kicad.set_profile):
+#   tht -- the primary all-through-hole board, 190 x 115 (original 25-5274-2, errata #9)
+#   smd -- the mixed SMD/THT variant, sized for the Part 7 155 x 90 "safe-bet" chassis
+PROFILES = {
+  # MARGIN: Part 4/5 ask 10 mm all round on the 190x115 board (chassis bracket); the
+  # small-chassis SMD board keeps 6 mm (M3 holes at 5 mm inset still clear).
+  # TOP_POUR: the SMD board also gets a GND pour on F.Cu (SMD ground pads have no
+  # through-hole to reach the bottom pour; two pours + the THT GND pads stitching
+  # them is the normal 2-layer SMD arrangement). The THT board keeps top = signal only.
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.4, MARGIN=10.0, ZONE_GAP=4.0, BOT_GAP=6.0, TOP_POUR=False, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
+  "smd": dict(BW=155.0, BH=90.0,  GAP=0.6, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.5, TOP_POUR=True,  OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
+}
+PROFILE = "tht"
+MARGIN = 10.0              # (set per profile in configure())
 ZONE_GAP = 4.0             # empty channel between columns (routing room)
 ZONE_VGAP = 2.0            # gap between zones stacked in one column
-EDGE_Y   = BH - MARGIN - 2.5   # wiring-edge connector row (Part 5: "all pads on one edge")
-MAIN_TOP = MARGIN + 1.5
-MAIN_BOT = EDGE_Y - 6.0    # bodies stay above the connector row
+def configure(profile):
+    """Select the build profile: board size, margins, part gap, output path (+ gen_kicad's footprint map)."""
+    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR
+    PROFILE = profile; P = PROFILES[profile]
+    BW, BH, GAP, MARGIN, ZONE_GAP, TOP_POUR = P["BW"], P["BH"], P["GAP"], P["MARGIN"], P["ZONE_GAP"], P["TOP_POUR"]
+    EDGE_Y   = BH - MARGIN - 2.5   # wiring-edge connector row (Part 5: "all pads on one edge")
+    MAIN_TOP = MARGIN + 1.5
+    MAIN_BOT = EDGE_Y - P["BOT_GAP"]   # bodies stay above the connector row
+    OUT = os.path.join(REPO_KI, P["SUBDIR"], P["OUT"])
+    g.set_profile(profile)
+configure("tht")
 KEEPOUT  = 10.0            # Part 5: 10 mm clearance around the LM1875 / LM317 mounting area
 TP_W, TP_H = 6.5, 5.0      # test-point cell: 2 mm pad + its silk label, in a strip at the top of each zone
 
@@ -74,7 +92,7 @@ HEATSINK  = {"IC_PA": 4, "U1": 5}           # top edge of their zone, tab outwar
 # (the 4-part TONE zone sits under INPUT/PREAMP instead of wasting a whole strip).
 COLUMNS = [[0, 1], [2, 3], [4], [5]]
 # extra width weight for zones that carry the fat HighCurrent/Power traces (routing room)
-ZONE_WEIGHT = {4: 1.2, 5: 1.05}
+ZONE_WEIGHT = {4: 1.05}     # (a bigger PA weight starves the effects column once the TP strips are in)
 
 def fp_libpath(fpid):
     lib, name = fpid.split(":")
@@ -110,6 +128,10 @@ def add_footprint(board, c, x, y, netmap, rot=0, hide_text=True):
         net = c["nets"].get(pad.GetNumber())
         if net and net in netmap:
             pad.SetNet(netmap[net])
+        if TOP_POUR and pad.GetAttribute() == pcbnew.PAD_ATTRIB_SMD and net == "GND":
+            # SMD ground pads connect SOLID into the top pour (no thermal spokes to
+            # starve; reflow/hot-air does not care) -- THT pads keep thermal reliefs
+            pad.SetZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
     return fp
 
 def outline(board, w, h):
@@ -121,11 +143,16 @@ def outline(board, w, h):
         seg.SetLayer(pcbnew.Edge_Cuts); seg.SetWidth(mm(0.15))
         board.Add(seg)
 
-def gnd_pour(board, netmap, w, h):
+def gnd_pour(board, netmap, w, h, layer=None):
     if "GND" not in netmap:
         return
     zone = pcbnew.ZONE(board)
-    zone.SetLayer(pcbnew.B_Cu)
+    zone.SetLayer(pcbnew.B_Cu if layer is None else layer)
+    if layer == pcbnew.F_Cu:
+        # top pour: copper for the SMD ground pads (they carry a SOLID per-pad
+        # override) and shielding; it does NOT put thermal spokes on the through-
+        # hole pads -- those ground through the bottom pour, so no starved spokes
+        zone.SetPadConnection(pcbnew.ZONE_CONNECTION_NONE)
     zone.SetNetCode(netmap["GND"].GetNetCode())
     zone.SetAssignedPriority(0)
     sps = zone.Outline(); sps.NewOutline()
@@ -281,7 +308,8 @@ def main():
     wt = [max(ZONE_WEIGHT.get(z, 1.0) for z in col) for col in COLUMNS]
     areas = [sum(zarea[z] for z in col) * k for col, k in zip(COLUMNS, wt)]
     edge_w = [[put(fp, 0, 0, 0)[0] for _, fp in ep] for ep in edge_parts]   # wire pads run along the edge
-    minw = [max([bbox_mm(fp)[0] for z in col for _, fp in zone_parts[z]] + [12.0]) + GAP for col in COLUMNS]
+    min_col = 12.0 if PROFILE == "tht" else 10.5     # narrowest useful column (axial R vs 0805 rows)
+    minw = [max([bbox_mm(fp)[0] for z in col for _, fp in zone_parts[z]] + [min_col]) + GAP for col in COLUMNS]
     widths = [max(total_w * a / sum(areas), m) for a, m in zip(areas, minw)]
     for _ in range(12):
         widths = [w * total_w / sum(widths) for w in widths]
@@ -294,7 +322,9 @@ def main():
 
     # final placement, plus the wiring-edge connector row (one global cursor so
     # neighbouring groups never collide; T1 pinned to the far right)
-    x = MARGIN; util = []; cursor = MARGIN
+    x = MARGIN; util = []
+    edge_lo, edge_hi = max(MARGIN, 9.0), min(BW - MARGIN, BW - 9.0)   # clear of the corner M3 holes
+    cursor = edge_lo
     for ci, col in enumerate(COLUMNS):
         x0, x1 = x, x + widths[ci]
         ybot = pack_column(ci, x0, x1)
@@ -302,7 +332,7 @@ def main():
         span = sum(w for _, _, w in eps) + GAP * max(len(eps) - 1, 0)
         ex = max((x0 + x1) / 2 - span / 2, cursor)
         if ci == ncol - 1:
-            ex = max(ex, x1 - span)
+            ex = max(ex, edge_hi - span)
         for c, fp, w in eps:
             put(fp, ex + w / 2, EDGE_Y, 0); ex += w + GAP
         cursor = ex
@@ -314,19 +344,22 @@ def main():
     mounting_holes(board, BW, BH)
     stubs = escape_stubs(board, fps)
     gnd_pour(board, netmap, BW, BH)
+    if TOP_POUR:
+        gnd_pour(board, netmap, BW, BH, layer=pcbnew.F_Cu)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(OUT, board)
 
     # chassis-fit packing-density check (bounding boxes, as before)
     areas_all = [bbox_mm(fp)[0] * bbox_mm(fp)[1] for _, fp in fps.values()]
     part_area = sum(areas_all)
-    print(f"[full] placed {len(fps)}/{len(comps)} footprints, {len(netmap)} nets, {stubs} locked escape stubs")
+    print(f"[{PROFILE}] placed {len(fps)}/{len(comps)} footprints, {len(netmap)} nets, {stubs} locked escape stubs "
+          f"-> {os.path.relpath(OUT, REPO_KI)} ({BW:.0f}x{BH:.0f} mm)")
     if miss:
         print("  MISSING:", sorted(set(miss)))
     for zname, x0, x1, ybot, over in util:
         print(f"  column {zname:28s} x={x0:6.1f}..{x1:6.1f} ({x1-x0:5.1f} mm)  parts reach y={ybot:5.1f} "
               f"of {MAIN_BOT:.0f}{'  ** OVERFLOW **' if over else ''}")
-    for label, w, h in [("190x115 (orig PCB)", BW, BH), ("155x90 (Part7 safe-bet)", 155, 90)]:
+    for label, w, h in [("190x115 (orig PCB)", 190, 115), ("155x90 (Part7 safe-bet)", 155, 90)]:
         usable = (w - 20) * (h - 20)
         print(f"  packing density on {label}: parts={part_area:.0f} mm^2 / "
               f"usable={usable:.0f} mm^2 = {100*part_area/usable:.0f}%")
@@ -392,5 +425,14 @@ def power_demo():
     print(f"[demo] routed {routed} track segments across 2 rails -> {OUT_DEMO}")
 
 if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(description="Generate the placed board(s) from the schematic data")
+    ap.add_argument("--profile", choices=tuple(PROFILES), default="tht",
+                    help="tht: kicad/cambridge_reverb.kicad_pcb (190x115); smd: kicad/smd/cambridge_reverb_smd.kicad_pcb (155x90)")
+    a = ap.parse_args()
+    configure(a.profile)
+    if a.profile == "smd":
+        g.write_smd_project_files()      # .kicad_pro + lib tables next to the board (DRC needs the net classes)
     main()
-    power_demo()
+    if a.profile == "tht":
+        power_demo()

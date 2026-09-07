@@ -101,6 +101,12 @@ transformer secondary nets `AC1`/`AC2` carry the same current as `+33V5` (more,
 as RMS: rectifier charging pulses) but had fallen into the 0.5 mm Default class.
 They are now in **HighCurrent** too (`.kicad_pro` pattern list).
 
+**Addendum (SMD variant, 2026-09-06):** `kicad/smd/cambridge_reverb_smd.kicad_pro`
+uses **HighCurrent 2.0 mm / Power 1.0 mm** (0.25 mm clearance) instead of 2.5 / 1.5.
+The wider classes were sized for the 190×115 THT board; on the 155×90 mixed-SMD
+board they cannot pass between 0805/1206 pads and starved the router. Electrically
+2.0 / 1.0 mm on 1 oz copper carry several amps — ample for ~1.7 A peak / <1 A RMS.
+
 ## Issue 12 — Via-drill specs disagree between Part 4 and netlist-notes
 Part 4 design rules give min via drill **0.3 mm** and a Power-class via drill of
 **0.5 mm**; `netlist-notes.txt` instead says **signal vias 0.5 mm**, **power
@@ -155,3 +161,17 @@ LM1875 design, V− (pin 3) **is** ground, so the bypass pair lands on **V+ (pin
 only**, exactly as Part 2 and the netlist show (`C_byp1`, `C_byp2` on pin 5 → GND).
 **Resolution:** read "each supply pin" as "the V+ supply pin"; no extra parts.
 **Severity:** LOW (wording).
+
+## Issue 18 — JFET symbol pin numbers did not match the TO-92 / SOT-23 parts (2026-09-06) — HIGH
+The generated schematic's JFET symbol numbered its pins **1 = Drain, 2 = Gate,
+3 = Source**, and the board used the stock `TO-92_Inline` footprint with pads 1-2-3
+in a row. The onsemi datasheets for **both** specified parts number the leads
+**1 = Drain, 2 = Source, 3 = Gate** — 2N5457/J113 (TO-92, straight-lead) and
+MMBF5457 (SOT-23) alike — so a real part fitted to the old board would have had
+its gate on the source pad and vice-versa (Q1, Q2, Q_rec). ERC/DRC cannot see
+this; it was caught while adding the SOT-23 footprint for the mixed-SMD variant.
+**Resolution:** symbol renumbered to 1 = D, 2 = S, 3 = G; all three JFET net maps
+updated; both boards regenerated. If you populate the THT board with a SOT-23 on a
+TO-92 adapter, wire the adapter D-S-G to pads 1-2-3.
+**Severity:** HIGH (silent wiring fault) — fixed in the generator; verify against
+the datasheet of whatever JFET you actually buy (J113: also D-S-G).

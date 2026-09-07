@@ -13,6 +13,21 @@ Symbol-lib coords are y-up; schematic is y-down, so pin endpoints map as
 import uuid, os, math
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
+
+# Build PROFILE: "tht" (the primary, all through-hole board, written to kicad/) or
+# "smd" (the mixed variant: small passives + small semis on SMD footprints, power
+# parts / cans / connectors / op-amps stay THT; written to kicad/smd/). One
+# schematic source, two footprint maps -- set with set_profile() before build().
+PROFILE = os.environ.get("CR_PROFILE", "tht")
+OUTDIR = ROOT
+def set_profile(profile):
+    global PROFILE, OUTDIR
+    assert profile in ("tht", "smd"), profile
+    PROFILE = profile
+    OUTDIR = ROOT if profile == "tht" else os.path.join(ROOT, "smd")
+    os.makedirs(OUTDIR, exist_ok=True)
+set_profile(PROFILE)
+
 def U(): return str(uuid.uuid4())
 def SNAP(v): return round(round(v / 1.27) * 1.27, 4)   # snap to 50-mil grid
 
@@ -66,8 +81,11 @@ SYMS = {
  "POT":dict(ref="RV", desc="Potentiometer (1,3 ends; 2 wiper)", hide_nums=False,
             pins=[("1","1",-5.08,0,-1,0),("3","3",5.08,0,1,0),("2","W",0,5.08,0,1)],
             body=[(-2.54,-1.27,2.54,1.27)]),
- "NJFET":dict(ref="Q", desc="N-channel JFET (D G S)", hide_nums=False,
-            pins=[("2","G",-7.62,0,-1,0),("1","D",2.54,7.62,0,1),("3","S",2.54,-7.62,0,-1)],
+ # pin numbers follow the onsemi 2N5457 (TO-92) AND MMBF5457 (SOT-23) datasheets:
+ # 1 = Drain, 2 = Source, 3 = Gate. (Before 2026-09 the symbol had 2 = G / 3 = S,
+ # which on a real TO-92 2N5457 wires the gate to the source lead -- errata #18.)
+ "NJFET":dict(ref="Q", desc="N-channel JFET (1=D 2=S 3=G, onsemi 2N5457/MMBF5457)", hide_nums=False,
+            pins=[("3","G",-7.62,0,-1,0),("1","D",2.54,7.62,0,1),("2","S",2.54,-7.62,0,-1)],
             body=[(-2.54,-3.81,2.54,3.81)]),
  "BRIDGE":dict(ref="BR", desc="Bridge rectifier (KBP pin order: 1=+ 2=~ 3=~ 4=-)", hide_nums=False,
             pins=[("2","~",-7.62,0,-1,0),("3","~",7.62,0,1,0),
@@ -260,7 +278,7 @@ class Sheet:
                '  (lib_symbols', "\n".join(libdefs), '  )',
                "\n".join(items),
                '  (sheet_instances (path "/" (page "1")))', ')']
-        p = os.path.join(ROOT, self.fname)
+        p = os.path.join(OUTDIR, self.fname)
         open(p, "w").write("\n".join(out) + "\n")
         return p
 
@@ -311,7 +329,42 @@ FP_BY_REF = {
  "C_reg_in":  "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",   # tantalum bead, 2.5 mm spacing (BOM)
  "C_reg_out1":"Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
 }
+# ---- "smd" profile: mixed SMD / THT ------------------------------------------
+# Small passives and small semis go SMD (hand- or JLCPCB-assembly friendly sizes:
+# 0805 R, 1206/1210 C, SMA/SOD-123 diodes, SOT-23 JFET). Deliberately THT:
+#  * power parts (LM1875, LM317, bridge, 5 W / 1 W resistors, R_zobel, the 0R link)
+#  * ALL electrolytics -- radial cans standing up use LESS board than SMD cans
+#  * the TL072s in DIP-8 sockets (component-availability audit: swappable)
+#  * the three JFET source resistors that are TRIMMED on the bench (errata #15)
+#  * the diagnostic LED, test points, vactrol, toroid, fuse clip, wire pads
+SMD_KEEP_THT = {"R_s1", "R_s2", "R_rec2",          # bench-trimmed (errata #15)
+                "R_zobel", "R_spk_rtn"}            # speaker-current parts
+SMD_R_1206 = {"R_reg2"}                            # ~85 mW: 1206 (0.25 W) not 0805
+SMD_C_1210 = {"C_zobel"}                           # 100 nF / 100 V across the speaker
+def _nf(value):
+    m = _re.match(r'(\d+(?:\.\d+)?)\s*(pF|nF|uF)', value)
+    if not m: return None
+    return float(m.group(1)) * {"pF": 1e-3, "nF": 1.0, "uF": 1e3}[m.group(2)]
+def footprint_smd(libsym, ref, value):
+    if ref in SMD_KEEP_THT or ref in FP_BY_REF: return None
+    if libsym == "R":
+        if value.endswith(("/5W", "/1W", "/2W")): return None
+        return ("Resistor_SMD:R_1206_3216Metric" if ref in SMD_R_1206
+                else "Resistor_SMD:R_0805_2012Metric")
+    if libsym == "C":
+        nf = _nf(value) or 0
+        if ref in SMD_C_1210 or nf > 100: return "Capacitor_SMD:C_1210_3225Metric"   # 120 nF MRB, 1 uF coupling (X7R 50 V or PPS film)
+        return "Capacitor_SMD:C_1206_3216Metric"                                    # <= 100 nF: C0G/NP0 in the signal path
+    if libsym == "D":
+        return "Diode_SMD:D_SMA" if "4007" in value else "Diode_SMD:D_SOD-123"      # S1M / 1N4148W
+    if libsym == "NJFET":
+        return "Package_TO_SOT_SMD:SOT-23"                                          # MMBF5457 as-is, no adapter
+    return None
+
 def footprint_for(libsym, ref, value):
+    if PROFILE == "smd":
+        fp = footprint_smd(libsym, ref, value)
+        if fp: return fp
     if ref in FP_BY_REF: return FP_BY_REF[ref]
     if libsym == "CP":
         uf = _uf(value) or 0
@@ -462,13 +515,13 @@ def build():
     s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15)",50,20)
     s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"Q1G"})
     s.comp("R","R_g1","1M",40,90,{"1":"Q1G","2":"GND"})
-    s.comp("NJFET","Q1","MMBF5457",90,70,{"2":"Q1G","1":"Q1D","3":"Q1S"})
+    s.comp("NJFET","Q1","MMBF5457",90,70,{"3":"Q1G","1":"Q1D","2":"Q1S"})   # 1=D 2=S 3=G
     s.comp("R","R_d1","10k",90,40,{"1":"+17V","2":"Q1D"})
     s.comp("R","R_s1","2K2",90,110,{"1":"Q1S","2":"GND"})
     s.comp("CP","C_s1","10uF/25V",130,110,{"1":"Q1S","2":"GND"})
     s.comp("C","C_cpl12","100nF",130,70,{"1":"Q1D","2":"Q2G"})
     s.comp("R","R_g2","1M",130,95,{"1":"Q2G","2":"GND"})
-    s.comp("NJFET","Q2","MMBF5457",175,70,{"2":"Q2G","1":"Q2D","3":"Q2S"})
+    s.comp("NJFET","Q2","MMBF5457",175,70,{"3":"Q2G","1":"Q2D","2":"Q2S"})
     s.comp("R","R_d2","10k",175,40,{"1":"+17V","2":"Q2D"})
     s.comp("C","C_pres","100pF",175,110,{"1":"Q2D","2":"GND"})
     s.comp("R","R_s2","2K2",215,95,{"1":"Q2S","2":"GND"})
@@ -498,7 +551,7 @@ def build():
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
             {"1":"TANK_IN","2":"GND","3":"TANK_OUT","4":"GND"})
     s.comp("C","C_rev2","10nF",60,120,{"1":"TANK_OUT","2":"QRG"})
-    s.comp("NJFET","Q_rec","MMBF5457",110,140,{"2":"QRG","1":"QRD","3":"QRS"})
+    s.comp("NJFET","Q_rec","MMBF5457",110,140,{"3":"QRG","1":"QRD","2":"QRS"})
     s.comp("R","R_rec_bias","1M",60,150,{"1":"QRG","2":"GND"})
     s.comp("R","R_rec1","10k",110,115,{"1":"+17V","2":"QRD"})
     s.comp("R","R_rec2","2K2",110,170,{"1":"QRS","2":"GND"})
@@ -588,6 +641,25 @@ def build():
         add_test_points(sh)
     return sheets
 
+ROOT_SCH = {"tht": "cambridge_reverb.kicad_sch", "smd": "cambridge_reverb_smd.kicad_sch"}
+
+def write_smd_project_files():
+    """kicad/smd/ is a self-contained KiCad project: same design rules / net classes
+    as the main project (copied), lib tables pointing one level up."""
+    import json, shutil
+    pro = json.load(open(os.path.join(ROOT, "cambridge_reverb.kicad_pro")))
+    pro.setdefault("meta", {})["filename"] = "cambridge_reverb_smd.kicad_pro"
+    # Net-class widths for the compact board: Part 4's 2.5 / 1.5 mm were sized for
+    # the 190x115 THT board. At ~1.7 A peak / <1 A RMS, 1 oz copper needs well under
+    # 1 mm; 2.0 / 1.0 mm keep a wide margin and fit between 0805/1206 pads.
+    SMD_CLASS = {"HighCurrent": dict(track_width=2.0, clearance=0.25, via_diameter=1.4, via_drill=0.8),
+                 "Power":       dict(track_width=1.0, clearance=0.25, via_diameter=1.2, via_drill=0.6)}
+    for cls in pro.get("net_settings", {}).get("classes", []):
+        cls.update(SMD_CLASS.get(cls.get("name"), {}))
+    json.dump(pro, open(os.path.join(OUTDIR, "cambridge_reverb_smd.kicad_pro"), "w"), indent=2)
+    for tbl in ("sym-lib-table", "fp-lib-table"):
+        txt = open(os.path.join(ROOT, tbl)).read().replace("${KIPRJMOD}/", "${KIPRJMOD}/../")
+        open(os.path.join(OUTDIR, tbl), "w").write(txt)
 def write_root(sheets):
     out=[]
     out.append('(kicad_sch (version 20230121) (generator cambridge_reverb_gen)')
@@ -612,12 +684,20 @@ def write_root(sheets):
     out.append('    (path "/" (page "1"))')
     out.append('  )')
     out.append(')')
-    open(os.path.join(ROOT,"cambridge_reverb.kicad_sch"),"w").write("\n".join(out)+"\n")
+    open(os.path.join(OUTDIR, ROOT_SCH[PROFILE]),"w").write("\n".join(out)+"\n")
 
 if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--profile", choices=("tht", "smd"), default=PROFILE,
+                    help="footprint profile / output dir: tht -> kicad/, smd -> kicad/smd/")
+    a = ap.parse_args()
+    set_profile(a.profile)
     write_primitives_lib()
     sheets = build()
     for sh in sheets:
         sh.render()
     write_root(sheets)
-    print("generated root + %d sheets" % len(sheets))
+    if PROFILE == "smd":
+        write_smd_project_files()
+    print("generated root + %d sheets  [profile %s -> %s]" % (len(sheets), PROFILE, os.path.relpath(OUTDIR, ROOT + "/..")))

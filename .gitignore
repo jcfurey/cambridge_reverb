@@ -48,4 +48,7 @@ __pycache__/
 # --- Autorouting (kicad/gen/route_board.py) ---
 kicad/gen/freerouting.jar
 kicad/routing/
+kicad/smd/routing/
+kicad/smd/*.kicad_prl
+kicad/*.kicad_prl
 freerouting.json

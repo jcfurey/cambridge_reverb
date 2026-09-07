@@ -17,8 +17,11 @@ placement follows the Part 5 floor plan. What remains is engineering judgement
 on the *autorouted* copper (see `PCB-NOTES.md`), not layout hygiene.
 
 ## 1. Footprints
-All 113 components carry a THT, hand-solderable footprint; pad numbers match the
-symbol pins (verified — netlist resolves with 0 unconnected at the schematic).
+All components carry a hand-solderable footprint; pad numbers match the symbol
+pins — **re-verified against the datasheets 2026-09-06 after finding the JFET
+symbol had Gate/Source on the wrong pin numbers (errata #18; both boards fixed)**.
+The table is the THT profile; the mixed-SMD variant (`smd/`) swaps the small R /
+C / D / JFET rows for 0805 / 1206 / 1210 / SMA / SOD-123 / SOT-23 and keeps the rest.
 
 | Class | Footprint | Verdict |
 |-------|-----------|---------|
@@ -30,7 +33,7 @@ symbol pins (verified — netlist resolves with 0 unconnected at the schematic).
 | CP ≤ 22 µF / 47 µF | `CP_Radial_D5.0mm_P2.00mm` / `D6.3mm_P2.50mm` | ✅ sized by value; tantalums `C_reg_in`/`C_reg_out1` on 2.5 mm spacing |
 | CP 1000 µF / 2200 µF / 4700 µF | `CP_Radial_D12.5_P5.00` / `D16.0_P7.50` / `D18.0_P7.50` | ✅ **real can sizes** (Panasonic FC per BOM) — the old board had every can as D8 |
 | D / LED | `D_DO-41…` / `LED_D3.0mm` | ✅ |
-| JFET | `TO-92_Inline` | ✅ for J113 / SOT-23-on-adapter |
+| JFET | `TO-92_Inline` (THT) / `SOT-23` (smd) | ✅ pads 1 D / 2 S / 3 G per onsemi 2N5457 + MMBF5457 (errata #18) |
 | TL072 | `DIP-8_W7.62mm` | ✅ (socket in the real build) |
 | LM317 | `TO-220-3_Vertical` | ✅ |
 | **LM1875** | **`cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875`** | ✅ **FIXED.** TI NDH0005D inline TO-220-5 (1.70 mm pitch, 0.89 × 0.38 mm leads). 1.1 mm drill (as stock) with **1.45 mm pads → 0.175 mm annular** (rule 0.15, JLCPCB 0.13); pad-local clearance 0.2 mm so the 0.25 mm pad gap passes next to the 0.3 mm HighCurrent clearance. Stock footprint gave 0.0875 mm → 5 DRC errors. |
@@ -66,6 +69,11 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
 - Not encoded: "no traces under LFO timing components" — an autorouter cannot
   honour it; check the tremolo area by eye.
 
+## 2b. The SMD variant's placement
+Same generator, `--profile smd`: 155 × 90 mm, 6 mm margin, 0.6 mm part gap, 3 mm
+channels, pad row kept clear of the corner holes. All four columns fit under the
+wiring-edge limit; pre-route DRC 0 errors / 0 warnings beyond the stub warnings.
+
 ## 3. Board outline & chassis fit — figure corrected ⚠️
 - Outline: **190 × 115 mm**, matching the original 25-5274-2 (errata #9).
 - **The earlier density numbers were inflated.** The old `gen_pcb.py` summed
@@ -77,10 +85,11 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
 | 190 × 115 mm (original) | 16 150 mm² | ~5 290 mm² | **~33 %** (was reported 48–53 %) |
 | 155 × 90 mm (Part 7 "safe-bet") | 9 450 mm² | ~5 290 mm² | **~56 %** (was reported 82–90 %) |
 
-  So the 155 × 90 board is **no longer "not buildable"** — 56 % is dense but
-  realistic for THT (this board packs the 190 × 115 to only ~62 % of its
-  height). Errata #9 still stands: **measure the chassis first**, then set
-  `BW, BH` in `gen_pcb.py` and regenerate (the placer rebalances the zones).
+  So the 155 × 90 board is **no longer "not buildable"** — 60 % (with the test
+  points) is dense for THT, and the **mixed-SMD variant actually fits it** at 48 %
+  (`smd/cambridge_reverb_smd.kicad_pcb`). Errata #9 still stands: **measure the
+  chassis first**, then pick the profile / set `BW, BH` in `gen_pcb.py` and
+  regenerate (the placer rebalances the columns).
 
 ## 4. Net classes & design rules
 - Three classes: **Default 0.5 mm / Power 1.5 mm / HighCurrent 2.5 mm**, with

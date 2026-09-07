@@ -10,6 +10,7 @@ standoffs, fuse holders, mains fuse).  Run from repo root:
     python3 kicad/gen/gen_bom.py
 """
 import sys, os, csv
+from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 import gen_kicad as g
 
@@ -41,7 +42,7 @@ CUR = {
  "IC_PA":dict(dk="LM1875T/NOPB-ND", mou="926-LM1875T/NOPB", notes="Single-source (TI) - buy a spare. Heatsink <=2.5 C/W + mica; NOT socketed"),
  "U1":   dict(dk="LM317T/NOPB-ND", mou="926-LM317T/NOPB", notes=""),
  "BR1":  dict(dk="KBP410G-ND", mou="821-KBP410G", notes="Or 4x 1N4007"),
- "Q1":   dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. SOT-23->TO-92 adapter or J113"),
+ "Q1":   dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. THT board: SOT-23 on a TO-92 adapter or J113 -- pads 1/2/3 = D/S/G (errata #18); SMD variant fits it directly"),
  "Q2":   dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="see Q1"),
  "Q_rec":dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="see Q1"),
  "D1":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp"),
@@ -91,18 +92,37 @@ def describe(c):
     if c["ref"] in REUSE and "reuse" not in d.lower(): d += " (reused/off-board)"
     return d
 
-def main():
+# "smd" profile: the curated THT part numbers do not apply to the remapped parts;
+# they get a spec note instead (generic JLCPCB-basic-class parts) -- no invented P/Ns.
+SMD_NOTES = {
+ "R_0805_2012Metric": "0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic",
+ "R_1206_3216Metric": "1206 1% 0.25 W (dissipates ~85 mW)",
+ "C_1206_3216Metric": "1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R",
+ "C_1210_3225Metric": "1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist",
+ "D_SMA":             "S1M (1 kV 1 A SMA) replaces 1N4007",
+ "D_SOD-123":         "1N4148W replaces 1N4148",
+ "SOT-23":            "MMBF5457 fitted directly (no TO-92 adapter); pin 1 D, 2 S, 3 G per onsemi",
+}
+def smd_note(c):
+    fpn = c["fp"].split(":")[-1] if c["fp"] else ""
+    return SMD_NOTES.get(fpn)
+
+def main(profile="tht", jlc=False):
+    g.set_profile(profile)
     g.build()
+    suffix = "" if profile == "tht" else "-" + profile
     comps = [c for c in g.COMPONENTS if c["libsym"] != "PWR_FLAG"]   # drop virtual flags
     rows = []
     for c in sorted(comps, key=lambda c: (c["sheet"], c["ref"])):
         cur = CUR.get(c["ref"], {})
         if c["libsym"] == "TP":
             cur = dict(notes="bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net")
+        if profile == "smd" and smd_note(c):
+            cur = dict(dk="", mou="", notes=smd_note(c) + (("; was: " + cur["notes"]) if cur.get("notes") else ""))
         rows.append([c["ref"], describe(c), c["value"], c["fp"].split(":")[-1] if c["fp"] else "",
                      cur.get("dk",""), cur.get("mou",""), 1, cur.get("notes","")])
     hdr = ["ref","description","value","footprint","digikey_pn","mouser_pn","qty","notes"]
-    out = os.path.join(ROOT, "bom", "bom.csv")
+    out = os.path.join(ROOT, "bom", f"bom{suffix}.csv")
     with open(out, "w", newline="") as f:
         w = csv.writer(f)
         f.write("# GENERATED from the schematic by kicad/gen/gen_bom.py -- do not hand-edit.\n")
@@ -112,20 +132,37 @@ def main():
         w.writerow(["# --- off-board / mechanical (not in netlist) ---","","","","","","",""])
         for m in MECH: w.writerow(list(m))
     # grouped order-summary by (value, footprint)
-    from collections import defaultdict
     grp = defaultdict(list)
     for c in comps:
         val = "test point (label = net)" if c["libsym"] == "TP" else c["value"]   # 26 one-offs -> one order line
         grp[(val, c["fp"].split(":")[-1] if c["fp"] else "")].append(c["ref"])
-    gout = os.path.join(ROOT, "bom", "bom-grouped.csv")
+    gout = os.path.join(ROOT, "bom", f"bom{suffix}-grouped.csv")
     with open(gout, "w", newline="") as f:
         w = csv.writer(f); w.writerow(["qty","value","footprint","refs"])
         for (val, fp), refs in sorted(grp.items(), key=lambda kv: (kv[0][1], kv[0][0])):
             w.writerow([len(refs), val, fp, " ".join(sorted(refs))])
-    print(f"wrote {len(rows)} electrical + {len(MECH)} mechanical rows -> bom/bom.csv")
-    print(f"wrote {len(grp)} grouped lines -> bom/bom-grouped.csv")
+    print(f"wrote {len(rows)} electrical + {len(MECH)} mechanical rows -> bom/bom{suffix}.csv")
+    print(f"wrote {len(grp)} grouped lines -> bom/bom{suffix}-grouped.csv")
+    if jlc:
+        # JLCPCB assembly BOM for the SMD side only (Comment, Designator, Footprint, LCSC).
+        # LCSC numbers are left for the JLC parts picker -- none are invented here.
+        smd = [c for c in comps if c["fp"] and ("_SMD:" in c["fp"] or "SOT_SMD" in c["fp"])]
+        os.makedirs(os.path.join(ROOT, "production", "smd"), exist_ok=True)
+        jout = os.path.join(ROOT, "production", "smd", "bom-jlcpcb.csv")
+        by = defaultdict(list)
+        for c in smd: by[(c["value"], c["fp"].split(":")[-1])].append(c["ref"])
+        with open(jout, "w", newline="") as f:
+            w = csv.writer(f); w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
+            for (val, fpn), refs in sorted(by.items(), key=lambda kv: (kv[0][1], kv[0][0])):
+                w.writerow([val, ",".join(sorted(refs)), fpn, ""])
+        print(f"wrote {len(by)} JLCPCB assembly lines ({len(smd)} SMD parts) -> production/smd/bom-jlcpcb.csv")
     miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","LM1875","LM317","BRIDGE","NJFET")]
     if miss: print("  note: active parts without a curated P/N:", miss)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    ap = argparse.ArgumentParser(description="Generate the BOM from the schematic (per build profile)")
+    ap.add_argument("--profile", choices=("tht", "smd"), default="tht")
+    ap.add_argument("--jlc", action="store_true", help="also write production/smd/bom-jlcpcb.csv (SMD side)")
+    a = ap.parse_args()
+    main(a.profile, a.jlc)
