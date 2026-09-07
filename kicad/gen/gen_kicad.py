@@ -107,6 +107,18 @@ SYMS = {
  "TP":  dict(ref="TP", desc="Test point (header pin / wire loop)", hide_nums=True,
             pins=[("1","1",0,-2.54,0,-1)],
             body=[(-1.27,0,1.27,2.54)]),
+ "OPAMP14":dict(ref="U", desc="Quad op-amp (TL074 DIP-14 pinout)", hide_nums=False,
+            pins=[("3","IN1+",-12.7,15.24,-1,0),("2","IN1-",-12.7,12.7,-1,0),
+                  ("5","IN2+",-12.7,7.62,-1,0),("6","IN2-",-12.7,5.08,-1,0),
+                  ("10","IN3+",-12.7,0,-1,0),("9","IN3-",-12.7,-2.54,-1,0),
+                  ("12","IN4+",-12.7,-7.62,-1,0),("13","IN4-",-12.7,-10.16,-1,0),
+                  ("1","OUT1",12.7,13.97,1,0),("7","OUT2",12.7,6.35,1,0),
+                  ("8","OUT3",12.7,-1.27,1,0),("14","OUT4",12.7,-8.89,1,0),
+                  ("4","V+",0,20.32,0,1),("11","V-",0,-15.24,0,-1)],
+            body=[(-7.62,-12.7,7.62,17.78)]),
+ "SW_SPST":dict(ref="SW", desc="SPST toggle switch (panel)", hide_nums=True,
+            pins=[("1","1",-5.08,0,-1,0),("2","2",5.08,0,1,0)],
+            body=[(-2.54,-1.27,2.54,1.27)]),
  "PWR_FLAG":dict(ref="#FLG", desc="Power flag", hide_nums=True, power=True,
             pins=[("1","pwr",0,0,0,1)], body=[], pin_type="power_out"),
  "JACK":dict(ref="J", desc="1/4in input jack (1=Tip 2=Sleeve)", hide_nums=False,
@@ -307,6 +319,8 @@ FOOTPRINTS = {
  "LM317":"Package_TO_SOT_THT:TO-220-3_Vertical",
  "LM1875":"cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875",  # wide-pad: fixes the annular-ring DRC error
  "OPAMP8":"Package_DIP:DIP-8_W7.62mm",
+ "OPAMP14":"Package_DIP:DIP-14_W7.62mm",
+ "SW_SPST":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",   # panel toggle, wired
  "JACK":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",
  "SPEAKER":"cambridge_reverb:WirePad_1x02_P5.08mm_D1.5mm",     # 3.0 mm power pads (Part 4)
  "XFMR":"cambridge_reverb:WirePad_1x03_P5.08mm_D1.5mm",        # 3.0 mm power pads (Part 4)
@@ -442,6 +456,8 @@ TEST_POINTS = [
   ("Preamp",         "TP_PRE_OUT",  "PRE",    "PREAMP_OUT"),
   ("Preamp",         "TP_GND_PRE",  "GND",    "GND"),
   ("Tone Stack",     "TP_TONE_OUT", "TONE",   "TONE_OUT"),
+  ("Tone Stack",     "TP_MK_OUT",   "TMK",    "MK_OUT"),
+  ("Tone Stack",     "TP_VBIAS_3",  "VB_3",   "VBIAS_3"),
   ("Reverb",         "TP_VBIAS_R",  "VB_R",   "VBIAS_R"),
   ("Reverb",         "TP_TANK_IN",  "TK_IN",  "TANK_IN"),
   ("Reverb",         "TP_TANK_OUT", "TK_OUT", "TANK_OUT"),
@@ -526,15 +542,51 @@ def build():
     s.comp("C","C_pres","100pF",175,110,{"1":"Q2D","2":"GND"})
     s.comp("R","R_s2","2K2",215,95,{"1":"Q2S","2":"GND"})
     s.comp("CP","C_s2","10uF/25V",215,120,{"1":"Q2S","2":"GND"})
-    s.comp("C","C_treble","470pF",215,55,{"1":"Q2D","2":"PREAMP_OUT"})
+    s.comp("C","C_cpl_out","1uF",215,55,{"1":"Q2D","2":"PREAMP_OUT"})   # full-band coupling (errata #20: the generated sheet had only the 470 pF chime cap here = a 1.3 kHz high-pass)
 
-    # ---- Sheet 3: Tone Stack ----
+    # ---- Sheet 3: Tone Stack -- passive James (Vox-style) Bass/Treble + switchable MID CUT (errata #20) ----
     s=Sheet("Tone Stack","tone_stack.kicad_sch"); sheets.append(s)
-    s.note("TONE -- Volume + passive Vox 'cut' (treble). DESIGNED SUBSTITUTE: original 25-5274-2 tone values not recovered (cross-check #4); response verified in spice/ac_tonestack.cir. Original panel may have had separate Treble/Bass.",40,18)
-    s.comp("POT","POT_VOL","250k log",70,70,{"1":"PREAMP_OUT","2":"TONE_OUT","3":"GND"})  # volume; wiper = TONE_OUT
-    s.comp("R","R_fx_pad","10k",70,110,{"1":"TONE_OUT","2":"FX_RET"})                       # internal FX send tap (IN3)
-    s.comp("C","C_cut","10nF",140,70,{"1":"TONE_OUT","2":"TCW"})                            # treble-cut cap
-    s.comp("POT","POT_TONE","100k lin",185,70,{"1":"TCW","2":"GND","3":"GND"})              # CUT: C_cut -> variable R -> GND
+    s.note("TONE -- IC3 TL074. A: input buffer. PASSIVE JAMES bass/treble network (the Thomas-Vox topology: panel Bass + Treble pots; ~flat at noon with a slight bright tilt, bass +-6 dB @100 Hz, treble +6/-16 dB @10 kHz -- more cut than boost, as the originals). B: make-up gain x2 (network loss). C: gyrator MID CUT (-10 dB @ ~790 Hz, Q~0.6, SW_MID toggle in the line-reverse hole). D: output buffer -> Volume (470 pF chime/bright cap) -> TONE_OUT. All about VBIAS_3. spice/sweep_tonestack.cir", 40, 20)
+    # own mid-rail reference (split-bias policy, roast R6) + bypass
+    s.comp("R","R_vb31","100k",40,60,{"1":"+17V","2":"VBIAS_3"})
+    s.comp("R","R_vb32","100k",40,90,{"1":"VBIAS_3","2":"GND"})
+    s.comp("CP","C_vb3","47uF/25V",70,90,{"1":"VBIAS_3","2":"GND"})
+    s.comp("C","C_byp3","100nF",70,60,{"1":"+17V","2":"GND"})
+    s.comp("OPAMP14","IC3","TL074CN",130,100,{"3":"PREAMP_OUT","2":"BUF","1":"BUF",       # A: input buffer (low-Z drive for the passive network)
+                                               "5":"JOUT","6":"MKN","7":"MK_OUT",          # B: make-up gain 1 + R_mk1/R_mk2 = 2
+                                               "10":"GYP","9":"GYO","8":"GYO",            # C: gyrator follower (simulated inductor)
+                                               "12":"MID","13":"OBUF","14":"OBUF",        # D: output buffer
+                                               "4":"+17V","11":"GND"})
+    s.comp("R","R_inb","1M",95,60,{"1":"PREAMP_OUT","2":"VBIAS_3"})        # buffer input bias (PREAMP_OUT is AC-coupled from Q2D)
+    # James network, bass ladder: BUF -R_j1- JA -[POT_BASS]- JB -R_j2- VBIAS_3 ; C_j1/C_j2 across the pot halves ; wiper -R_j3- JOUT
+    # (pot pin 3 = clockwise = the input end = BOOST)
+    s.comp("R","R_j1","10k",180,40,{"1":"BUF","2":"JA"})
+    s.comp("POT","POT_BASS","250k lin",215,40,{"3":"JA","2":"JWB","1":"JB"})
+    s.comp("C","C_j1","22nF",215,65,{"1":"JA","2":"JWB"})
+    s.comp("C","C_j2","22nF",250,65,{"1":"JWB","2":"JB"})
+    s.comp("R","R_j2","10k",285,40,{"1":"JB","2":"VBIAS_3"})
+    s.comp("R","R_j3","68k",250,90,{"1":"JWB","2":"JOUT"})
+    # treble ladder: BUF -C_j3- JTA -[POT_TREB]- JTB -C_j4- VBIAS_3 ; wiper -R_j4- JOUT
+    s.comp("C","C_j3","2.2nF",180,125,{"1":"BUF","2":"JTA"})
+    s.comp("POT","POT_TREB","250k lin",215,125,{"3":"JTA","2":"JWT","1":"JTB"})
+    s.comp("C","C_j4","2.2nF",285,125,{"1":"JTB","2":"VBIAS_3"})
+    s.comp("R","R_j4","1k",250,150,{"1":"JWT","2":"JOUT"})
+    # make-up gain x2 about VBIAS_3
+    s.comp("R","R_mk1","10k",320,90,{"1":"MK_OUT","2":"MKN"})
+    s.comp("R","R_mk2","10k",320,125,{"1":"MKN","2":"VBIAS_3"})
+    # mid cut: series R, then a SWITCHED series-resonant gyrator shunt. L = R_gL*R_gg*C_gg = 4.7k*220k*1.8n = 1.86 H,
+    # C_res 22 nF -> f0 ~790 Hz; depth ~10 dB (R_gL vs R_mid), Q ~0.6 (broad 'honk' band). Off = flat.
+    s.comp("R","R_mid","10k",180,185,{"1":"MK_OUT","2":"MID"})
+    s.comp("SW_SPST","SW_MID","MID CUT",215,185,{"1":"MID","2":"MIDSW"})
+    s.comp("C","C_res","22nF",250,185,{"1":"MIDSW","2":"GYA"})
+    s.comp("R","R_gL","4.7k",285,185,{"1":"GYA","2":"GYO"})
+    s.comp("C","C_gg","1.8nF",285,215,{"1":"GYA","2":"GYP"})
+    s.comp("R","R_gg","220k",320,215,{"1":"GYP","2":"VBIAS_3"})
+    # output buffer -> volume pot (chime cap as a BRIGHT cap across the top half) -> TONE_OUT feeds summer / tank driver / FX send
+    s.comp("C","C_tout","1uF",95,215,{"1":"OBUF","2":"VOLTOP"})
+    s.comp("POT","POT_VOL","250k log",140,215,{"1":"VOLTOP","2":"TONE_OUT","3":"GND"})
+    s.comp("C","C_treble","470pF",235,215,{"1":"VOLTOP","2":"TONE_OUT"})   # Vox 'chime' -> bright cap (treble lift at low volume)
+    s.comp("R","R_fx_pad","10k",185,215,{"1":"TONE_OUT","2":"FX_RET"})       # internal FX send tap (IN3)
 
     # ---- Sheet 4: Reverb (netlist-notes sheet 4) ----
     s=Sheet("Reverb","reverb.kicad_sch"); sheets.append(s)

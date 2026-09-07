@@ -21,7 +21,7 @@ CLASS_DESC = {
  "R":"Resistor","C":"Capacitor (film/ceramic)","CP":"Capacitor (electrolytic)",
  "L":"Inductor","D":"Diode","LED":"LED","FUSE":"Fuse","POT":"Potentiometer (panel, reused)",
  "NJFET":"N-ch JFET","BRIDGE":"Bridge rectifier","LM317":"Adj. regulator",
- "LM1875":"Power amplifier","OPAMP8":"Dual op-amp","JACK":"1/4in jack (panel, reused)",
+ "LM1875":"Power amplifier","OPAMP8":"Dual op-amp","OPAMP14":"Quad op-amp","SW_SPST":"SPST toggle switch (panel)","JACK":"1/4in jack (panel, reused)",
  "SPEAKER":"Speaker (reused)","XFMR":"Power transformer (reused/AnTek)",
  "VTL5C1":"LED/LDR optocoupler","Reverb_Tank_4FB2A1C":"Reverb pan (off-board)",
  "Footswitch_DIN6":"6-pin DIN footswitch (panel)","PWR_FLAG":"","TP":"Test point (header pin or wire loop)",
@@ -29,6 +29,8 @@ CLASS_DESC = {
 # per-ref description override (function), where it adds clarity
 DESC = {
  "IC1":"Dual op-amp: reverb tank driver + wet/dry summer","IC2":"Dual op-amp: tremolo LFO + output buffer",
+ "IC3":"Quad op-amp: tone input buffer + x2 make-up after the passive James bass/treble network + mid-cut gyrator + output buffer",
+ "POT_BASS":"Bass","POT_TREB":"Treble","SW_MID":"Mid-cut toggle (panel, line-reverse switch hole)",
  "IC_PA":"Power amplifier","U1":"+17V rail regulator","BR1":"Bridge rectifier",
  "Q1":"Preamp JFET","Q2":"Preamp JFET","Q_rec":"Reverb-recovery JFET",
  "REV1":"Reverb pan (high-Z input)","FS1":"Footswitch DIN connector","LS1":"10in speaker",
@@ -39,6 +41,10 @@ DESC = {
 CUR = {
  "IC1":  dict(dk="296-1775-5-ND", mou="595-TL072CP", notes="DIP-8; use a machined-pin SOCKET_IC"),
  "IC2":  dict(dk="296-1775-5-ND", mou="595-TL072CP", notes="DIP-8; use a machined-pin SOCKET_IC"),
+ "IC3":  dict(dk="", mou="595-TL074CN", notes="DIP-14; machined-pin SOCKET_IC14. Tone stack (errata #20)"),
+ "SW_MID": dict(dk="", mou="", notes="SPST (or SPDT wired as SPST) mini toggle, panel-mount in the ORIGINAL line-reverse switch hole (no new hole); switches an audio shunt sitting at mid-rail DC -> no pop"),
+ "POT_BASS": dict(dk="", mou="", notes="reused panel pot; James network scaled for 250k lin -- if the original measures differently, scale R_j1/R_j2/R_j3 and C_j1/C_j2 to keep the same corner frequencies"),
+ "POT_TREB": dict(dk="", mou="", notes="reused panel pot; James network scaled for 250k lin -- scale C_j3/C_j4 inversely to keep the treble corner"),
  "IC_PA":dict(dk="LM1875T/NOPB-ND", mou="926-LM1875T/NOPB", notes="Single-source (TI) - buy a spare. Heatsink <=2.5 C/W + mica; NOT socketed"),
  "U1":   dict(dk="LM317T/NOPB-ND", mou="926-LM317T/NOPB", notes=""),
  "BR1":  dict(dk="KBP410G-ND", mou="821-KBP410G", notes="Or 4x 1N4007"),
@@ -73,7 +79,7 @@ CUR = {
  "POT_SPD_A": dict(dk="", mou="", notes="DUAL-GANG 250k linear, 1 part = gangs A+B (same panel hole as the original speed pot); errata #19"),
  "POT_SPD_B": dict(dk="", mou="", notes="second gang of POT_SPD_A -- do not order twice"),
 }
-REUSE = {"POT_VOL","POT_TONE","POT_REV","POT_DPT","J_IN1","J_IN2","J_IN3","FS1","LS1","T1","REV1","L1"}
+REUSE = {"POT_VOL","POT_BASS","POT_TREB","POT_REV","POT_DPT","J_IN1","J_IN2","J_IN3","FS1","LS1","T1","REV1","L1"}
 # POT_SPD_A/B: the tremolo speed pot is NEW -- a dual-gang 250k lin in the original
 # speed-pot hole (errata #19); the original single pot is not reused.
 
@@ -84,6 +90,7 @@ MECH = [
  ("F_MAINS_holder","Fused IEC inlet / panel fuse holder","","panel","","",1,"carries the mains fuse"),
  ("F1_holder","Secondary fuse holder","5x20mm","PCB/panel","","534-3557",1,""),
  ("SOCKET_IC","8-pin DIP machined-pin socket","turned-pin","DIP-8","ED3008-5-ND","575-193308",2,"REQUIRED for IC1/IC2 (machined, not stamped)"),
+ ("SOCKET_IC14","14-pin DIP machined-pin socket","turned-pin","DIP-14","","",1,"REQUIRED for IC3 (tone stack TL074)"),
  ("SOCKET_U1","TO-220 socket (optional)","3-pin","TO-220","","",0,"optional LM317 field-swap; LM1875 stays soldered"),
  ("HS_LM1875","Heatsink for LM1875","<=2.5 C/W","bracket","","",1,"reuse original bracket; mica + shoulder washer"),
  ("INS_MICA","TO-220 mica insulator + bushing","","","","",1,"for LM1875"),
@@ -160,7 +167,7 @@ def main(profile="tht", jlc=False):
             for (val, fpn), refs in sorted(by.items(), key=lambda kv: (kv[0][1], kv[0][0])):
                 w.writerow([val, ",".join(sorted(refs)), fpn, ""])
         print(f"wrote {len(by)} JLCPCB assembly lines ({len(smd)} SMD parts) -> production/smd/bom-jlcpcb.csv")
-    miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","LM1875","LM317","BRIDGE","NJFET")]
+    miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","OPAMP14","LM1875","LM317","BRIDGE","NJFET")]
     if miss: print("  note: active parts without a curated P/N:", miss)
 
 if __name__ == "__main__":

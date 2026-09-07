@@ -18,10 +18,10 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | `tran_tremolo_lfo.cir` | Tremolo LFO | Oscillation + rate at the fast end of the **errata #19** network |
 | `ac_power_amp_lm1875.cir` | Power amp | Gain + LF/HF −3 dB with `C_fb_hf` + a 10″ speaker model |
 | `tran_reverb_mixer.cir` | Reverb summer | **Rail-aware**: mid-rail bias, unity sum, headroom / clipping |
-| `ac_tonestack.cir` | Tone | Vox treble-cut, bright vs full-cut |
+| `ac_tonestack.cir` | Tone | **Rail-aware**: IC3 bias, noon response, MID CUT on/off (errata #20) |
 | `tran_classa_output.cir` | Class-A stage | AB vs A: idle current and crossover THD |
 | **`sweep_preamp_bias.cir`** | Preamp | **Vd vs R_s for LO / TYP / HI JFET corners** (datasheet Idss 1–5 mA) |
-| **`sweep_tonestack.cir`** | Tone | Response over the whole pot travel |
+| **`sweep_tonestack.cir`** | Tone | Bass / Treble pot travel + the mid-cut switch |
 | **`sweep_lfo_speed.cir`** | Tremolo LFO | Rate and amplitude vs the speed pot (built network) |
 | **`sweep_lfo_speed_recovered.cir`** | Tremolo LFO | The recovered single-arm network — evidence for errata #19 |
 | **`sweep_classa_bias.cir`** | Class-A stage | Standing current, heat and THD vs the bias spreader |
@@ -42,7 +42,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Tremolo LFO, pot at min | **10.59 Hz**, 0.48 V amplitude | 10.6 Hz = 1/(2π·15 k·1 µF) | ✅ (errata #19 network) |
 | Preamp drain Vd (R_s = 2.2 k, nominal JFET) | **12.1 V** | 8–9 V target | ⚠️ see the sweep below |
 | Reverb summer bias / gain / clip | **8.50 V**, **0.0 dB**, clips 15.5 / 1.5 V | mid-rail, unity, ±7 V | ✅ |
-| Tone bright / full-cut | −1.6 dB flat / −9 dB @ 5 kHz, −14 dB @ 10 kHz | flat / progressive cut | ✅ |
+| Tone stack, pots at noon / MID CUT on | **−0.21 dB** flat 100 Hz–10 kHz / **−9.6 dB @ 796 Hz**; all IC3 nodes 8.50 V | flat / ~−10 dB @ ~800 Hz, mid-rail | ✅ (errata #20) |
 | Class-A stage AB → A | THD 1.05 % → 0.0025 %, idle 0.11 → 0.49 A | crossover removed | ✅ |
 
 ## Sweeps
@@ -66,17 +66,30 @@ larger R_d or should be rejected. Hence "trim per device": measure Idss once
 (drain to +17 V via 10 k, gate/source grounded) and pick R_s from the row above.
 This is why `R_s1`, `R_s2`, `R_rec2` stay through-hole even on the SMD variant.
 
-### Tone pot travel (`sweep_tonestack`)
-| Pot (Ω) | 1 kHz | 3 kHz | 5 kHz | 10 kHz |
-|--------:|------:|------:|------:|-------:|
-| 100 k (bright) | −1.6 | −1.6 | −1.6 | −1.6 |
-| 20 k | −3.1 | −3.9 | −4.0 | −4.1 |
-| 10 k | −3.3 | −5.7 | −6.1 | −6.4 |
-| 5 k | −2.9 | −7.1 | −8.6 | −9.5 |
-| 1 k (full cut) | −2.3 | −7.3 | −10.9 | −15.5 |
+### Bass / Treble pots and the MID CUT (`sweep_tonestack`, errata #20)
+Passive James network (250 k lin pots) + TL074 buffer / ×2 make-up, volume at max,
+gain in dB re the Q2 drain signal. 0 = fully counter-clockwise (cut), 1 = clockwise (boost).
 
-The 1 kHz level barely moves (−1.6 … −3.3 dB) while 10 kHz falls 14 dB: a treble
-cut, not a volume drop — the Vox character intended.
+| Bass pot | 60 Hz | 100 Hz | 200 Hz | 400 Hz | 1 kHz |
+|---------:|------:|-------:|-------:|-------:|------:|
+| 0 (cut) | −11.3 | −7.5 | −3.2 | −1.0 | −0.3 |
+| 0.5 | −0.3 | −0.3 | −0.2 | −0.2 | −0.2 |
+| 1 (boost) | +5.2 | +4.9 | +3.6 | +1.6 | +0.1 |
+
+| Treble pot | 1 kHz | 2 kHz | 3 kHz | 5 kHz | 10 kHz |
+|-----------:|------:|------:|------:|------:|-------:|
+| 0 (cut) | +0.2 | −1.1 | −6.8 | −10.7 | −16.5 |
+| 0.5 | −0.2 | −0.2 | −0.2 | −0.2 | −0.2 |
+| 1 (boost) | −0.2 | +2.4 | +5.0 | +5.5 | +5.6 |
+
+| MID CUT | 200 Hz | 400 Hz | 600 Hz | 800 Hz | 1 kHz | 1.5 kHz | 2 kHz | 4 kHz |
+|--------:|-------:|-------:|-------:|-------:|------:|--------:|------:|------:|
+| off | −0.2 | −0.2 | −0.2 | −0.2 | −0.2 | −0.2 | −0.2 | −0.2 |
+| **on** | −0.9 | −3.2 | −7.1 | **−9.7** | −7.7 | −3.6 | −2.2 | −1.0 |
+
+Noon is flat (the ×2 make-up cancels the network's centre loss); the controls
+are asymmetric — more cut than boost — as the passive Vox networks were, and
+the mid cut is a broad (Q ≈ 0.6) notch at the "honk" band, not a surgical one.
 
 ### Tremolo LFO vs the speed pot (`sweep_lfo_speed` — the built network)
 Symmetric Wien, 15 k + one gang of a dual 250 k pot per arm, 1 µF, gain 3.13 + diode limiter.

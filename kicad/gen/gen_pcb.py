@@ -38,8 +38,8 @@ PROFILES = {
   # TOP_POUR: the SMD board also gets a GND pour on F.Cu (SMD ground pads have no
   # through-hole to reach the bottom pour; two pours + the THT GND pads stitching
   # them is the normal 2-layer SMD arrangement). The THT board keeps top = signal only.
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.4, MARGIN=10.0, ZONE_GAP=4.0, BOT_GAP=6.0, TOP_POUR=False, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
-  "smd": dict(BW=155.0, BH=90.0,  GAP=0.6, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.5, TOP_POUR=True,  OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.2, MARGIN=10.0, ZONE_GAP=3.5, BOT_GAP=4.5, TOP_POUR=False, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
+  "smd": dict(BW=155.0, BH=90.0,  GAP=0.4, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.0, TOP_POUR=True,  OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
 }
 PROFILE = "tht"
 MARGIN = 10.0              # (set per profile in configure())
@@ -57,7 +57,7 @@ def configure(profile):
     g.set_profile(profile)
 configure("tht")
 KEEPOUT  = 10.0            # Part 5: 10 mm clearance around the LM1875 / LM317 mounting area
-TP_W, TP_H = 6.5, 5.0      # test-point cell: 2 mm pad + its silk label, in a strip at the top of each zone
+TP_W, TP_H = 6.0, 4.5      # test-point cell: 2 mm pad + its silk label, in a strip at the top of each zone
 
 # Part 5 floor plan: zones left -> right. Each zone takes the on-board parts of the
 # listed schematic sheets, in sheet (= signal-chain) order.
@@ -74,12 +74,19 @@ ZONES = [
 ]
 # Off-board wiring connectors -> the zone whose stretch of the wiring edge they sit on
 EDGE_ZONE = {"J_IN1": 0, "J_IN2": 0, "J_IN3": 0,
-             "POT_VOL": 1, "POT_TONE": 1,
+             "POT_VOL": 1, "POT_BASS": 1, "POT_TREB": 1, "SW_MID": 1,   # tone zone: 3 panel pots + the mid-cut toggle
              "POT_SPD_A": 2, "POT_SPD_B": 2, "POT_DPT": 2,   # dual-gang speed pot = two 3-pad groups
              "REV1": 3, "POT_REV": 3, "FS1": 3,
              "LS1": 4,
              "T1": 5}                      # transformer pads: far right, away from signal
 BODY_ZONE = {"R_spk_rtn": 4}                # switching-sheet part that lives on the board body
+# The 155x90 SMD board's wiring edge (137 mm between the corner holes) is ~9 mm
+# too short for all 13 connector groups once the Bass/Treble pots and the mid-cut
+# toggle join it, so there the input-jack pads run down the LEFT edge instead,
+# rotated 90 deg, in the 6 mm margin next to the preamp (shortest input wiring;
+# the margin between the two M3 holes is free). The 190x115 THT board keeps
+# Part 5's "all pads on one edge".
+LEFT_EDGE = {"smd": ["J_IN1", "J_IN2", "J_IN3"]}
 # pack these with another sheet's parts: the footswitch pull-downs belong next to
 # the DIN pads on the wiring edge (reverb block = bottom of the effects column)
 SHEET_OVERRIDE = {"R_fs_trem": "Reverb", "R_fs_mrb": "Reverb",
@@ -88,11 +95,18 @@ SHEET_OVERRIDE = {"R_fs_trem": "Reverb", "R_fs_mrb": "Reverb",
                   "R_vbr1": "Reverb", "R_vbr2": "Reverb", "C_vbr": "Reverb",
                   "R_vbt1": "Tremolo", "R_vbt2": "Tremolo", "C_vbt": "Tremolo"}
 HEATSINK  = {"IC_PA": 4, "U1": 5}           # top edge of their zone, tab outward, keep-out around
-# Board columns, left -> right; a column may stack several zones top -> bottom
-# (the 4-part TONE zone sits under INPUT/PREAMP instead of wasting a whole strip).
+# Board columns, left -> right; a column may stack several zones top -> bottom.
+# TONE stays stacked under INPUT/PREAMP: Part 5 drew it as its own column, but a
+# fifth column (one more channel, a 10 mm DIP-14 alone on 16 mm-wide shelves)
+# does not fit either board's area with the errata #20 parts. Instead the
+# tone/preamp column gets extra WIDTH (ZONE_WEIGHT): the 26-part tone zone is the
+# dense one, and a wider zone means shorter rows, the four panel-control pad
+# groups sitting right under it, and room for the router (8-9 links were left
+# open there when the column was 28 mm wide).
 COLUMNS = [[0, 1], [2, 3], [4], [5]]
-# extra width weight for zones that carry the fat HighCurrent/Power traces (routing room)
-ZONE_WEIGHT = {4: 1.05}     # (a bigger PA weight starves the effects column once the TP strips are in)
+# extra width weight: tone/preamp column (routing room, see above) and the PA
+# zone that carries the fat HighCurrent/Power traces
+ZONE_WEIGHT = {1: 1.35, 4: 1.05}     # (a bigger PA weight starves the effects column once the TP strips are in)
 
 def fp_libpath(fpid):
     lib, name = fpid.split(":")
@@ -187,6 +201,30 @@ def escape_stubs(board, fps):
         t.SetLocked(True); board.Add(t); n += 1
     return n
 
+def keepouts(board, w, h, edge=2.0, hole_inset=5.0, hole_r=3.6):
+    """Rule areas (no tracks / vias, pours allowed) that the Specctra export hands
+    to Freerouting as keepouts: a 2 mm frame inside the board edge (KiCad's
+    copper-to-edge rule is 0.5 mm; the router only knows the outline) and a square
+    around each M3 hole (its 0.5 mm local clearance does not survive the export).
+    Without them the SMD board's left-edge jack pads invited 45 mm of trace along
+    the edge and under a mounting hole."""
+    rects = [(0.3, 0.3, w - 0.3, edge), (0.3, h - edge, w - 0.3, h - 0.3),
+             (0.3, 0.3, edge, h - 0.3), (w - edge, 0.3, w - 0.3, h - 0.3)]
+    for cx, cy in [(hole_inset, hole_inset), (w - hole_inset, hole_inset),
+                   (hole_inset, h - hole_inset), (w - hole_inset, h - hole_inset)]:
+        rects.append((cx - hole_r, cy - hole_r, cx + hole_r, cy + hole_r))
+    for x0, y0, x1, y1 in rects:
+        z = pcbnew.ZONE(board)
+        z.SetIsRuleArea(True)
+        z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True)
+        z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+        ls = pcbnew.LSET(); ls.addLayer(pcbnew.F_Cu); ls.addLayer(pcbnew.B_Cu)
+        z.SetLayerSet(ls)
+        sps = z.Outline(); sps.NewOutline()
+        for px, py in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]:
+            sps.Append(mm(px), mm(py))
+        board.Add(z)
+
 def mounting_holes(board, w, h, inset=5.0):
     for i, (x, y) in enumerate([(inset, inset), (w - inset, inset), (inset, h - inset), (w - inset, h - inset)]):
         fp = pcbnew.FootprintLoad(os.path.join(SYS_FP, "MountingHole.pretty"), "MountingHole_3.2mm_M3")
@@ -264,10 +302,18 @@ def main():
             c = dict(c, sheet=SHEET_OVERRIDE.get(ref, c["sheet"]))
             zone_parts[sheet_zone[c["sheet"]]].append((c, fp))
 
-    # inside a zone keep the sheet (signal-chain) grouping, but sort each sheet's
-    # parts tallest-first so the shelves pack tightly (heights vary 3x: discs vs cans)
+    # inside a zone keep the sheet (signal-chain) grouping; within a sheet sort by
+    # height CLASS only -- ICs/big cans (> 8 mm), small cans (> 4.4 mm), then the
+    # axials and discs -- so the shelves still pack tightly, but inside a class the
+    # parts keep their schematic (signal) order: netlist neighbours stay board
+    # neighbours, which is what the router needs in a dense zone
+    def hkey(fp):
+        h = bbox_mm(fp)[1]
+        if h > 4.4:                      # ICs and cans: tallest first (few, no locality to lose)
+            return (0, -h)
+        return (1, 0.0)                  # axials, discs, chips: schematic order
     for zp in zone_parts:
-        zp.sort(key=lambda cf: (sheet_order.index(cf[0]["sheet"]), -bbox_mm(cf[1])[1]))
+        zp.sort(key=lambda cf: (sheet_order.index(cf[0]["sheet"]), hkey(cf[1])))
 
     def pack_zone(zi, x0, x1, y):
         """Place zone zi between x0..x1 starting at y; returns the y its parts reach."""
@@ -283,7 +329,7 @@ def main():
             per_row = max(1, int((x1 - x0 + GAP) // TP_W))
             for i, (c, fp) in enumerate(tps):
                 r, k = divmod(i, per_row)
-                put(fp, x0 + k * TP_W + TP_W / 2, y + r * TP_H + 3.6, 0)
+                put(fp, x0 + k * TP_W + TP_W / 2, y + r * TP_H + TP_H - 1.6, 0)   # label above, courtyard flush with the cell
             y += ((len(tps) - 1) // per_row + 1) * TP_H + GAP
         ybot, _ = shelf_pack(zone_parts[zi], x0, x1, y, MAIN_BOT)
         return ybot
@@ -307,6 +353,9 @@ def main():
             w, h, _, _ = bbox_mm(hs[ref][1]); zarea[z] += (w + 2 * KEEPOUT) * (h + KEEPOUT)
     wt = [max(ZONE_WEIGHT.get(z, 1.0) for z in col) for col in COLUMNS]
     areas = [sum(zarea[z] for z in col) * k for col, k in zip(COLUMNS, wt)]
+    left_refs = LEFT_EDGE.get(PROFILE, [])
+    left_parts = [(c, fp) for ep in edge_parts for (c, fp) in ep if c["ref"] in left_refs]
+    edge_parts = [[(c, fp) for (c, fp) in ep if c["ref"] not in left_refs] for ep in edge_parts]
     edge_w = [[put(fp, 0, 0, 0)[0] for _, fp in ep] for ep in edge_parts]   # wire pads run along the edge
     min_col = 12.0 if PROFILE == "tht" else 10.5     # narrowest useful column (axial R vs 0805 rows)
     minw = [max([bbox_mm(fp)[0] for z in col for _, fp in zone_parts[z]] + [min_col]) + GAP for col in COLUMNS]
@@ -319,6 +368,23 @@ def main():
         target = sum(w * h * k for w, h, k in zip(widths, hts, wt)) / total_w
         widths = [max(w * (0.5 + 0.5 * (h * k) / target), m) for w, h, m, k in zip(widths, hts, minw, wt)]
     widths = [w * total_w / sum(widths) for w in widths]
+    # shelf packing is discrete, so the proportional balance can leave one column a
+    # fraction of a row over MAIN_BOT while another has slack: repair by moving width
+    # in 0.5 mm steps from the slackest column to the overflowing one
+    for _ in range(40):
+        x = MARGIN; bots = []
+        for ci in range(ncol):
+            bots.append(pack_column(ci, x, x + widths[ci])); x += widths[ci] + ZONE_GAP
+        over = [ci for ci in range(ncol) if bots[ci] > MAIN_BOT + 1e-6]
+        if not over:
+            break
+        worst = max(over, key=lambda ci: bots[ci])
+        donors = [ci for ci in range(ncol) if ci != worst and widths[ci] - 0.5 >= minw[ci]
+                  and bots[ci] <= MAIN_BOT - 1.0]
+        if not donors:
+            break
+        donor = min(donors, key=lambda ci: bots[ci])
+        widths[donor] -= 0.5; widths[worst] += 0.5
 
     # final placement, plus the wiring-edge connector row (one global cursor so
     # neighbouring groups never collide; T1 pinned to the far right)
@@ -340,8 +406,16 @@ def main():
         util.append((name, x0, x1, ybot, ybot > MAIN_BOT + 1e-6))
         x = x1 + ZONE_GAP
 
+    # left-edge column (SMD board): pad groups stacked top -> bottom below the
+    # corner hole's courtyard, centred in the margin, GAP clear of the first column
+    ly = 5.0 + 3.5 + GAP                 # M3 hole at 5 mm inset, 3.45 mm courtyard radius
+    for c, fp in left_parts:
+        w, h = put(fp, 0, 0, 90)
+        put(fp, MARGIN - GAP - w / 2, ly + h / 2, 90); ly += h + GAP
+
     outline(board, BW, BH)
     mounting_holes(board, BW, BH)
+    keepouts(board, BW, BH)
     stubs = escape_stubs(board, fps)
     gnd_pour(board, netmap, BW, BH)
     if TOP_POUR:

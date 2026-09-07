@@ -1,6 +1,10 @@
-Warning from checkvalid: vector br_1k is not available or has zero length.
-br_1k               =  -1.566452e+00
-br_10k              =  -1.583449e+00
-cut_1k              =  -2.278231e+00
-cut_5k              =  -1.085234e+01
-cut_10k             =  -1.553148e+01
+DC: BUF=8.49963 JOUT=8.49965 MK_OUT=8.49955 MID=8.49955 GYA=8.49963 OBUF=8.4995 TONE_OUT=0 (all IC3 nodes 8.5 V, TONE_OUT 0 V)
+noon_100            =  -2.097047e-01
+noon_1k             =  -2.075972e-01
+noon_10k            =  -2.077655e-01
+noon_100 = -2.09705e-01
+noon_1k = -2.07597e-01
+noon_10k = -2.07766e-01
+mid_800             =  -9.637573e+00
+mid_800 = -9.63757e+00
+mid_min = -9.64729e+00

@@ -1,31 +1,80 @@
-Tone stack -- passive Vox 'cut' (treble) control response (designed substitute)
-* Volume wiper (source ~10k from the preamp) feeds a treble-cut shunt:
-*   TONE_OUT --C_cut(22n)--> --POT_TONE(0..100k to GND)
-* Driving the reverb/dry op-amp loads (~100k). Sweeps the tone pot from full-bright
-* (100k, ~flat) to full-cut (1k) and reports the rolloff. (Original 25-5274-2
-* values were not recovered -- this is a working substitute, cross-check #4.)
+Tone stack -- fixed-point check: mid-rail bias (rail-aware), noon response, mid cut ON/OFF
+* Same network as sweep_tonestack.cir but with the RAIL-AWARE op-amp so the DC
+* operating point of every IC3 stage is real: everything must sit at VBIAS_3
+* (8.5 V on the +17 V rail), no DC across the pots or the switch (no pops), and
+* TONE_OUT (after C_tout) at 0 V.
 
-V_in  IN 0 AC 1
-R_src IN TONE_OUT 10k         ; preamp drain / volume-wiper source impedance
-C_cut TONE_OUT TCW 10n
-R_tone TCW 0 {rt}             ; tone pot (rheostat), swept
-R_load TONE_OUT 0 100k        ; downstream op-amp input load
-.param rt=100k
+.include models/opamp_rail.sub
+
+Vcc VCC 0 17
+R_vb31 VCC VBIAS_3 100k
+R_vb32 VBIAS_3 0 100k
+C_vb3 VBIAS_3 0 47u
+
+Vin  q2src 0 DC 9 AC 1            ; Q2 drain: ~9 V DC + signal, through R_d 10k
+R_src q2src q2d 10k
+C_cpl_out q2d PREAMP_OUT 1u       ; blocks the drain DC (errata #20)
+R_inb PREAMP_OUT VBIAS_3 1meg
+X_A PREAMP_OUT BUF BUF VCC 0 OPAMP_RAIL
+
+.param rsw=1e9
+R_j1 BUF JA 10k
+R_bA JA JWB 125k
+R_bB JWB JB 125k
+C_j1 JA JWB 22n
+C_j2 JWB JB 22n
+R_j2 JB VBIAS_3 10k
+R_j3 JWB JOUT 68k
+C_j3 BUF JTA 2.2n
+R_tA JTA JWT 125k
+R_tB JWT JTB 125k
+C_j4 JTB VBIAS_3 2.2n
+R_j4 JWT JOUT 1k
+X_B JOUT MKN MK_OUT VCC 0 OPAMP_RAIL
+R_mk1 MK_OUT MKN 10k
+R_mk2 MKN VBIAS_3 10k
+R_mid MK_OUT MID 10k
+R_sw MID MIDSW {rsw}
+C_res MIDSW GYA 22n
+R_gL GYA GYO 4.7k
+C_gg GYA GYP 1.8n
+R_gg GYP VBIAS_3 220k
+X_C GYP GYO GYO VCC 0 OPAMP_RAIL
+X_D MID OBUF OBUF VCC 0 OPAMP_RAIL
+C_tout OBUF VOLTOP 1u
+R_volA VOLTOP TONE_OUT 1k
+R_volB TONE_OUT 0 249k
+C_treble VOLTOP TONE_OUT 470p
+R_ld1 TONE_OUT 0 100k
 
 .control
-* full-bright (tone pot = 100k, minimal cut)
-alterparam rt=100k
+op
+let v_buf = v(BUF)
+let v_jout = v(JOUT)
+let v_mk = v(MK_OUT)
+let v_mid = v(MID)
+let v_gya = v(GYA)
+let v_obuf = v(OBUF)
+let v_tone = v(TONE_OUT)
+set sbuf = "$&v_buf"
+set sj = "$&v_jout"
+set smk = "$&v_mk"
+set smid = "$&v_mid"
+set sgya = "$&v_gya"
+set sob = "$&v_obuf"
+set stone = "$&v_tone"
+echo DC: BUF=$sbuf JOUT=$sj MK_OUT=$smk MID=$smid GYA=$sgya OBUF=$sob TONE_OUT=$stone   (all IC3 nodes ~8.5 V, TONE_OUT 0 V)
+ac dec 50 20 20k
+meas ac noon_100 FIND vdb(TONE_OUT) AT=100
+meas ac noon_1k FIND vdb(TONE_OUT) AT=1000
+meas ac noon_10k FIND vdb(TONE_OUT) AT=10000
+print noon_100 noon_1k noon_10k
+* (print before the re-run: meas vectors live in the plot they were made in)
+alterparam rsw=1e-3
 reset
 ac dec 100 20 20k
-meas ac br_1k  FIND vdb(TONE_OUT) AT=1000
-meas ac br_10k FIND vdb(TONE_OUT) AT=10000
-* full-cut (tone pot ~ 1k)
-alterparam rt=1k
-reset
-ac dec 100 20 20k
-meas ac cut_1k  FIND vdb(TONE_OUT) AT=1000
-meas ac cut_5k  FIND vdb(TONE_OUT) AT=5000
-meas ac cut_10k FIND vdb(TONE_OUT) AT=10000
-print br_1k br_10k cut_1k cut_5k cut_10k
+meas ac mid_800 FIND vdb(TONE_OUT) AT=800
+meas ac mid_min MIN vdb(TONE_OUT) FROM=100 TO=5000
+print mid_800 mid_min
 .endc
 .end

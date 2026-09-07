@@ -15,7 +15,7 @@ notes and discontinued-part alternatives; see also
 ## Build profiles
 - `bom.csv` / `bom-grouped.csv` — the **THT** board (`kicad/cambridge_reverb.kicad_pcb`).
 - `bom-smd.csv` / `bom-smd-grouped.csv` — the **mixed SMD/THT variant**
-  (`kicad/smd/cambridge_reverb_smd.kicad_pcb`): same schematic, 70 small parts on
+  (`kicad/smd/cambridge_reverb_smd.kicad_pcb`): same schematic, 90 small parts on
   0805/1206/1210/SMA/SOD-123/SOT-23 footprints (spec notes instead of the THT part
   numbers — pick JLCPCB "basic" parts or equivalents), everything else identical.
   `production/smd/bom-jlcpcb.csv` + the position file are the JLCPCB assembly

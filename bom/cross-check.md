@@ -35,8 +35,9 @@ the `notes` column):
 - **Tremolo** *(recovered values — superseded 2026-09-07 by errata #19: the single-arm Wien LFO could not oscillate at tremolo rates; built design = dual-gang 250k speed pot, 15k floors in both arms, 1 µF timing caps)*: `R_lfo1` 33K, `R_lfo_ser` 100K, `R_lfo_fb1` 10K, `R_lfo_fb2` 4K7,
   `R_led_diag` 2K2, `C_dc_blk` 10µF, `C_trem_out` 100nF, `POT_SPD` 500K,
   `POT_DPT` 100K.
-- **Effects loop / panel:** `R_fx_pad` 10K, `POT_VOL`, `POT_TONE`, `J_IN` (×3),
-  `FS_DIN`.
+- **Effects loop / panel:** `R_fx_pad` 10K, `POT_VOL`, `POT_TONE` *(superseded
+  2026-09-07 by errata #20: the panel's Bass + Treble pots, `POT_BASS`/`POT_TREB`,
+  plus the `SW_MID` toggle)*, `J_IN` (×3), `FS_DIN`.
 - **Mechanical / safety:** `R_bleed` 10K/5W (filter-cap discharge, from the
   Part 1 safety note), `HS_LM1875`, `INS_MICA`, `SOCKET_IC` (×2), `STANDOFF`.
 
@@ -61,16 +62,20 @@ The sims also surfaced two real findings (both folded into errata):
 - **Preamp bias is cold with Rs = 2.2 kΩ** (Vd ≈ 12 V vs the 8–9 V target);
   **Rs ≈ 1–1.2 kΩ** lands it. See errata Issue 15. (BOM note added on R_s1/R_s2.)
 
-## 4. Tone stack — designed substitute (original values not recovered)
-The Vox "top-boost" tone-stack passive values from the original 25-5274-2 were
-**not recovered**. The tone sheet now implements a **designed substitute**: a
-Volume pot + a passive Vox-style **treble "cut"** (`C_cut` 10 nF + `POT_TONE`
-100 k to ground). Its response is simulated in `spice/ac_tonestack.cir` — flat at
-the bright end (−1.6 dB), a musical treble cut at the dark end (−9 dB @ 5 kHz,
-−14 dB @ 10 kHz). The "chime" lives in the preamp (`C_pres` 100 pF / `C_treble`
-470 pF). **If you recover the original 25-5274-2 tone network** (which may have had
-separate Treble/Bass), swap it in; the substitute is a working stand-in, not the
-factory voicing.
+## 4. Tone stack — designed (Bass / Treble + MID CUT; errata #20)
+The original 25-5274-2 tone-network values were **not recovered**, but the panel
+is known: **Bass and Treble** pots. The tone sheet now implements a **passive
+James (Thomas-Vox) network** — the topology of the originals, asymmetric, more
+cut than boost — driven by a TL074 buffer and followed by a ×2 make-up stage, with
+both pots **250 k lin** in the original holes, plus a **switchable MID CUT**
+(gyrator-resonated shunt, −9.6 dB @ ~800 Hz, Q ≈ 0.6) on an SPST toggle in the
+line-reverse switch hole. Swept in `spice/sweep_tonestack.cir` (results in
+`spice/results/`): bass −7.5 … +4.9 dB @ 100 Hz, treble −16.5 … +5.6 dB @
+10 kHz, noon flat. The "chime" lives in the preamp (`C_pres` 100 pF) and in
+`C_treble` 470 pF, now a bright cap across the volume pot; the earlier 470 pF-only
+coupling (a 1.3 kHz high-pass — no bass at all) is replaced by `C_cpl_out` 1 µF.
+**If you recover the original 25-5274-2 values**, drop them into the same James
+ladder — the buffer / make-up / mid-cut stages do not care.
 
 ## 5. Value change applied from the consistency pass
 `R_reg2` changed **3.0 kΩ → 3.09 kΩ (E96)** so the LM317 lands inside the stated

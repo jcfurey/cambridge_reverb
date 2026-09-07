@@ -3,6 +3,48 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Bass / Treble tone stack + switchable MID CUT (2026-09-07)
+- 🔴 **Errata #20 — tone.** Two findings: the recovered coupling from Q2's drain
+  to the volume pot was the **470 pF chime cap alone** (a 1.3 kHz high-pass — no
+  bass reached the rest of the amp), and the designed "Tone" substitute was a
+  single treble-cut pot while the Cambridge Reverb's panel has **Bass and Treble**.
+  **Built design:** `C_cpl_out` 1 µF full-band coupling; a **passive James
+  (Thomas-Vox) Bass/Treble network** — the originals' topology, asymmetric, more
+  cut than boost, kept on purpose over a hi-fi active Baxandall so the amp keeps
+  its character — driven by a TL074 (`IC3`: input buffer, ×2 make-up, gyrator,
+  output buffer, own mid-rail `VBIAS_3`), both pots 250 k lin in the original
+  holes; `C_treble` 470 pF becomes a bright cap across the volume pot.
+- **New: MID CUT toggle** for honky pickups — `R_mid` 10 k + a switched
+  series-resonant gyrator shunt (1.86 H simulated + 22 nF): **−9.6 dB at ~800 Hz,
+  Q ≈ 0.6**, flat when off, no DC across the switch (no pop). `SW_MID` sits in the
+  **original line-reverse switch hole** — still no new panel holes.
+- **SPICE:** `ac_tonestack.cir` rewritten rail-aware (every IC3 node 8.50 V, noon
+  −0.21 dB flat, mid cut −9.65 dB @ 796 Hz); `sweep_tonestack.cir` sweeps both
+  pots and the switch (bass −7.5 … +4.9 dB @ 100 Hz, treble −16.5 … +5.6 dB @
+  10 kHz). Results in `spice/results/`.
+- **Generator / placer:** `OPAMP14` (TL074 DIP-14) and `SW_SPST` symbols;
+  `VB_3` / `TMK` test points (28 in total); the tone zone grew by 22 parts, so
+  the THT profile packs at a 1.2 mm gap / 3.5 mm channels (SMD 0.4 mm) and the
+  placer now **repairs column overflow** by moving width from the slackest
+  column. Small parts (axials, discs, chips) keep their **schematic order** on
+  the shelves instead of tallest-first, so netlist neighbours stay board
+  neighbours in the dense tone zone; the tone/preamp column gets a width weight.
+  On the 155 × 90 SMD board the 13 wiring-edge groups no longer fit in one row,
+  so the three input-jack pad groups run down the **left edge** next to the
+  preamp. **Keepout rule areas** (2 mm edge frame + squares round the M3 holes)
+  are exported to the router, which otherwise happily ran 45 mm of trace along
+  the board edge and under a hole. `route_board.py` refuses a board without its
+  `.kicad_pro` (a copy routed without the project's net classes came back with
+  0.2 mm tracks and 400 DRC errors) and prunes the zero-length segments the SES
+  import leaves.
+- **BOM:** `IC3` TL074CN + DIP-14 socket, `POT_BASS` / `POT_TREB` (reused panel
+  pots), `SW_MID`; 138 components + 28 test points; 90 SMD parts on the variant.
+- **Boards regenerated and re-routed** (a dozen router settings each): **THT
+  208/212 routed, DRC clean** (was 167/168 + 3 starved thermals on the previous
+  placement); **SMD 207/213 routed, 4 starved thermals** (was 162/169 clean).
+  The four / six open links are listed in `kicad/PCB-NOTES.md`. The counts move
+  with every placement change; `kicad/reports/` holds the evidence.
+
 ### SPICE parameter sweeps, committed results, tremolo LFO fix (2026-09-07)
 - **Six ngspice sweeps** added next to the fixed-point checks, and `run_all.sh`
   now writes every result table to **`spice/results/`** (committed evidence):

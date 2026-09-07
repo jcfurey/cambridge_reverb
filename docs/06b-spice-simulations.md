@@ -35,6 +35,7 @@ Measured vs. documented:
 | MRB peak | 577 Hz | ~610 Hz ✅ |
 | Tremolo LFO | 10.6 Hz (pot 0) … 0.60 Hz (pot max), 1/(2πRC) with the errata #19 network | RC-set ✅ (swept) |
 | Preamp drain | 12.1 V (Rs 2.2 k) | 8–9 V — see below ⚠️ |
+| Tone stack (errata #20) | noon flat −0.2 dB; bass −7.5…+4.9 dB @ 100 Hz; treble −16.5…+5.6 dB @ 10 kHz; MID CUT −9.6 dB @ 796 Hz | James network + gyrator notch ✅ (swept) |
 
 Two corrections fell out of running it: the power-amp LF corner is ~17 Hz (the
 input pole adds to `C_gain`; fine for guitar), and the preamp wants Rs ≈ 1–1.2 kΩ

@@ -25,11 +25,11 @@ run ac_mrb.cir
 run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
 run tran_reverb_mixer.cir
-run ac_tonestack.cir
+run ac_tonestack.cir "= |^DC:"
 run tran_classa_output.cir "= |THD"
 # --- parameter sweeps (tables) ---
 run sweep_preamp_bias.cir        "^[0-9R]"
-run sweep_tonestack.cir          "^[0-9p]"
+run sweep_tonestack.cir          "^(---|bass=|treble=|mid_)"
 run sweep_lfo_speed.cir          "^[0-9p]"
 run sweep_lfo_speed_recovered.cir "^[0-9p]"
 run sweep_classa_bias.cir        "^(ROW|vb)|THD"

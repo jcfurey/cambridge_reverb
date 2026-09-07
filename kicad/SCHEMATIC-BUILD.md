@@ -6,8 +6,8 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  102 components · 58 nets · 0 unconnected pins
-GND spans 55 nodes · VBIAS 10 nodes · all inter-sheet signals resolve
+kicad-cli sch export netlist ->  166 components (138 + 28 test points) · 79 nets · 0 unconnected pins
+GND spans 65 nodes · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 
 Files: `cambridge_reverb.kicad_sch` (root) + `power_supply / preamp /
@@ -43,7 +43,7 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
 - PDF/SVG render of all sheets is correct (title blocks, values, labels).
 - ERC does not check reference *annotation* (that's a separate tool), so the
   descriptive non-numeric refs do not produce ERC violations; `export netlist`
-  prints an "annotation" notice but exports all 102 components correctly.
+  prints an "annotation" notice but exports all 166 components correctly.
 
 ## Design additions beyond the recovered notes (clearly marked)
 - **Mid-rail `VBIAS`.** Single-supply TL072 stages need their inputs biased to
@@ -68,9 +68,12 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   unity sum, ±7 V headroom before clipping. ERC 0.
 
 ## Still to finish before a build
-- **Tone stack** is a *designed substitute* (Volume + Vox-style treble cut,
-  verified in `spice/ac_tonestack.cir`) — the original 25-5274-2 values were never
-  recovered (cross-check §4); replace with the original network if it turns up.
+- **Tone stack** is *designed* (errata #20): the panel's Bass + Treble pots on a
+  passive James network with a TL074 buffer / make-up (`IC3`), a switchable
+  gyrator MID CUT (`SW_MID`, line-reverse hole) and the 470 pF chime cap as a
+  bright cap — verified in `spice/ac_tonestack.cir` + `sweep_tonestack.cir`. The
+  original 25-5274-2 values were never recovered (cross-check §4); if they turn
+  up they drop into the same ladder.
 - The tremolo's passive LDR shunt + MRB sit *between* the two buffered nodes
   (BLEND→ … →PA_IN); levels there are reasonable but bench-tune the tremolo depth
   and MRB blend.

@@ -59,11 +59,11 @@ TP_VRAW,Test point (header pin or wire loop),VRAW,TestPoint_THT_D2.0mm_Label,,,1
 TP_VREG_IN,Test point (header pin or wire loop),VREG,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 U1,+17V rail regulator,LM317T,TO-220-3_Vertical,LM317T/NOPB-ND,926-LM317T/NOPB,1,
 C_cpl12,Capacitor (film/ceramic),100nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_cpl_out,Capacitor (film/ceramic),1uF,C_1210_3225Metric,,,1,"1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist"
 C_in_pre,Capacitor (film/ceramic),47nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
 C_pres,Capacitor (film/ceramic),100pF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
 C_s1,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_s2,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
-C_treble,Capacitor (film/ceramic),470pF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
 Q1,Preamp JFET,MMBF5457,SOT-23,,,1,"MMBF5457 fitted directly (no TO-92 adapter); pin 1 D, 2 S, 3 G per onsemi; was: AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. THT board: SOT-23 on a TO-92 adapter or J113 -- pads 1/2/3 = D/S/G (errata #18); SMD variant fits it directly"
 Q2,Preamp JFET,MMBF5457,SOT-23,,,1,"MMBF5457 fitted directly (no TO-92 adapter); pin 1 D, 2 S, 3 G per onsemi; was: see Q1"
 R_d1,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
@@ -110,11 +110,37 @@ J_IN2,"1/4in jack (panel, reused)",Input 2,WirePad_1x02_P2.54mm_D1.2mm,,,1,
 J_IN3,"1/4in jack (panel, reused)",IN3 / FX return,WirePad_1x02_P2.54mm_D1.2mm,,,1,
 LS1,10in speaker (reused/off-board),10in Bulldog,WirePad_1x02_P5.08mm_D1.5mm,,,1,
 R_spk_rtn,Resistor,0R,R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal,,,1,
-C_cut,Capacitor (film/ceramic),10nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
-POT_TONE,Tone (reused/off-board),100k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,
+C_byp3,Capacitor (film/ceramic),100nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_gg,Capacitor (film/ceramic),1.8nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_j1,Capacitor (film/ceramic),22nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_j2,Capacitor (film/ceramic),22nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_j3,Capacitor (film/ceramic),2.2nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_j4,Capacitor (film/ceramic),2.2nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_res,Capacitor (film/ceramic),22nF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_tout,Capacitor (film/ceramic),1uF,C_1210_3225Metric,,,1,"1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist"
+C_treble,Capacitor (film/ceramic),470pF,C_1206_3216Metric,,,1,1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R
+C_vb3,Capacitor (electrolytic),47uF/25V,CP_Radial_D6.3mm_P2.50mm,,,1,
+IC3,Quad op-amp: tone input buffer + x2 make-up after the passive James bass/treble network + mid-cut gyrator + output buffer,TL074CN,DIP-14_W7.62mm,,595-TL074CN,1,DIP-14; machined-pin SOCKET_IC14. Tone stack (errata #20)
+POT_BASS,Bass (reused/off-board),250k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,"reused panel pot; James network scaled for 250k lin -- if the original measures differently, scale R_j1/R_j2/R_j3 and C_j1/C_j2 to keep the same corner frequencies"
+POT_TREB,Treble (reused/off-board),250k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,reused panel pot; James network scaled for 250k lin -- scale C_j3/C_j4 inversely to keep the treble corner
 POT_VOL,Volume (reused/off-board),250k log,WirePad_1x03_P2.54mm_D1.2mm,,,1,
 R_fx_pad,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_gL,Resistor,4.7k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_gg,Resistor,220k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_inb,Resistor,1M,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_j1,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_j2,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_j3,Resistor,68k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_j4,Resistor,1k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_mid,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_mk1,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_mk2,Resistor,10k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_vb31,Resistor,100k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+R_vb32,Resistor,100k,R_0805_2012Metric,,,1,0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic
+SW_MID,"Mid-cut toggle (panel, line-reverse switch hole)",MID CUT,WirePad_1x02_P2.54mm_D1.2mm,,,1,"SPST (or SPDT wired as SPST) mini toggle, panel-mount in the ORIGINAL line-reverse switch hole (no new hole); switches an audio shunt sitting at mid-rail DC -> no pop"
+TP_MK_OUT,Test point (header pin or wire loop),TMK,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_TONE_OUT,Test point (header pin or wire loop),TONE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
+TP_VBIAS_3,Test point (header pin or wire loop),VB_3,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_lfo1,Capacitor (film/ceramic),1uF,C_1210_3225Metric,,,1,"1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist"
 C_lfo2,Capacitor (film/ceramic),1uF,C_1210_3225Metric,,,1,"1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist"
@@ -146,6 +172,7 @@ F_MAINS,MAINS PRIMARY fuse (SAFETY),T800mA 250V slow-blow,5x20mm,,,1,"IEC inlet 
 F_MAINS_holder,Fused IEC inlet / panel fuse holder,,panel,,,1,carries the mains fuse
 F1_holder,Secondary fuse holder,5x20mm,PCB/panel,,534-3557,1,
 SOCKET_IC,8-pin DIP machined-pin socket,turned-pin,DIP-8,ED3008-5-ND,575-193308,2,"REQUIRED for IC1/IC2 (machined, not stamped)"
+SOCKET_IC14,14-pin DIP machined-pin socket,turned-pin,DIP-14,,,1,REQUIRED for IC3 (tone stack TL074)
 SOCKET_U1,TO-220 socket (optional),3-pin,TO-220,,,0,optional LM317 field-swap; LM1875 stays soldered
 HS_LM1875,Heatsink for LM1875,<=2.5 C/W,bracket,,,1,reuse original bracket; mica + shoulder washer
 INS_MICA,TO-220 mica insulator + bushing,,,,,1,for LM1875

@@ -70,9 +70,11 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
   honour it; check the tremolo area by eye.
 
 ## 2b. The SMD variant's placement
-Same generator, `--profile smd`: 155 × 90 mm, 6 mm margin, 0.6 mm part gap, 3 mm
-channels, pad row kept clear of the corner holes. All four columns fit under the
-wiring-edge limit; pre-route DRC 0 errors / 0 warnings beyond the stub warnings.
+Same generator, `--profile smd`: 155 × 90 mm, 6 mm margin, 0.4 mm part gap (0.6
+before the errata #20 tone parts), 3 mm channels, pad row kept clear of the corner
+holes; the three input-jack pad groups run down the left edge because the bottom
+edge is ~9 mm short for 13 connector groups (PCB-NOTES). All four columns fit under
+the wiring-edge limit; pre-route DRC 0 errors / 0 warnings beyond the stub warnings.
 
 ## 3. Board outline & chassis fit — figure corrected ⚠️
 - Outline: **190 × 115 mm**, matching the original 25-5274-2 (errata #9).

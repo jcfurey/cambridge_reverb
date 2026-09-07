@@ -49,8 +49,13 @@ original 27 V tap. Full values in Part 2.)
 
 JFET common-source stages replace the original discrete bipolar preamp. JFETs
 clip softly (tube-like), present very high input impedance for guitar pickups,
-and self-bias easily. The Vox "top boost" voicing comes from the tone-stack
-values, which are preserved.
+and self-bias easily. The Vox voicing comes from the tone stack: the panel's
+**Bass and Treble** pots drive a **passive James network** (the Thomas-Vox
+topology — asymmetric, more cut than boost, slightly bright at noon) buffered
+by a TL074 (`IC3`), with the 470 pF "chime" cap as a bright cap across the
+volume pot. New in this design: a **MID CUT toggle** (−9.6 dB, ~800 Hz, broad)
+in the original line-reverse switch hole, for honky-sounding pickups — off, the
+chain is flat. Errata #20 has the values and the SPICE sweeps.
 
 **JFET device:** the through-hole 2N5457 is **discontinued** (see Part 8). Use
 the **MMBF5457** (SOT-23, exact same die) on a SOT-23→TO-92 adapter, or the
@@ -121,9 +126,9 @@ span tremolo rates); the LFO runs 0.6–10.6 Hz (`spice/sweep_lfo_speed.cir`).
 ## Section 6: MRB (Mid Resonance Boost)
 
 A parallel LC tank using the original-style inductor. Default is **hardwired at
-600 Hz** (original spec); the line-reverse switch position is available for
-internal repurposing if a multi-frequency selector is desired later — but no new
-panel holes. (Errata Issue 8.)
+600 Hz** (original spec); the line-reverse switch hole is **now used by the tone
+stack's MID CUT toggle** (errata #20), so a multi-frequency MRB selector would have
+to be internal-only — no new panel holes. (Errata Issue 8.)
 
 ## Section 7: Added features (internal only)
 

@@ -171,6 +171,13 @@ def main():
     for p in (ses,):
         if os.path.exists(p): os.remove(p)
 
+    pro = os.path.splitext(a.src)[0] + ".kicad_pro"
+    if not os.path.exists(pro):
+        # Without the project file next to the board, pcbnew falls back to the
+        # default net class (0.2 mm everywhere): the router then ignores the
+        # Part 4 widths / clearances and the result fails DRC by the hundreds.
+        sys.exit(f"no project file {pro} next to the board -- route the board in place "
+                 f"(--in kicad/cambridge_reverb.kicad_pcb), not a copy")
     board = pcbnew.LoadBoard(a.src)                 # also loads the .kicad_pro net classes
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         sys.exit("DSN export failed")
@@ -193,6 +200,12 @@ def main():
     board = pcbnew.LoadBoard(a.src)
     if not pcbnew.ImportSpecctraSES(board, ses):
         sys.exit("SES import failed")
+    z = prune_zero_length(board)
+    if z:
+        print(f"  removed {z} zero-length track segment(s) left by the SES import")
+    d, t = tidy_stubs(board)
+    if d or t:
+        print(f"  removed {d} duplicate segment(s), trimmed {t} locked stub(s) at the router's T-junction")
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(dst, board)
     n, v, top, bot, unrouted = stats(board)
@@ -200,6 +213,60 @@ def main():
     print(f"  {n} track segments: F.Cu {top:.0f} mm, B.Cu {bot:.0f} mm; {v} vias; "
           f"unrouted connections: {unrouted}")
     print("  now run: kicad-cli pcb drc --severity-all kicad/cambridge_reverb.kicad_pcb")
+
+def prune_zero_length(board, eps_mm=0.001):
+    """The SES import occasionally leaves a degenerate (< 1 um) track segment where
+    two of Freerouting's wires met on a pad; DRC flags it as `track_dangling`.
+    It carries no copper -- drop it."""
+    dead = [t for t in board.GetTracks()
+            if t.GetClass() == "PCB_TRACK" and pcbnew.ToMM(t.GetLength()) < eps_mm]
+    for t in dead:
+        board.Delete(t)
+    return len(dead)
+
+def tidy_stubs(board):
+    """Two more SES-import artefacts around the locked escape stubs: Freerouting
+    hands the fixed wire back as a routed wire too (an exact DUPLICATE of the
+    locked stub), and it may join the stub from the side instead of at its end,
+    leaving the end hanging (`track_dangling`). Drop exact duplicates; then trim a
+    locked stub whose far end touches nothing back to the last T-junction on it."""
+    segs = [t for t in board.GetTracks() if t.GetClass() == "PCB_TRACK"]
+    seen, dups = set(), []
+    for t in segs:                                   # locked original wins over the copy
+        a, b = t.GetStart(), t.GetEnd()
+        key = (t.GetLayer(), t.GetNetCode(), t.GetWidth(), tuple(sorted([(a.x, a.y), (b.x, b.y)])))
+        if key in seen and not t.IsLocked():
+            dups.append(t)
+        else:
+            seen.add(key)
+    for t in dups:
+        board.Delete(t)
+    segs = [t for t in board.GetTracks() if t.GetClass() == "PCB_TRACK"]
+    ends = {}
+    for t in segs:
+        for pt in (t.GetStart(), t.GetEnd()):
+            ends.setdefault((t.GetLayer(), t.GetNetCode()), []).append((pt, t))
+    trimmed = 0
+    for stub in [t for t in segs if t.IsLocked()]:
+        s0, s1 = stub.GetStart(), stub.GetEnd()
+        pts = [(pt, t) for pt, t in ends.get((stub.GetLayer(), stub.GetNetCode()), []) if t is not stub]
+        def on_stub(pt):                             # point on the stub's centre line?
+            dx, dy = s1.x - s0.x, s1.y - s0.y
+            L2 = dx * dx + dy * dy
+            u = ((pt.x - s0.x) * dx + (pt.y - s0.y) * dy) / L2
+            if u < 0.02 or u > 1.02:
+                return None
+            px, py = s0.x + u * dx, s0.y + u * dy
+            return u if ((pt.x - px) ** 2 + (pt.y - py) ** 2) ** 0.5 < stub.GetWidth() / 2 else None
+        far_end_used = any(((pt.x - s1.x) ** 2 + (pt.y - s1.y) ** 2) ** 0.5 < pcbnew.FromMM(0.01) for pt, _ in pts)
+        if far_end_used:
+            continue
+        us = [u for u in (on_stub(pt) for pt, _ in pts) if u is not None and u < 0.98]
+        if us:
+            u = max(us)
+            stub.SetEnd(pcbnew.VECTOR2I(int(s0.x + u * (s1.x - s0.x)), int(s0.y + u * (s1.y - s0.y))))
+            trimmed += 1
+    return len(dups), trimmed
 
 if __name__ == "__main__":
     main()

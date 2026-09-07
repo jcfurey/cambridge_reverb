@@ -46,7 +46,38 @@
 | C_s | Source bypass | 10µF/25V | |
 | C_in | Input coupling | ~47nF film | |
 | C_pres | Presence rolloff at Q2 drain | 100pF | Guitar-frequency optimization |
-| C_treble | Vox "chime" treble cap | 470pF | |
+| C_cpl_out | Q2 drain → tone coupling | 1µF film | errata #20: the recovered 470 pF-only coupling was a 1.3 kHz high-pass |
+| C_treble | Vox "chime" cap — bright cap across the top of the volume pot | 470pF | |
+
+### Tone stack — Bass / Treble + MID CUT `[DESIGNED — errata #20]`
+
+Passive James (Thomas-Vox) network with a TL074 buffer / make-up / gyrator /
+output buffer (`IC3`, own mid-rail `VBIAS_3`). Swept in `spice/sweep_tonestack.cir`.
+
+| Ref | Description | Value | Notes |
+|-----|-------------|-------|-------|
+| IC3 | Quad op-amp, DIP-14 socket | TL074CN | A buffer, B ×2 make-up, C gyrator, D output buffer |
+| R_vb31, R_vb32, C_vb3, C_byp3 | VBIAS_3 divider + bypass | 100K, 100K, 47µF, 100nF | mid-rail for IC3 only (split bias) |
+| R_inb | Buffer input bias | 1MΩ | to VBIAS_3 |
+| R_j1, R_j2 | Bass ladder end resistors | 10K, 10K | |
+| POT_BASS | **Bass** (reused panel pot) | 250K lin | pin 3 (cw) = boost end |
+| C_j1, C_j2 | Bass ladder caps (across each pot half) | 22nF, 22nF | film |
+| R_j3 | Bass wiper → sum | 68K | |
+| C_j3, C_j4 | Treble ladder caps | 2.2nF, 2.2nF | C0G / film |
+| POT_TREB | **Treble** (reused panel pot) | 250K lin | |
+| R_j4 | Treble wiper → sum | 1K | |
+| R_mk1, R_mk2 | Make-up gain 1 + 10K/10K = 2 | 10K, 10K | recovers the network's ~6 dB centre loss |
+| R_mid | Series resistor ahead of the mid shunt | 10K | sets the cut depth with R_gL |
+| SW_MID | **MID CUT** toggle, SPST, panel | — | in the original line-reverse switch hole |
+| C_res | Resonating cap | 22nF | f₀ = 1/(2π√(L·C)) ≈ 790 Hz |
+| R_gL, C_gg, R_gg | Gyrator (simulated inductor) | 4K7, 1.8nF, 220K | L = R_gL·R_gg·C_gg = 1.86 H |
+| C_tout | Output buffer → volume pot | 1µF film | |
+| POT_VOL | Volume (reused) | 250K log | C_treble across pins 1–2 |
+| R_fx_pad | Internal FX-send tap | 10K | |
+
+Response (250 k lin pots, dB re noon): bass **−7.5 … +4.9 @ 100 Hz**, treble
+**−16.5 … +5.6 @ 10 kHz**, noon flat within 0.3 dB, MID CUT **−9.6 dB @ 800 Hz,
+Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 
 ### Power amplifier (LM1875) — recovered verbatim
 

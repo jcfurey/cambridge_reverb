@@ -197,3 +197,39 @@ exponential waveform, harder tremolo; not adopted. `POT_SPD_A`/`POT_SPD_B` in th
 schematic and BOM are the two gangs of **one** part.
 **Severity:** HIGH (the effect did not work as drawn) — fixed in the generator;
 both boards regenerated and re-routed.
+
+## Issue 20 — Tone: the single "cut" pot did not match the panel, and the recovered coupling had no bass (2026-09-07) — HIGH
+Two problems in the tone sheet, one recovered and one designed. **(a)** The
+recovered preamp coupled Q2's drain to the tone/volume network through
+`C_treble` **470 pF alone** — into the ~250 k volume pot that is a **1.3 kHz
+high-pass**: no bass or low-mids at all reached the reverb, tremolo or power amp.
+`C_treble` is the Vox "chime" cap; it belongs *across the top of the volume pot*
+as a bright cap, not in series as the only coupling. **(b)** The Cambridge Reverb's
+panel has **Bass and Treble** pots, but the designed substitute (cross-check §4)
+was a Volume + single treble "cut" pot: the Bass hole had nothing to drive.
+**Resolution (built design, `kicad/gen/gen_kicad.py` tone sheet):**
+- `C_cpl_out` **1 µF** couples Q2D → `PREAMP_OUT` (flat to ~16 Hz into the 1 M
+  bias resistor); `C_treble` 470 pF moves across the top half of the volume pot
+  (bright cap: treble lift at low volume, transparent at full).
+- A **passive James (Thomas-Vox style) Bass/Treble network** driven by a TL074
+  buffer (`IC3`-A) and followed by a ×2 make-up stage (`IC3`-B) — the topology the
+  originals used, deliberately **not** an active Baxandall: asymmetric, more cut
+  than boost, a slight bright tilt at noon, both pots **250 k lin** in the original
+  holes. `R_j1`/`R_j2` 10 k, `C_j1`/`C_j2` 22 nF, `R_j3` 68 k (bass ladder);
+  `C_j3`/`C_j4` 2.2 nF, `R_j4` 1 k (treble ladder). Swept in
+  `spice/sweep_tonestack.cir`: bass −7.5 … +4.9 dB @ 100 Hz, treble −16.5 … +5.6 dB
+  @ 10 kHz, noon flat within 0.3 dB (`spice/results/`).
+- A **switchable MID CUT** for honky pickups: `R_mid` 10 k then a series-resonant
+  shunt to mid-rail — `C_res` 22 nF + a gyrator (`IC3`-C, `R_gL` 4.7 k, `C_gg`
+  1.8 nF, `R_gg` 220 k → L = 1.86 H). **−9.6 dB at ~800 Hz, Q ≈ 0.6** (broad:
+  −3 dB from ~400 Hz to ~1.7 kHz), flat within 0.05 dB when off. `SW_MID` is an
+  SPST mini toggle in the **original line-reverse switch hole** (that position
+  was reserved for "internal repurposing" in Issue 8 — no new holes). The switch
+  sits on a node at mid-rail DC on both sides, so it does not pop.
+- `IC3`-D buffers the result into the volume pot; `TONE_OUT` still feeds the
+  summer, the tank driver and the FX send as before. `IC3` gets its own mid-rail
+  (`VBIAS_3`, split-bias policy) and a DIP-14 socket; test points `TMK`
+  (make-up output) and `VB_3` join the strip.
+**Severity:** HIGH ((a) alone made the amp sound like a treble-only transistor
+radio) — fixed in the generator; both boards regenerated and re-routed. The
+"designed substitute" wording in cross-check §4 is superseded.

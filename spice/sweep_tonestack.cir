@@ -1,27 +1,105 @@
-Tone stack SWEEP: treble-cut response vs the tone-pot position
-* Same network as ac_tonestack.cir (10k source, C_cut 10n -> POT_TONE rheostat to
-* GND, 100k load); the pot is stepped from full-bright (100k) to full-cut (1k).
-* Reports gain re: 1 V in at 1 kHz / 3 kHz / 5 kHz / 10 kHz -- the shape of the
-* cut over the whole travel, not just its two ends.
+Tone stack SWEEP: passive James (Vox-style) bass/treble pots + the switchable mid cut (tone sheet, errata #20)
+* IC3 (TL074): A input buffer, PASSIVE James network, B make-up x2, C gyrator for the
+* series-resonant mid-cut shunt, D output buffer, then the volume pot (max) with the
+* 470 pF bright cap and the downstream loads (summer 100k, tank driver 220k).
+* Pots 250k lin; position 0 = counter-clockwise (cut) .. 1 = clockwise (boost).
+* Tables: gain re 1 V at Q2's drain (dB) vs frequency for each pot position, and mid ON/OFF.
 
-V_in  IN 0 AC 1
-R_src IN TONE_OUT 10k
-C_cut TONE_OUT TCW 10n
-R_tone TCW 0 {rt}
-R_load TONE_OUT 0 100k
-.param rt=100k
+.include models/opamp1p.sub
+
+Vin  in 0 AC 1
+R_src in q2d 10k
+C_cpl_out q2d PREAMP_OUT 1u
+R_inb PREAMP_OUT 0 1meg
+X_A PREAMP_OUT BUF BUF OPAMP1P PARAMS: aol=2e5 gbw=3e6
+
+.param pb=0.5 pt=0.5 RVB=250k RVT=250k rsw=1e9
+* bass ladder
+R_j1 BUF JA 10k
+R_bA JA JWB {RVB*(1-pb)+1}
+R_bB JWB JB {RVB*pb+1}
+C_j1 JA JWB 22n
+C_j2 JWB JB 22n
+R_j2 JB 0 10k
+R_j3 JWB JOUT 68k
+* treble ladder
+C_j3 BUF JTA 2.2n
+R_tA JTA JWT {RVT*(1-pt)+1}
+R_tB JWT JTB {RVT*pt+1}
+C_j4 JTB 0 2.2n
+R_j4 JWT JOUT 1k
+* make-up x2
+X_B JOUT MKN MK_OUT OPAMP1P PARAMS: aol=2e5 gbw=3e6
+R_mk1 MK_OUT MKN 10k
+R_mk2 MKN 0 10k
+* mid cut
+R_mid MK_OUT MID 10k
+R_sw MID MIDSW {rsw}                    ; SW_MID: 1 mOhm = ON, 1 GOhm = OFF
+C_res MIDSW GYA 22n
+R_gL GYA GYO 4.7k
+C_gg GYA GYP 1.8n
+R_gg GYP 0 220k
+X_C GYP GYO GYO OPAMP1P PARAMS: aol=2e5 gbw=3e6
+* output buffer, volume (max), bright cap, loads
+X_D MID OBUF OBUF OPAMP1P PARAMS: aol=2e5 gbw=3e6
+C_tout OBUF VOLTOP 1u
+R_volA VOLTOP TONE_OUT 1k
+R_volB TONE_OUT 0 249k
+C_treble VOLTOP TONE_OUT 470p
+R_ld1 TONE_OUT 0 100k
+R_ld2 TONE_OUT 0 220k
 
 .control
-echo "pot(ohm)  g_1k(dB)  g_3k(dB)  g_5k(dB)  g_10k(dB)"
-foreach rt 100k 50k 20k 10k 5k 2k 1k
-  alterparam rt=$rt
+echo "--- BASS pot (treble centred, mid OFF): gain dB at 60 / 100 / 200 / 400 / 1k / 3k / 5k / 10k Hz"
+foreach pb 0 0.25 0.5 0.75 1
+  alterparam pb=$pb
   reset
-  ac dec 50 20 20k
-  meas ac g1  FIND vdb(TONE_OUT) AT=1000
-  meas ac g3  FIND vdb(TONE_OUT) AT=3000
-  meas ac g5  FIND vdb(TONE_OUT) AT=5000
-  meas ac g10 FIND vdb(TONE_OUT) AT=10000
-  echo $rt  $&g1  $&g3  $&g5  $&g10
+  ac dec 40 20 20k
+  echo ""
+  meas ac g60 FIND vdb(TONE_OUT) AT=60
+  meas ac g100 FIND vdb(TONE_OUT) AT=100
+  meas ac g200 FIND vdb(TONE_OUT) AT=200
+  meas ac g400 FIND vdb(TONE_OUT) AT=400
+  meas ac g1k FIND vdb(TONE_OUT) AT=1000
+  meas ac g3k FIND vdb(TONE_OUT) AT=3000
+  meas ac g5k FIND vdb(TONE_OUT) AT=5000
+  meas ac g10k FIND vdb(TONE_OUT) AT=10000
+  echo bass=$pb  $&g60 $&g100 $&g200 $&g400 $&g1k $&g3k $&g5k $&g10k
+end
+echo "--- TREBLE pot (bass centred, mid OFF)"
+alterparam pb=0.5
+foreach pt 0 0.25 0.5 0.75 1
+  alterparam pt=$pt
+  reset
+  ac dec 40 20 20k
+  echo ""
+  meas ac g60 FIND vdb(TONE_OUT) AT=60
+  meas ac g100 FIND vdb(TONE_OUT) AT=100
+  meas ac g200 FIND vdb(TONE_OUT) AT=200
+  meas ac g400 FIND vdb(TONE_OUT) AT=400
+  meas ac g1k FIND vdb(TONE_OUT) AT=1000
+  meas ac g3k FIND vdb(TONE_OUT) AT=3000
+  meas ac g5k FIND vdb(TONE_OUT) AT=5000
+  meas ac g10k FIND vdb(TONE_OUT) AT=10000
+  echo treble=$pt  $&g60 $&g100 $&g200 $&g400 $&g1k $&g3k $&g5k $&g10k
+end
+echo "--- MID CUT switch (both pots centred): gain dB at 200 / 400 / 600 / 800 / 1k / 1.5k / 2k / 4k Hz, notch"
+alterparam pt=0.5
+foreach rsw 1e9 1e-3
+  alterparam rsw=$rsw
+  reset
+  ac dec 100 20 20k
+  echo ""
+  meas ac g200 FIND vdb(TONE_OUT) AT=200
+  meas ac g400 FIND vdb(TONE_OUT) AT=400
+  meas ac g600 FIND vdb(TONE_OUT) AT=600
+  meas ac g800 FIND vdb(TONE_OUT) AT=800
+  meas ac g1k FIND vdb(TONE_OUT) AT=1000
+  meas ac g15 FIND vdb(TONE_OUT) AT=1500
+  meas ac g2k FIND vdb(TONE_OUT) AT=2000
+  meas ac g4k FIND vdb(TONE_OUT) AT=4000
+  meas ac gmin MIN vdb(TONE_OUT) FROM=100 TO=5000
+  echo mid_rsw=$rsw  $&g200 $&g400 $&g600 $&g800 $&g1k $&g15 $&g2k $&g4k   min $&gmin dB   (rsw 1e9 = switch OFF, 1e-3 = ON)
 end
 .endc
 .end

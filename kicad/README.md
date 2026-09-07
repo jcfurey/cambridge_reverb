@@ -28,7 +28,7 @@ KiCad project files.
 - `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
   `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
   They open in KiCad 7/8, **pass ERC with 0 violations** (KiCad 8.0.9), and
-  netlist cleanly (102 components, 0 unconnected pins).
+  netlist cleanly (138 components + 28 test points, 0 unconnected pins).
 - `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
   the generated sheets.
 - `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).
@@ -50,7 +50,7 @@ KiCad project files.
   (**155 × 90 mm**, the Part 7 safe-bet size): generated with `--profile smd` by the
   same three scripts. Small passives and semis are SMD (0805 R, 1206/1210 C,
   SMA/SOD-123 D, SOT-23 JFETs); power parts, all electrolytics, the socketed
-  TL072s, the bench-trimmed JFET source resistors, connectors and test points stay
+  TL072s / TL074, the bench-trimmed JFET source resistors, connectors and test points stay
   THT. Lib tables point at the shared `../symbols` / `../footprints`.
   Details and routing status: `PCB-NOTES.md` (SMD variant section).
 
