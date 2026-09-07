@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-09-07T00:55:32+0000",
+    "kicad_version": "8.0.9",
+    "schematic_parity": [],
+    "source": "cambridge_reverb_smd.kicad_pcb",
+    "unconnected_items": [
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Zone [GND] on F.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "2312ac02-08ff-4188-a02b-81f94c5a8727"
+                },
+                {
+                    "description": "Zone [GND] on F.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "2312ac02-08ff-4188-a02b-81f94c5a8727"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [MRB_T] on F.Cu, length 2.0529 mm",
+                    "pos": {
+                        "x": 59.4131,
+                        "y": 14.275
+                    },
+                    "uuid": "ee0fbd56-9d4c-423b-8720-eeb71e205ed0"
+                },
+                {
+                    "description": "Track [MRB_T] on F.Cu, length 15.0500 mm",
+                    "pos": {
+                        "x": 33.8631,
+                        "y": 14.725
+                    },
+                    "uuid": "1072147c-1d21-4a51-a4bd-102bad4694f9"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        }
+    ],
+    "violations": [
+        {
+            "description": "Thermal relief connection to zone incomplete (layer B.Cu; 2 spokes connected to isolated island)",
+            "items": [
+                {
+                    "description": "Zone [GND] on B.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "e009e045-fc99-4f15-85d8-85ddc26bc68b"
+                },
+                {
+                    "description": "PTH pad 2 [GND] of C_vbr",
+                    "pos": {
+                        "x": 35.3233,
+                        "y": 63.475
+                    },
+                    "uuid": "17bfe382-111d-4062-b876-93db810e802c"
+                }
+            ],
+            "severity": "error",
+            "type": "starved_thermal"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [+33V5] on F.Cu, length 7.0711 mm",
+                    "pos": {
+                        "x": 92.560848,
+                        "y": 11.445
+                    },
+                    "uuid": "8dc6d0ba-a97a-415f-ad43-2549e8a776ec"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        }
+    ]
+}

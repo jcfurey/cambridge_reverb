@@ -22,7 +22,10 @@
 
 Regenerate: `python3 kicad/gen/gen_pcb.py && python3 kicad/gen/route_board.py`
 (needs Java + `kicad/gen/freerouting.jar` = freerouting-1.9.0.jar, git-ignored;
-`apt install xvfb`). Then `kicad-cli pcb drc --severity-all kicad/cambridge_reverb.kicad_pcb`.
+`apt install xvfb`). **Verify:** `kicad/gen/check.sh tht --no-regen` (or `smd`)
+runs ERC + DRC and writes the reports to **`kicad/reports/`** — the committed
+`*-erc.rpt` / `*-drc.json` files there are the evidence for every number in this
+file. Without `--no-regen` the script regenerates first (which discards routing).
 
 ## Routing result — THT board (`kicad-cli 8.0.9 pcb drc`, this commit)
 | Item | Result |

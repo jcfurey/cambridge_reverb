@@ -34,6 +34,13 @@ deliverables produced during the design phase.
   109 vias**; the two open items are documented as GUI touches.
 - `bom/bom-smd*.csv` with spec notes (no invented part numbers) and
   `production/smd/bom-jlcpcb.csv` + position file for JLCPCB assembly of the SMD side.
+- **Datasheets committed** (`datasheets/`, 13 PDFs, ~15 MB) with a manifest
+  (`SOURCES.md`: source URL, revision, SHA-256 prefix, and which footprint / pin
+  number / design value each sheet backs). Reverses the earlier "not committed"
+  policy — errata #18 is exactly the kind of error only the drawing catches.
+- **Verification tooling in the repo:** `kicad/gen/check.sh tht|smd [--no-regen]`
+  regenerates a profile and writes ERC/DRC reports to `kicad/reports/`; the
+  committed reports are the evidence for the numbers in `PCB-NOTES.md`.
 
 ### Footprint fixes, floor-plan placement, headless autoroute (2026-09-06)
 - **PCB-AUDIT §1 defects fixed with datasheet-derived project footprints:**

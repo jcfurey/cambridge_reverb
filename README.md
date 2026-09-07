@@ -54,7 +54,8 @@ production/   fab-package checklist
 ```
 
 ## Tools
-- **EDA / verification:** KiCad 8 (`kicad-cli` ERC/DRC), regenerate with `python3 kicad/gen/gen_kicad.py && python3 kicad/gen/gen_pcb.py && python3 kicad/gen/gen_bom.py`; route with `python3 kicad/gen/route_board.py` (Freerouting 1.9.0 jar + Java + xvfb, see the script)
+- **EDA / verification:** KiCad 8 (`kicad-cli` ERC/DRC). `kicad/gen/check.sh tht|smd` regenerates a profile and writes ERC/DRC reports to `kicad/reports/` (add `--no-regen` to verify a routed board); route with `python3 kicad/gen/route_board.py` (Freerouting 1.9.0 jar + Java + xvfb, see the script)
+- **Datasheets:** `datasheets/` holds the manufacturer PDFs the footprints and pinouts were taken from, with a manifest (`SOURCES.md`: file, revision, checksum, which decision it backs)
 - **Simulation:** ngspice (`spice/run_all.sh`); LTspice netlist kept for the power amp
 - **PCB fab / sourcing:** JLCPCB · Mouser / Digikey
 
