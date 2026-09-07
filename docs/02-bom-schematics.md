@@ -137,6 +137,10 @@
 #                             GND
 #   When LED bright -> LDR low -> signal shunted; LED dim -> signal passes.
 #   LFO freq: f = 1/(2π R C), ~1 Hz (R=500k+33k) to ~10 Hz (R≈33k)
+#   [2026-09-07, errata #19: with these values the LFO oscillates only for the bottom
+#    ~5 % of the pot and then at 45-80 Hz (a single-arm pot breaks the Wien start
+#    condition). Built design: DUAL-GANG 250k lin speed pot, 15k floor in EACH arm,
+#    C_lfo1/2 = 1 uF -> 10.6 Hz (fast) .. 0.60 Hz (slow), swept in spice/sweep_lfo_speed.cir.]
 ```
 
 ### Effects loop (internal) — recovered verbatim

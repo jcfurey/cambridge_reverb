@@ -1,0 +1,45 @@
+JFET preamp bias SWEEP: drain voltage vs R_s across the 2N5457 device spread (errata #15)
+* The recovered R_s = 2.2k biases a nominal device cold (Vd ~12 V vs the 8-9 V
+* target). Real 2N5457/MMBF5457 parts spread IDSS 1.0-5.0 mA and VGS(off) -0.5 to
+* -6.0 V (onsemi datasheet, committed in datasheets/), so the trim value is per
+* device. Three model corners (Beta = IDSS / Vto^2):
+*   LO  : IDSS 1.0 mA, Vto -0.8 V (Beta 1.5625m)   -- a low-current part
+*   TYP : IDSS 3.0 mA, Vto -1.8 V (Beta 0.926m)    -- the project model
+*   HI  : IDSS 5.0 mA, Vto -3.0 V (Beta 0.556m)    -- a high-current part
+* Same stage as dc_preamp_jfet.cir (R_d 10k on +17 V). Output: Vd for each corner
+* at each R_s -- pick the R_s that lands 8-9 V for the corner your part is closest
+* to (measure IDSS once: drain to +17 V through 10k, gate and source to ground).
+
+.include models/jfet_2n5457.lib
+
+V_dd  VDD 0 17
+R_g   G  0 1meg
+J1    D  G S 2N5457
+R_d   VDD D 10k
+R_s   S  0 2.2k
+
+.control
+echo "R_s(ohm)  Vd_LO(V)  Vd_TYP(V)  Vd_HI(V)   Id_TYP(mA)   [target Vd 8-9 V]"
+foreach rs 470 560 680 820 1000 1200 1500 1800 2200 2700
+  alter r_s $rs
+  altermod 2N5457 vto = -0.8
+  altermod 2N5457 beta = 1.5625m
+  op
+  let x = v(d)
+  set vdlo = $&x
+  altermod 2N5457 vto = -1.8
+  altermod 2N5457 beta = 0.926m
+  op
+  let x = v(d)
+  set vdtyp = $&x
+  let x = (17 - v(d)) / 10k * 1000
+  set idtyp = $&x
+  altermod 2N5457 vto = -3.0
+  altermod 2N5457 beta = 0.556m
+  op
+  let x = v(d)
+  set vdhi = $&x
+  echo $rs  $vdlo  $vdtyp  $vdhi  $idtyp
+end
+.endc
+.end

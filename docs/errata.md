@@ -175,3 +175,25 @@ updated; both boards regenerated. If you populate the THT board with a SOT-23 on
 TO-92 adapter, wire the adapter D-S-G to pads 1-2-3.
 **Severity:** HIGH (silent wiring fault) — fixed in the generator; verify against
 the datasheet of whatever JFET you actually buy (J113: also D-S-G).
+
+## Issue 19 — The tremolo LFO as recovered cannot run at tremolo rates (2026-09-07) — HIGH
+The recovered Wien-bridge LFO put the speed pot in **one** arm only: series arm
+`R_lfo_ser` 10 k + `POT_SPD` 0–500 k with `C_lfo1` 100 nF, shunt arm a fixed
+`R_lfo1` 33 k with `C_lfo2` 100 nF, amplifier gain 1 + 10 k/4.7 k = 3.13. For an
+asymmetric Wien network the loop only starts when gain > 2 + R1/R2, i.e. while the
+series arm stays under ~37 k — the bottom **5 %** of the pot — and there it runs at
+**45–80 Hz** (f₀ = 1/(2π√(R1R2)C)). Everywhere else it does not oscillate at all.
+Part 2's "~1 Hz to ~10 Hz" was never reachable with those values. Swept and shown
+in `spice/sweep_lfo_speed_recovered.cir` (results in `spice/results/`).
+**Resolution:** symmetric network with a **dual-gang 250 k lin speed pot**, one gang
+in each arm, `R_lfo_ser` = `R_lfo_sh` = 15 k floors, `C_lfo1` = `C_lfo2` = **1 µF**.
+The attenuation is then exactly 1/3 at every setting, the existing gain-3.13 /
+diode-limited amplifier starts everywhere, and f = 1/(2π(15 k + pot)·1 µF) =
+**10.6 Hz (fast) … 0.60 Hz (slow)** at constant 0.96 Vpp
+(`spice/sweep_lfo_speed.cir`). The dual-gang pot goes in the original speed-pot
+hole (no new holes); the original single pot is no longer reused. Alternative if
+you insist on the single pot: a one-op-amp Schmitt relaxation LFO — square/
+exponential waveform, harder tremolo; not adopted. `POT_SPD_A`/`POT_SPD_B` in the
+schematic and BOM are the two gangs of **one** part.
+**Severity:** HIGH (the effect did not work as drawn) — fixed in the generator;
+both boards regenerated and re-routed.

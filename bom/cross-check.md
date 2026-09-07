@@ -32,7 +32,7 @@ the `notes` column):
 - **Reverb:** `R_drv1` 100K, `R_drv2` 10K, `R_drv3` 10R, `C_rev1` 1µF,
   `C_rev2` 10nF, `C_rev4` 100nF, `R_rec_bias` 1M, `R_rec1` 10K, `R_rec2` 2K2,
   `C_rec_byp` 10µF, `POT_REV`.
-- **Tremolo:** `R_lfo1` 33K, `R_lfo_ser` 100K, `R_lfo_fb1` 10K, `R_lfo_fb2` 4K7,
+- **Tremolo** *(recovered values — superseded 2026-09-07 by errata #19: the single-arm Wien LFO could not oscillate at tremolo rates; built design = dual-gang 250k speed pot, 15k floors in both arms, 1 µF timing caps)*: `R_lfo1` 33K, `R_lfo_ser` 100K, `R_lfo_fb1` 10K, `R_lfo_fb2` 4K7,
   `R_led_diag` 2K2, `C_dc_blk` 10µF, `C_trem_out` 100nF, `POT_SPD` 500K,
   `POT_DPT` 100K.
 - **Effects loop / panel:** `R_fx_pad` 10K, `POT_VOL`, `POT_TONE`, `J_IN` (×3),

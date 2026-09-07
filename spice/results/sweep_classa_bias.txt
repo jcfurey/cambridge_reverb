@@ -1,0 +1,22 @@
+vb(V)  Iq_avg(A)  P_standing(W)    (THD from the fourier block that follows each row)
+ROW 0.60 0.111181 3.72456
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 1.40883 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.62 0.112609 3.77238
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 1.04864 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.66 0.119359 3.99853
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.404409 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.70 0.172783 5.78823
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.0485661 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.72 0.275728 9.23689
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.00843481 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.74 0.487546 16.3328
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.0024951 %, Gridsize: 200, Interpolation Degree: 1
+ROW 0.76 0.844983 28.3069
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.00218707 %, Gridsize: 200, Interpolation Degree: 1

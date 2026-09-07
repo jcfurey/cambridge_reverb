@@ -75,7 +75,7 @@ ZONES = [
 # Off-board wiring connectors -> the zone whose stretch of the wiring edge they sit on
 EDGE_ZONE = {"J_IN1": 0, "J_IN2": 0, "J_IN3": 0,
              "POT_VOL": 1, "POT_TONE": 1,
-             "POT_SPD": 2, "POT_DPT": 2,
+             "POT_SPD_A": 2, "POT_SPD_B": 2, "POT_DPT": 2,   # dual-gang speed pot = two 3-pad groups
              "REV1": 3, "POT_REV": 3, "FS1": 3,
              "LS1": 4,
              "T1": 5}                      # transformer pads: far right, away from signal

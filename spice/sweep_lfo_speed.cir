@@ -1,0 +1,46 @@
+Tremolo LFO SWEEP: rate vs the SPEED pot -- the schematic's (2026-09-07) symmetric network
+* This IS the tremolo sheet now (errata #19; the recovered network is kept in
+* sweep_lfo_speed_recovered.cir): put the speed pot in BOTH
+* Wien arms (a dual-gang pot in the same panel hole) so the network attenuation
+* stays exactly 1/3 at every setting and the loop starts everywhere with the
+* existing gain-3.13 / diode-limited amplifier. Series and shunt arm each:
+* R_lfo_ser 15k (min-R floor) + one gang of a 250k lin pot, with C = 1 uF.
+*   f = 1/(2*pi*R*C):  pot 0 -> 10.6 Hz, pot 250k -> 0.60 Hz  (guitar tremolo range)
+
+.include models/opamp1p.sub
+.model DLIM D(Is=2.5n Rs=0.5 N=1.7 Cjo=4p Bv=100)
+
+X1 P N OUT OPAMP1P PARAMS: aol=2e5 gbw=3e6
+R_ser OUT n1 {15k + pot}
+C_ser n1 P 1u
+R_sh  P 0 {15k + pot}
+C_sh  P 0 1u
+R_g N 0 4.7k
+R_f OUT N 10k
+Dl1 OUT N DLIM
+Dl2 N OUT DLIM
+.param pot=0
+.ic v(P)=0.05
+
+.control
+echo "pot(ohm)  R_arm(ohm)  f0_theory(Hz)  Vpp_out(V)  f_measured(Hz)"
+foreach pot 0 25k 50k 100k 150k 250k
+  alterparam pot=$pot
+  reset
+  let rarm = 15k + $pot
+  let f0 = 1/(2*pi*rarm*1u)
+  let tstop = 3 + 8/f0
+  let tsettle = 3/f0 + 1
+  tran 1m $&tstop 0 1m uic
+  meas tran vpp PP v(out) FROM=$&tsettle TO=$&tstop
+  if $&vpp > 0.2
+    meas tran ta WHEN v(out)=0 RISE=4 FROM=$&tsettle
+    meas tran tb WHEN v(out)=0 RISE=5 FROM=$&tsettle
+    let fm = 1/(tb - ta)
+    echo $pot  $&rarm  $&f0  $&vpp  $&fm
+  else
+    echo $pot  $&rarm  $&f0  $&vpp  NO-OSCILLATION
+  end
+end
+.endc
+.end

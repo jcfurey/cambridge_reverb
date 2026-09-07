@@ -1,0 +1,3 @@
+v(out) = 8.499957e+00
+gain_1k             =  -1.367219e-04
+Warning from checkvalid: vector gain_1k is not available or has zero length.

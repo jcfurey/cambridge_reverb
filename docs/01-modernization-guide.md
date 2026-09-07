@@ -114,7 +114,9 @@ in Part 2 / Part 9.)
 A Wien-bridge LFO (TL072 half) drives an LED/LDR optocoupler (**Xvive VTL5C1**
 or DIY LED+LDR; original Perkin-Elmer vactrols are discontinued under RoHS
 cadmium restrictions). The LFO output also drives an on-board diagnostic rate
-LED. Speed and depth pots use the original panel positions.
+LED. Speed and depth pots use the original panel positions — the speed pot is a
+**dual-gang 250 k linear** in the original hole (errata #19: a single-arm Wien pot cannot
+span tremolo rates); the LFO runs 0.6–10.6 Hz (`spice/sweep_lfo_speed.cir`).
 
 ## Section 6: MRB (Mid Resonance Boost)
 

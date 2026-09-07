@@ -11,13 +11,13 @@ qty,value,footprint,refs
 1,10uF/25V,CP_Radial_D5.0mm_P2.50mm,C_reg_out1
 1,10uF/50V,CP_Radial_D5.0mm_P2.50mm,C_reg_in
 2,47uF/25V,CP_Radial_D6.3mm_P2.50mm,C_vbr C_vbt
-10,100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_byp1 C_cpl12 C_drvin C_lfo1 C_lfo2 C_mrb_in C_mrb_out C_reg_out2 C_rev4 C_zobel
+8,100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_byp1 C_cpl12 C_drvin C_mrb_in C_mrb_out C_reg_out2 C_rev4 C_zobel
 1,100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_pres
 2,10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_cut C_rev2
 4,10nF/100V,C_Disc_D7.5mm_W2.5mm_P5.00mm,C101 C102 C103 C104
 1,120nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_450
 1,1nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_fb_hf
-4,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_drymix C_in_pa C_obuf_in C_wetmix
+6,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_drymix C_in_pa C_lfo1 C_lfo2 C_obuf_in C_wetmix
 1,470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_treble
 1,47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_in_pre
 1,47nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_750
@@ -30,7 +30,8 @@ qty,value,footprint,refs
 1,3mm red,LED_D3.0mm,LED_rate
 12,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_drv1 R_drymix R_fs_mrb R_fs_rev R_fs_trem R_mixfb R_obuf_b R_vbr1 R_vbr2 R_vbt1 R_vbt2 R_wetmix
 2,10R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_drv3 R_zobel
-9,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_d1 R_d2 R_drv2 R_fx_pad R_lfo_fb1 R_lfo_ser R_mrb_ser R_rec1 R_trem1
+8,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_d1 R_d2 R_drv2 R_fx_pad R_lfo_fb1 R_mrb_ser R_rec1 R_trem1
+2,15k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo_ser R_lfo_sh
 3,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_g1 R_g2 R_rec_bias
 2,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_gain R_led
 4,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_led_diag R_rec2 R_s1 R_s2
@@ -38,7 +39,6 @@ qty,value,footprint,refs
 3,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_bias1 R_bias2 R_fb
 1,240R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg1
 1,3.09k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg2
-1,33k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo1
 1,4.7k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_lfo_fb2
 1,0R,R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal,R_spk_rtn
 1,100R/1W,R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal,R_27V
@@ -53,8 +53,8 @@ qty,value,footprint,refs
 1,Input 2,WirePad_1x02_P2.54mm_D1.2mm,J_IN2
 1,10in Bulldog,WirePad_1x02_P5.08mm_D1.5mm,LS1
 2,100k lin,WirePad_1x03_P2.54mm_D1.2mm,POT_DPT POT_TONE
+2,250k lin dual,WirePad_1x03_P2.54mm_D1.2mm,POT_SPD_A POT_SPD_B
 1,250k log,WirePad_1x03_P2.54mm_D1.2mm,POT_VOL
-1,500k lin,WirePad_1x03_P2.54mm_D1.2mm,POT_SPD
 1,reuse,WirePad_1x03_P2.54mm_D1.2mm,POT_REV
 1,reuse / AnTek AS-0524,WirePad_1x03_P5.08mm_D1.5mm,T1
 1,4FB2A1C,WirePad_1x04_P2.54mm_D1.2mm,REV1

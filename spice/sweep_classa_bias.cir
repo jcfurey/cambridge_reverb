@@ -1,0 +1,34 @@
+Class-A power-stage SWEEP: standing current and crossover distortion vs the bias spreader
+* Same transistor-level output stage as tran_classa_output.cir (single +33.5 V rail,
+* ~0.7 W into 8 ohm -> ~0.38 A peak load current). The bias voltage per base is
+* stepped from a lean Class-AB setting to full Class A. For each step: average
+* supply current (= standing heat, the Class-A tax: P ~ 33.5 V x Iq) and the
+* THD from `fourier` (printed below each row; crossover shows up as ~1 %).
+
+.model QN NPN(Bf=120 Is=2e-13 Vaf=100 Rb=2)
+.model QP PNP(Bf=120 Is=2e-13 Vaf=100 Rb=2)
+
+Vcc vcc 0 33.5
+Vdrv dc 0 DC 16.75 SIN(16.75 3 1000)
+.param vb=0.62
+Vbt bt dc {vb}
+Vbb dc bb {vb}
+Q1 vcc bt out QN
+Q2 0   bb out QP
+Cout out spk 2200u
+Rspk spk 0 8
+
+.control
+echo "vb(V)  Iq_avg(A)  P_standing(W)    (THD from the fourier block that follows each row)"
+foreach vb 0.60 0.62 0.66 0.70 0.72 0.74 0.76
+  alterparam vb=$vb
+  reset
+  tran 5u 30m 10m
+  meas tran iq AVG i(vcc)
+  let iqp = -iq
+  let pq = 33.5 * iqp
+  echo ROW $vb  $&iqp  $&pq
+  fourier 1000 v(spk)
+end
+.endc
+.end

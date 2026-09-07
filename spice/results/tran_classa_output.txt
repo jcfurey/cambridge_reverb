@@ -1,0 +1,5 @@
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 1.04864 %, Gridsize: 200, Interpolation Degree: 1
+Warning from checkvalid: vector iq_ab is not available or has zero length.
+Fourier analysis for v(spk):
+  No. Harmonics: 10, THD: 0.0024951 %, Gridsize: 200, Interpolation Degree: 1

@@ -116,22 +116,23 @@ POT_VOL,Volume (reused/off-board),250k log,WirePad_1x03_P2.54mm_D1.2mm,,,1,
 R_fx_pad,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 TP_TONE_OUT,Test point (header pin or wire loop),TONE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
-C_lfo1,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
-C_lfo2,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_lfo1,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_lfo2,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_obuf_in,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 D_lfo1,Diode,1N4148,D_DO-41_SOD81_P10.16mm_Horizontal,1N4148FS-ND,512-1N4148,1,LFO amplitude clamp
 D_lfo2,Diode,1N4148,D_DO-41_SOD81_P10.16mm_Horizontal,1N4148FS-ND,512-1N4148,1,LFO amplitude clamp
 IC2,Dual op-amp: tremolo LFO + output buffer,TL072CP,DIP-8_W7.62mm,296-1775-5-ND,595-TL072CP,1,DIP-8; use a machined-pin SOCKET_IC
 LED_rate,LED,3mm red,LED_D3.0mm,160-1127-ND,,1,"on-board diagnostic, not panel"
 POT_DPT,Tremolo depth (reused/off-board),100k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,
-POT_SPD,Tremolo speed (reused/off-board),500k lin,WirePad_1x03_P2.54mm_D1.2mm,,,1,
+POT_SPD_A,"Tremolo speed -- dual-gang pot, gang A (series Wien arm)",250k lin dual,WirePad_1x03_P2.54mm_D1.2mm,,,1,"DUAL-GANG 250k linear, 1 part = gangs A+B (same panel hole as the original speed pot); errata #19"
+POT_SPD_B,"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A",250k lin dual,WirePad_1x03_P2.54mm_D1.2mm,,,1,second gang of POT_SPD_A -- do not order twice
 R_fs_trem,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_led,Resistor,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_led_diag,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
-R_lfo1,Resistor,33k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_lfo_fb1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_lfo_fb2,Resistor,4.7k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
-R_lfo_ser,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo_ser,Resistor,15k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_lfo_sh,Resistor,15k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_obuf_b,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_trem1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 TP_GND_TREM,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net

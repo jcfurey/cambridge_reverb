@@ -33,7 +33,7 @@ DESC = {
  "Q1":"Preamp JFET","Q2":"Preamp JFET","Q_rec":"Reverb-recovery JFET",
  "REV1":"Reverb pan (high-Z input)","FS1":"Footswitch DIN connector","LS1":"10in speaker",
  "VTL1":"Tremolo optocoupler","L1":"MRB tank inductor","T1":"Power transformer",
- "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD":"Tremolo speed","POT_DPT":"Tremolo depth",
+ "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference
 CUR = {
@@ -70,8 +70,12 @@ CUR = {
  "L1":   dict(dk="", mou="", notes="reuse original ~1H, or 2x 0.5H Fasel"),
  "REV1": dict(dk="", mou="", notes="Accutronics/Belton 4FB2A1C ~1475ohm - NOT 4AB3C1B (8ohm)"),
  "T1":   dict(dk="", mou="", notes="reuse original (test ~48VAC) or AnTek AS-0524 50VA"),
+ "POT_SPD_A": dict(dk="", mou="", notes="DUAL-GANG 250k linear, 1 part = gangs A+B (same panel hole as the original speed pot); errata #19"),
+ "POT_SPD_B": dict(dk="", mou="", notes="second gang of POT_SPD_A -- do not order twice"),
 }
-REUSE = {"POT_VOL","POT_TONE","POT_REV","POT_SPD","POT_DPT","J_IN1","J_IN2","J_IN3","FS1","LS1","T1","REV1","L1"}
+REUSE = {"POT_VOL","POT_TONE","POT_REV","POT_DPT","J_IN1","J_IN2","J_IN3","FS1","LS1","T1","REV1","L1"}
+# POT_SPD_A/B: the tremolo speed pot is NEW -- a dual-gang 250k lin in the original
+# speed-pot hole (errata #19); the original single pot is not reused.
 
 # off-board / mechanical items that are NOT in the netlist
 # (ref, description, value, package, dk, mou, qty, notes)

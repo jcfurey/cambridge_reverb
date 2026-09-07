@@ -1,0 +1,42 @@
+Power-amp headroom SWEEP: clean output ceiling vs the +33.5 V rail (mains -10 % .. +10 %)
+* Roast R2: on a single rail the LM1875 ceilings at ~12 W into 8 ohm, not 18 W.
+* This puts numbers on how that ceiling moves with mains voltage. Rail-aware op-amp
+* (models/opamp_rail.sub, vsat 3 V ~ LM1875 saturation), gain 23x, output cap +
+* 8 ohm load, driven hard so the output clips at both rails (rout 0.05: the vsat
+* figure already carries the load-dependent saturation). Reports the clip
+* levels, the usable peak swing and the corresponding sine power = Vpk^2 / (2 x 8).
+
+.include models/opamp_rail.sub
+
+.param vcc=33.5
+Vcc  vcc 0 {vcc}
+* bias divider -> V+/2, input driven hard (2 Vpk x 23 = way past the rail)
+R_b1 vcc pab 22k
+R_b2 pab 0   22k
+Vin  in  0   DC 0 SIN(0 2 1000)
+C_in in pab_in 1u
+R_in pab_in pab 100k
+X1 pab_in inv out vcc 0 OPAMP_RAIL PARAMS: aol=1e5 gbw=2.5e6 rout=0.05 vsat=3
+R_fb  out inv 22k
+R_g   inv gnd_c 1k
+C_g   gnd_c 0 22u
+C_out out spk 2200u
+R_spk spk 0 8
+
+.control
+echo "Vcc(V)  Vout_dc(V)  clip_hi(V)  clip_lo(V)  Vpk_usable(V)  P_8ohm(W)"
+foreach vcc 30.0 31.75 33.5 35.25 37.0
+  alterparam vcc=$vcc
+  reset
+  op
+  let x = v(out)
+  set vdc = $&x
+  tran 10u 25m 15m
+  meas tran vmax MAX v(out) FROM=15m TO=25m
+  meas tran vmin MIN v(out) FROM=15m TO=25m
+  let vpk = (vmax - vmin) / 2
+  let p8 = vpk * vpk / 16
+  echo $vcc  $vdc  $&vmax  $&vmin  $&vpk  $&p8
+end
+.endc
+.end

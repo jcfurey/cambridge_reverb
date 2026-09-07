@@ -27,21 +27,25 @@ runs ERC + DRC and writes the reports to **`kicad/reports/`** — the committed
 `*-erc.rpt` / `*-drc.json` files there are the evidence for every number in this
 file. Without `--no-regen` the script regenerates first (which discards routing).
 
-## Routing result — THT board (`kicad-cli 8.0.9 pcb drc`, this commit)
+## Routing result — THT board (`kicad-cli 8.0.9 pcb drc`, this commit; `kicad/reports/tht-drc.json`)
 | Item | Result |
 |------|-------:|
-| Connections (ratsnest, incl. the 26 test points) | 166 |
-| **Routed** | **166 / 166** (`unconnected_items`: 0) |
-| DRC violations (errors + warnings, `--severity-all`) | **0** |
-| Track segments | 929 — **F.Cu 4 306 mm**, B.Cu 430 mm (short jumpers) |
-| Vias | 66 |
-| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×7, via cost 60 (`route_board.py --bottom-cost 7 --via-cost 60`) |
+| Connections (ratsnest, incl. the 26 test points and the dual-gang speed pot) | 168 |
+| **Routed** | **167 / 168** (`unconnected_items`: 1) |
+| DRC violations (`--severity-all`) | **3 errors** — `starved_thermal` on the GND pads of `C_rec_byp`, `C_vbr`, `C_byp2` (small-pitch radial caps whose spokes a neighbouring bottom jumper blocks) |
+| Track segments | 892 — **F.Cu 4 129 mm**, B.Cu 629 mm (short jumpers) |
+| Vias | 49 |
+| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×6, via cost 80 (`route_board.py --bottom-cost 6 --via-cost 80`) |
 
-Sweep on this placement (150 passes): B.Cu ×7 / via 60 → **0 open, DRC clean
-(committed)**; ×6 / via 80 → 3 open (2 of them GND pads islanded by bottom
-jumpers). Earlier placements routed to 1–5 open connections with the same
-settings, so re-check after any placement change — Freerouting is run-to-run
-sensitive and the balance of column widths matters as much as the router knobs.
+The one open connection is **`DRVP`**: a trace end at ≈ (100, 74) to `IC1` pin 3
+(the reverb-driver input) at ≈ (31, 79) — the router failed to cross the effects
+column with it. Four GUI touches in total (one link, three thermal spokes).
+
+Honest note: the previous placement (before the errata #19 tremolo parts) routed to
+**166/166 with 0 violations**; the same settings on this placement gave 4 open,
+and six settings were tried (1–10 open). Freerouting is deterministic for identical
+input but sensitive to small placement changes, so the count moves with every
+schematic edit — always re-check `kicad/reports/` after regenerating.
 
 ## Mixed SMD / THT variant — `smd/cambridge_reverb_smd.kicad_pcb` (155 × 90 mm)
 Same schematic, second footprint profile (`--profile smd` on all three scripts),
@@ -73,29 +77,26 @@ stubs and wiring edge. Two more deliberate differences:
   pads on a 155×90 board (errata #11 addendum). Parts area **~4 560 mm² → 48 % of the 155 × 90 usable area**
 (THT: 60 %). **Pre-route DRC: 0 errors, 0 warnings** beyond the two stub warnings.
 
-**Routing result (this commit)** — `route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb --bottom-cost 6 --via-cost 60`:
+**Routing result (this commit; `kicad/reports/smd-drc.json`)** — `route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb --bottom-cost 6 --via-cost 80`:
 
 | Item | Result |
 |------|-------:|
-| Connections (incl. 26 test points; SMD ground pads count via the top pour) | 167 |
-| **Routed** | **165 / 167** |
-| DRC | **1 error** (`starved_thermal`: `C_vbr` GND pad, bottom pour) + 1 unused-stub warning |
-| Track segments | 1 049 — F.Cu 3 410 mm, B.Cu 677 mm |
-| Vias | 109 (most are SMD-ground-pad drops to the bottom pour) |
+| Connections (incl. 26 test points and the dual-gang speed pot; SMD ground pads count via the top pour) | 169 |
+| **Routed** | **162 / 169** |
+| DRC (`--severity-all`) | **0 violations** |
+| Track segments | 1 002 — F.Cu 3 853 mm, B.Cu 682 mm |
+| Vias | 95 (most are SMD-ground-pad drops to the bottom pour) |
 
-The two open items: one **top-pour fragment** not tied back to the rest of GND
-(add a stitching via on it in the GUI), and **`MRB_T`** from a trace end at
-≈ (59, 14) to `C_mrb_450` pin 1 at ≈ (49, 15). Plus the `C_vbr` thermal spokes
-(nudge the neighbouring trace). Three GUI touches, all in the effects column.
+The seven open items: three GND (top-pour fragments / islanded pads — stitching
+vias), `MRB_T`, `PA_IN`, `Q2S`, `VRAW`. All are short GUI touches; the DRC-clean
+board was preferred over the alternative with 4 open + 3 starved thermals.
 
-Sweep on this placement (150 passes): B.Cu ×6 / via 60 → **2 open + 1 starved
-(committed)**; ×7 / via 60 → 4 open; ×9 / via 80 → 4 open (all GND) + 2 starved;
-×7 / via 40 → 5 open + 2 starved. Hiding *both* pours from the router (every GND
-link in copper) gave 4–5 open with edge-clearance errors, and no top pour at all
-gave 4–5 open with 1–6 starved spokes — so the committed configuration (top pour
-for SMD grounds, router sees only the bottom plane) is the best of the eight
-tried. Before the class widths were narrowed to 2.0 / 1.0 mm the same board
-routed to 9–11 open connections.
+Sweep on this placement (150 passes): ×6 / via 60 → 7 open + 3 starved; ×7 / via
+60 → 10 open + 2 starved; ×9 / via 80 → 6 open + 2 starved + 1 clearance; **×6 /
+via 80 → 7 open, DRC clean (committed)**; ×8 / via 60 → 4 open + 3 starved. The
+placement before the errata #19 tremolo parts routed to 2 open + 1 starved with
+the same tooling — the SMD board sits close to the router's limit at 155 × 90, so
+expect to finish a handful of links by hand after any regeneration.
 
 **Assembly path:** JLCPCB places the SMD side (all are basic-class part sizes),
 you hand-solder the ~70 THT parts. `production/smd/bom-jlcpcb.csv` (Comment /
@@ -131,7 +132,7 @@ Part 2's set-up notes and the ngspice suite (`spice/README.md`).
 | `BLEND` | TP_BLEND | BLEND | Reverb | ~8.5 V DC (summer output about VBIAS_R) + dry/wet mix AC, unity | spice (tran_reverb_mixer) |
 | `GND` | TP_GND_REV | GND | Reverb | probe ground | — |
 | `VB_T` | TP_VBIAS_T | VBIAS_T | Tremolo | ~8.5 V (mid-rail reference for IC2) | spice |
-| `LFO` | TP_LFO | LFO_OUT | Tremolo | AC: the LFO — ~16 Hz at the fast end (100 k/100 n), ~0.5 V amplitude in sim; speed pot sweeps it | spice (tran_tremolo_lfo) |
+| `LFO` | TP_LFO | LFO_OUT | Tremolo | AC: the LFO — **10.6 Hz** with the speed pot at min, **0.60 Hz** at max, ~0.48 V amplitude (0.96 Vpp), sine-ish | spice (tran_tremolo_lfo, sweep_lfo_speed) |
 | `TREM` | TP_TREM_OUT | TREM_OUT | Tremolo | AC: post-LDR signal, amplitude pumping at the LFO rate when tremolo is on | Part 1 §5 |
 | `PA_IN` | TP_PA_IN | PA_IN | Tremolo | ~8.5 V DC (IC2-B buffer about VBIAS_T) + the full effects-chain signal | roast R3 |
 | `GND` | TP_GND_TREM | GND | Tremolo | probe ground | — |

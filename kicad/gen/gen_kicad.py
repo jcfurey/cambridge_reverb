@@ -575,11 +575,17 @@ def build():
             "8":"+17V","4":"GND","5":"OBUF_IN","6":"PA_IN","7":"PA_IN"})
     s.comp("C","C_obuf_in","1uF",30,40,{"1":"MRB_OUT","2":"OBUF_IN"})  # post-MRB into buffer
     s.comp("R","R_obuf_b","100k",30,70,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
-    s.comp("R","R_lfo_ser","10k",140,55,{"1":"LFO_OUT","2":"SPD_A"})   # min-R floor
-    s.comp("POT","POT_SPD","500k lin",170,55,{"1":"SPD_A","2":"WN1","3":"WN1"})  # SPEED: rheostat in Wien series arm
-    s.comp("C","C_lfo1","100nF",200,60,{"1":"WN1","2":"LFO_P"})
-    s.comp("R","R_lfo1","33k",150,120,{"1":"LFO_P","2":"VBIAS_T"})  # LFO biased to mid-rail
-    s.comp("C","C_lfo2","100nF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
+    # Wien network -- SYMMETRIC, dual-gang speed pot (errata #19). The recovered
+    # single-arm pot (10k+500k vs a fixed 33k) only oscillates for ~5 % of the pot
+    # travel, at 45-80 Hz (spice/sweep_lfo_speed_recovered.cir). With one gang in
+    # each arm the attenuation stays 1/3 at every setting: f = 1/(2*pi*(15k+pot)*1u)
+    # = 10.6 Hz (pot 0) .. 0.60 Hz (pot 250k)  -- spice/sweep_lfo_speed.cir.
+    s.comp("R","R_lfo_ser","15k",140,55,{"1":"LFO_OUT","2":"SPD_A"})   # series arm min-R floor
+    s.comp("POT","POT_SPD_A","250k lin dual",170,55,{"1":"SPD_A","2":"WN1","3":"WN1"})  # SPEED gang A (rheostat), series arm
+    s.comp("C","C_lfo1","1uF",200,60,{"1":"WN1","2":"LFO_P"})
+    s.comp("R","R_lfo_sh","15k",150,120,{"1":"LFO_P","2":"SPD_B"})     # shunt arm min-R floor
+    s.comp("POT","POT_SPD_B","250k lin dual",150,150,{"1":"SPD_B","2":"VBIAS_T","3":"VBIAS_T"})  # SPEED gang B (rheostat), shunt arm -> mid-rail
+    s.comp("C","C_lfo2","1uF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS_T"}) # AC gnd via VBIAS_T
     s.comp("D","D_lfo1","1N4148",40,70,{"1":"LFO_OUT","2":"LFO_N"})

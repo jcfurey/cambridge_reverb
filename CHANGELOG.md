@@ -3,6 +3,28 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### SPICE parameter sweeps, committed results, tremolo LFO fix (2026-09-07)
+- **Six ngspice sweeps** added next to the fixed-point checks, and `run_all.sh`
+  now writes every result table to **`spice/results/`** (committed evidence):
+  JFET drain voltage vs `R_s` across the datasheet Idss/Vp spread (the recovered
+  2.2 k suits a *high*-Idss part; a typical one wants ~1.0 k; a 1 mA part cannot
+  reach 8–9 V — errata #15 quantified), tone-pot travel, LFO rate vs speed pot,
+  Class-A bias vs standing heat / THD, power-amp clean power vs mains ±10 %
+  (8.9 / 11.7 / 14.8 W).
+- 🔴 **Errata #19 — the tremolo LFO did not work as recovered.** Sweeping the
+  recovered single-arm Wien network showed it oscillates only for the bottom ~5 %
+  of the speed pot, at 45–80 Hz, and not at all elsewhere. **Fixed:** symmetric
+  network with a **dual-gang 250 k speed pot** (one gang per arm, same panel
+  hole), 15 k floors, 1 µF timing caps → **10.6 Hz … 0.60 Hz** at constant
+  amplitude (`sweep_lfo_speed.cir`; the pre-fix network is kept as
+  `sweep_lfo_speed_recovered.cir`). `POT_SPD_A`/`POT_SPD_B` are the two gangs of
+  one new part; the original speed pot is no longer reused.
+- Both boards regenerated and re-routed for the new tremolo parts (six router
+  settings each): **THT 167/168 routed, 3 starved-thermal errors** (was 166/166
+  clean on the previous placement); **SMD 162/169 routed, DRC clean** (was 165/167
+  + 1 error). The open links are listed in `kicad/PCB-NOTES.md`; the counts move
+  with every placement change — `kicad/reports/` holds the evidence.
+
 ### Mixed SMD/THT variant + JFET pin-number fix (2026-09-06)
 - 🔴 **Errata #18 — JFET pins.** The generated JFET symbol had 2 = Gate / 3 = Source;
   the onsemi 2N5457 (TO-92) and MMBF5457 (SOT-23) datasheets both number the leads

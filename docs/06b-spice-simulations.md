@@ -33,7 +33,7 @@ Measured vs. documented:
 | Power-amp LF −3 dB | 17.2 Hz | "7.2 Hz" — see below ⚠️ |
 | Reverb-driver gain | 20.83 dB (11.0×) | 11× ✅ |
 | MRB peak | 577 Hz | ~610 Hz ✅ |
-| Tremolo LFO | 15.9 Hz = 1/(2πRC) | RC-set ✅ |
+| Tremolo LFO | 10.6 Hz (pot 0) … 0.60 Hz (pot max), 1/(2πRC) with the errata #19 network | RC-set ✅ (swept) |
 | Preamp drain | 12.1 V (Rs 2.2 k) | 8–9 V — see below ⚠️ |
 
 Two corrections fell out of running it: the power-amp LF corner is ~17 Hz (the

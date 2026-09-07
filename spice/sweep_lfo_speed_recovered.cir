@@ -1,0 +1,46 @@
+Tremolo LFO SWEEP -- the RECOVERED (pre-fix) network: evidence for errata #19
+* Kept as the record of why the tremolo sheet was changed on 2026-09-07. The
+* recovered network (Part 2 / netlist-notes, as generated until then) was NOT symmetric: series arm = R_lfo_ser 10k + POT_SPD
+* (0..500k rheostat) with C_lfo1 100n; shunt arm = R_lfo1 33k with C_lfo2 100n;
+* amplifier gain 1 + R_lfo_fb1/R_lfo_fb2 = 1 + 10k/4.7k = 3.13 with a diode limiter.
+* Wien theory: f0 = 1/(2*pi*sqrt(R1*R2*C1*C2)); the network attenuates 1/(1 + R1/R2
+* + C2/C1) at f0, so the loop only starts if gain > 2 + R1/R2 -> with gain 3.13 the
+* series arm must stay below ~37k. This sweep steps the pot and reports whether the
+* LFO oscillates at all, and at what rate: it runs only for pot <= ~27k (5 % of the
+* travel) and then at 45-80 Hz -- not a tremolo. Fix: sweep_lfo_speed.cir.
+
+.include models/opamp1p.sub
+.model DLIM D(Is=2.5n Rs=0.5 N=1.7 Cjo=4p Bv=100)
+
+X1 P N OUT OPAMP1P PARAMS: aol=2e5 gbw=3e6
+R_ser OUT n1 {10k + pot}
+C_ser n1 P 100n
+R_sh  P 0 33k
+C_sh  P 0 100n
+R_g N 0 4.7k
+R_f OUT N 10k
+Dl1 OUT N DLIM
+Dl2 N OUT DLIM
+.param pot=0
+.ic v(P)=0.05
+
+.control
+echo "pot(ohm)  R_series(ohm)  f0_theory(Hz)  Vpp_out(V)  f_measured(Hz)   [starts only if 2+R1/R2 < 3.13]"
+foreach pot 0 10k 20k 27k 35k 50k 100k 250k 500k
+  alterparam pot=$pot
+  reset
+  let rser = 10k + $pot
+  let f0 = 1/(2*pi*sqrt(rser*33k)*100n)
+  tran 0.2m 2.0 0 0.2m uic
+  meas tran vpp PP v(out) FROM=1.2 TO=2.0
+  if $&vpp > 0.2
+    meas tran ta WHEN v(out)=0 RISE=6 FROM=1.0
+    meas tran tb WHEN v(out)=0 RISE=7 FROM=1.0
+    let fm = 1/(tb - ta)
+    echo $pot  $&rser  $&f0  $&vpp  $&fm
+  else
+    echo $pot  $&rser  $&f0  $&vpp  NO-OSCILLATION
+  end
+end
+.endc
+.end
