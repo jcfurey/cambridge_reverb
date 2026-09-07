@@ -1,0 +1,85 @@
+LM1875 THERMAL: steady-state junction temperature vs heatsink, and the heatsink's time to saturate
+* Electro-thermal RC ladder (1 W = 1 A, 1 K = 1 V):
+*   junction --RthJC 2 K/W (TI app hint; 3 abs-max)-- case --RthCS-- sink --RthSA-- ambient
+*   Cth: die+tab 0.35 J/K (TO-220 copper tab ~1.5 g), heatsink m*0.9 J/(g K) (aluminium)
+* RthCS: greased mica 1.6 K/W (TI), or 1.0 K/W metal-to-metal (single supply: tab is at
+*   GND = V-, so the LM1875 CAN bolt straight to a grounded chassis/sink -- TI's note).
+* Dissipation on the 33.5 V single rail into 8 ohm, ideal class-B + quiescent
+*   (Pq = 33.5 V x 70 mA typ = 2.3 W):  Pd = Vcc*Vpk/(pi*RL) - Vpk^2/(2*RL) + Pq
+*   idle 2.3 W | worst-case sine Vpk = Vcc/pi = 10.7 V (7.1 W out): 9.4 W | at the 12 W
+*   clip point (Vpk 13.7): 8.8 W | loud music (crest factor ~4, peaks at clip): ~4.0 W avg
+* Runs: (1) steady state Tj for RthSA in {1.5, 2.5, 4, 6, 8, 10} at Ta = 25 / 40 / 55 C,
+*          for idle / worst-sine / music -- what heatsink is actually needed;
+*      (2) transient with the 40 g sink at RthSA 4 K/W: 10 min of "loud set" (worst-case
+*          sine 60 s on / music 60 s) from cold -> how long until the heatsink is saturated and
+*          whether Tj crosses the 150 C limit / ~170 C shutdown.
+
+.param rsa=2.5 rcs=1.6 rjc=2.0 c_die=0.35 m_sink=40 ta=40 pd=9.4
+.param c_sink={m_sink*0.9}
+
+* thermal network (node voltages = temperatures above 0 C)
+V_ta   TA 0 {ta}
+I_pd   0 TJ DC {pd}
+R_jc   TJ TC {rjc}
+C_die  TJ TA {c_die}
+R_cs   TC TS {rcs}
+R_sa   TS TA {rsa}
+C_sink TS TA {c_sink}
+.ic V(TJ)={ta} V(TC)={ta} V(TS)={ta}
+
+.control
+echo --- steady state Tj (C) with greased mica (RthCS 1.6): one line per RthSA / Pd, columns Ta = 25 / 40 / 55 C
+foreach r 1.5 2.5 4 6 8 10
+  foreach p 2.3 9.4 4.0
+    alterparam rsa = $r
+    alterparam pd = $p
+    alterparam ta = 25
+    reset
+    op
+    let tj25 = v(TJ)
+    set s25 = "$&tj25"
+    alterparam ta = 40
+    reset
+    op
+    let tj40 = v(TJ)
+    set s40 = "$&tj40"
+    alterparam ta = 55
+    reset
+    op
+    let tj55 = v(TJ)
+    set s55 = "$&tj55"
+    echo RthSA=$r Pd=$p Tj: $s25 $s40 $s55
+  end
+end
+echo --- same, LM1875 bolted directly to a grounded sink (RthCS 1.0), worst sine 9.4 W, Ta 40
+alterparam rcs = 1.0
+alterparam pd = 9.4
+alterparam ta = 40
+foreach r 1.5 2.5 4 6 8 10
+  alterparam rsa = $r
+  reset
+  op
+  let tj = v(TJ)
+  set stj = "$&tj"
+  echo RthSA=$r Tj=$stj
+end
+alterparam rcs = 1.6
+echo --- transient: 40 g sink, RthSA 4, Ta 40: 60 s worst-case sine / 60 s music, 10 minutes
+alterparam rsa = 4
+alterparam ta = 40
+reset
+alter I_pd PWL(0 2.3 1 9.4 60 9.4 61 4.0 120 4.0 121 9.4 180 9.4 181 4.0 240 4.0 241 9.4 300 9.4 301 4.0 360 4.0 361 9.4 420 9.4 421 4.0 480 4.0 481 9.4 540 9.4 541 4.0 600 4.0)
+* start from a cold amp (everything at Ta): uic + .ic, otherwise tran starts at the hot steady state
+tran 0.5 600 uic
+meas tran tj_max MAX v(TJ)
+meas tran ts_max MAX v(TS)
+meas tran tj_60 FIND v(TJ) AT=60
+meas tran tj_300 FIND v(TJ) AT=300
+meas tran tj_540 FIND v(TJ) AT=540
+echo --- continuous worst-case sine, RthSA 4, Ta 40: time for the sink to reach 63 % of its rise
+alter I_pd DC 9.4
+tran 1 900 uic
+meas tran ts_ss FIND v(TS) AT=900
+meas tran tj_ss FIND v(TJ) AT=900
+.endc
+.end

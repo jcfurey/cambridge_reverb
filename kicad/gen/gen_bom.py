@@ -20,7 +20,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CLASS_DESC = {
  "R":"Resistor","C":"Capacitor (film/ceramic)","CP":"Capacitor (electrolytic)",
  "L":"Inductor","D":"Diode","LED":"LED","FUSE":"Fuse","POT":"Potentiometer (panel, reused)",
- "NJFET":"N-ch JFET","BRIDGE":"Bridge rectifier","LM317":"Adj. regulator",
+ "NJFET":"N-ch JFET","NPN":"NPN transistor","BRIDGE":"Bridge rectifier","LM317":"Adj. regulator",
  "LM1875":"Power amplifier","OPAMP8":"Dual op-amp","OPAMP14":"Quad op-amp","SW_SPST":"SPST toggle switch (panel)","JACK":"1/4in jack (panel, reused)",
  "SPEAKER":"Speaker (reused)","XFMR":"Power transformer (reused/AnTek)",
  "VTL5C1":"LED/LDR optocoupler","Reverb_Tank_4FB2A1C":"Reverb pan (off-board)",
@@ -35,6 +35,13 @@ DESC = {
  "Q1":"Preamp JFET","Q2":"Preamp JFET","Q_rec":"Reverb-recovery JFET",
  "REV1":"Reverb pan (high-Z input)","FS1":"Footswitch DIN connector","LS1":"10in speaker",
  "VTL1":"Tremolo optocoupler","L1":"MRB tank inductor","T1":"Power transformer",
+ "Q_trem":"Tremolo LED driver (emitter follower, AC-coupled from the depth pot)",
+ "LED_rate":"LFO limiter LED = rate indicator (on-board)","LED_lim":"LFO limiter LED (other half-cycle)",
+ "C_drv":"LED-driver coupling (LFO -> base)","R_b1":"LED-driver base bias","R_b2":"LED-driver base bias",
+ "R_e":"LED-driver emitter resistor (sets peak LED current ~6 mA)","R_c":"Vactrol LED series resistor",
+ "C_adj":"LM317 ADJ bypass: +15 dB ripple rejection, ~10x less rail noise","R_pre":"Preamp rail decoupling (with C_pre)",
+ "C_pre":"Preamp rail decoupling (with R_pre)","R_bias3":"LM1875 + input bias feed (from the bypassed divider)",
+ "C_bref":"LM1875 bias-divider bypass (kills the rail-ripple path into the + input)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference
@@ -53,9 +60,13 @@ CUR = {
  "Q_rec":dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="see Q1"),
  "D1":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp"),
  "D2":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp"),
- "D_lfo1":dict(dk="1N4148FS-ND", mou="512-1N4148", notes="LFO amplitude clamp"),
- "D_lfo2":dict(dk="1N4148FS-ND", mou="512-1N4148", notes="LFO amplitude clamp"),
- "LED_rate":dict(dk="160-1127-ND", mou="", notes="on-board diagnostic, not panel"),
+ "LED_rate":dict(dk="160-1127-ND", mou="", notes="3 mm red; antiparallel with LED_lim across R_lfo_fb1 = the LFO amplitude limiter (~1.6 V knee -> ~2 V LFO swing) AND the rate indicator; on-board, not panel"),
+ "LED_lim": dict(dk="160-1127-ND", mou="", notes="3 mm red; the other half of the limiter (lights on the negative half-cycle)"),
+ "Q_trem": dict(dk="2N3904FS-ND", mou="512-2N3904BU", notes="any small NPN; SMD board: MMBT3904 on the EBC-renumbered SOT-23 footprint (1=E 2=B 3=C like the TO-92)"),
+ "C_drv":  dict(dk="", mou="", notes="100 uF/25 V electrolytic, + to the depth-pot wiper (8.5 V) side; with R_b1||R_b2 sets the 0.17 Hz LFO coupling corner"),
+ "C_adj":  dict(dk="", mou="", notes="10 uF/25 V on the LM317 ADJ pin (TI: 65 -> 80 dB ripple rejection; output noise falls ~10x) -- spice/noise_frontend.cir"),
+ "C_pre":  dict(dk="", mou="", notes="220 uF/25 V; with R_pre 100R a 7 Hz corner on the preamp/recovery JFET rail -- the resistor-loaded JFET stages have ~0 dB PSRR"),
+ "C_bref": dict(dk="", mou="", notes="100 uF/25 V bypass on the LM1875 bias divider; without it the divider injected rail ripple x23 into the speaker (spice/ac_hum_psrr.cir)"),
  "VTL1": dict(dk="", mou="", notes="Xvive VTL5C1 (single-source) or DIY LED+LDR"),
  "C_main":dict(dk="", mou="667-EEU-FC1H472", notes="low-ESR; or 2x2200uF if PCB-mounted (errata #16)"),
  "C_filt1":dict(dk="", mou="667-EEU-FC1H102", notes="low-ESR pre-filter bulk"),
@@ -109,7 +120,6 @@ SMD_NOTES = {
  "R_0805_2012Metric": "0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic",
  "R_1206_3216Metric": "1206 1% 0.25 W (dissipates ~85 mW)",
  "C_1206_3216Metric": "1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R",
- "C_1210_3225Metric": "1210 X7R 50 V (fixed DC bias, small signal) -- or PPS/PET SMD film on a 2220 pad for the purist",
  "D_SMA":             "S1M (1 kV 1 A SMA) replaces 1N4007",
  "D_SOD-123":         "1N4148W replaces 1N4148",
  "SOT-23":            "MMBF5457 fitted directly (no TO-92 adapter); pin 1 D, 2 S, 3 G per onsemi",
@@ -157,7 +167,8 @@ def main(profile="tht", jlc=False):
     if jlc:
         # JLCPCB assembly BOM for the SMD side only (Comment, Designator, Footprint, LCSC).
         # LCSC numbers are left for the JLC parts picker -- none are invented here.
-        smd = [c for c in comps if c["fp"] and ("_SMD:" in c["fp"] or "SOT_SMD" in c["fp"])]
+        smd = [c for c in comps if c["fp"] and ("_SMD:" in c["fp"] or "SOT_SMD" in c["fp"] or "SOT-23" in c["fp"])
+               and "(opt)" not in c["value"]]          # optional MRB caps are DNP: not placed by JLC
         os.makedirs(os.path.join(ROOT, "production", "smd"), exist_ok=True)
         jout = os.path.join(ROOT, "production", "smd", "bom-jlcpcb.csv")
         by = defaultdict(list)
@@ -167,7 +178,7 @@ def main(profile="tht", jlc=False):
             for (val, fpn), refs in sorted(by.items(), key=lambda kv: (kv[0][1], kv[0][0])):
                 w.writerow([val, ",".join(sorted(refs)), fpn, ""])
         print(f"wrote {len(by)} JLCPCB assembly lines ({len(smd)} SMD parts) -> production/smd/bom-jlcpcb.csv")
-    miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","OPAMP14","LM1875","LM317","BRIDGE","NJFET")]
+    miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","OPAMP14","LM1875","LM317","BRIDGE","NJFET","NPN")]
     if miss: print("  note: active parts without a curated P/N:", miss)
 
 if __name__ == "__main__":

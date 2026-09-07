@@ -10,6 +10,7 @@ rebuilt from recovered conversation fragments, not the original files.
 - `04-jlcpcb-fabrication.md`
 - `05-thermal-placement.md`
 - `06b-spice-simulations.md`
+- `06c-noise-hum-crosstalk-thermal.md` — noise, hum, tremolo depth, crosstalk audit, LM1875 thermal model (2026-09-07)
 - `07-chassis-measurement.md`
 - `08-verified-bom.md`
 - `09-transformers-magnetics.md`

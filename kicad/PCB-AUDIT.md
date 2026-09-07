@@ -26,6 +26,8 @@ C / D / JFET rows for 0805 / 1206 / 1210 / SMA / SOD-123 / SOT-23 and keeps the 
 | Class | Footprint | Verdict |
 |-------|-----------|---------|
 | R (¼ W) | `R_Axial_DIN0207…P5.08mm_Vertical` | ✅ compact vertical |
+| JFETs, Q_trem (TO-92) | `TO-92_Inline_Wide` (2.54 mm pitch, 1.5 mm pads / 0.8 mm holes) | ✅ 0.35 mm annular ring; the stock `TO-92_Inline` (1.05 mm pads) had 0.15 mm — under JLCPCB's 0.18 mm minimum (errata #23); the wide pitch also matches the SOT-23→TO-92 adapters |
+| LM1875 (TO-220-5, 1.7 mm pitch) | project footprint, pads **1.5 × 2.6 mm** on 1.1 mm holes | ⚠️ 0.20 mm ring: meets JLC's 0.18 absolute minimum, not the 0.25 recommendation (impossible at this pitch without a 1.0 mm drill the 0.97 mm lead diagonal would not survive) |
 | R (1 W: `R_27V`) | `R_Axial_DIN0414_L11.9mm…P15.24mm` | ✅ **sized by value** (`gen_kicad.footprint_for`) |
 | R (5 W: `R_bleed`) | `R_Axial_Power_L20.0mm_W6.4mm_P25.40mm` | ✅ sized by value |
 | `R_spk_rtn` 0 Ω | `R_Axial_DIN0414…` (1 W-size link) | ✅ carries the full speaker current — fat pads, not a ¼ W jumper |

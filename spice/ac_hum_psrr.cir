@@ -1,0 +1,158 @@
+HUM: mains ripple on +33V5 -> (A) LM1875 input bias divider, (B) LM317 -> +17 V -> JFET preamp
+* AC analysis with 1 V of ripple on the raw +33V5 rail. Real ripple at full drive:
+* ~0.7 Vpp (0.25 Vrms) at 100/120 Hz across the 4700 uF (see sweep_pa_headroom).
+*  (A) LM1875 single-supply input bias: R_bias1/R_bias2 22k/22k from +33V5. As drawn
+*      there is NO bypass capacitor on the bias node, so the divider feeds the rail
+*      ripple straight into the + input -> x23 -> speaker.  cfg>=1 adds the textbook
+*      fix: divider node bypassed by C_bref, then R_bias3 into the + input.
+*  (B) +33V5 -> 100R / 2000uF pre-filter -> LM317 (ripple rejection 65 dB without
+*      C_adj, 80 dB with 10 uF C_adj; TI datasheet typicals) -> +17 V -> JFET drain
+*      loads (a resistor-loaded CS stage has ~0 dB PSRR) -> Q2 gain -> chain (unity)
+*      -> x23.  cfg>=2 adds C_adj; cfg 3 adds C_adj + the preamp rail RC (100R + 220uF).
+* Output: transfer |PA_OUT / ripple| in dB at 100 Hz and 120 Hz for each path, and the
+* hum at the speaker for 0.25 Vrms of rail ripple (in mVrms and dB below 12 W).
+
+.include models/jfet_2n5457.lib
+.include models/opamp1p.sub
+.param cfg=0
+.param c_bref = {cfg>=1 ? 100e-6 : 1e-15}
+.param r_b3   = {cfg>=1 ? 22e3 : 1e-3}
+.param rej_db = {cfg>=2 ? 80 : 65}
+.param r_pre  = {cfg>=3 ? 100 : 1e-3}
+.param c_pre  = {cfg>=3 ? 220e-6 : 1e-15}
+
+Vrip RIP 0 AC 1                        ; the ripple, riding on the (ideal) +33.5 V
+E_33 P33 0 VALUE = { 33.5 + V(RIP) }
+* ---- path A: LM1875 single-supply input bias (nothing else drives the input)
+R_bias1 P33 BREF 22k
+R_bias2 BREF 0 22k
+C_bref BREF 0 {c_bref}
+R_bias3 BREF PA_BIAS {r_b3}
+C_in_pa PA_INA PA_BIAS 1u
+R_drv PA_INA 0 75                      ; source impedance of the IC2-B buffer feeding PA_IN
+X_PA PA_BIAS PA_INV PA_OUT_A OPAMP1P PARAMS: aol=3e4 gbw=5.5e6 rout=0.1
+R_fb PA_OUT_A PA_INV 22k
+R_gain PA_INV PA_GAIN 1k
+C_gain PA_GAIN 0 22u
+R_ld PA_OUT_A 0 8
+* ---- path B: pre-filter -> LM317 -> preamp rail -> JFET stages -> PA (x23)
+R_27V P33 VREG_IN 100
+C_filt VREG_IN 0 2000u
+* LM317 as a fixed 17 V plus the VREG_IN ripple attenuated by its rejection ratio (a param
+* inside a B-source VALUE={} did not survive alterparam+reset in ngspice 42 -> linear VCVS)
+.param krej = {pow(10, -rej_db/20)}
+V_17dc RAILDC 0 17
+V_33dc P33DC 0 33.5
+E_317 RAIL RAILDC VREG_IN P33DC {krej}
+R_pre RAIL VPRE {r_pre}
+C_pre VPRE 0 {c_pre}
+R_g1 Q1G 0 1meg
+J1 Q1D Q1G Q1S 2N5457
+R_d1 VPRE Q1D 10k
+R_s1 Q1S 0 1.2k
+C_s1 Q1S 0 10u
+C_cpl12 Q1D Q2G 100n
+R_g2 Q2G 0 1meg
+J2 Q2D Q2G Q2S 2N5457
+R_d2 VPRE Q2D 10k
+R_s2 Q2S 0 1.2k
+C_s2 Q2S 0 10u
+* rest of the chain is unity to PA_IN; PA gain 23 modelled as a gain block on the AC signal
+E_pab PA_OUT_B 0 VALUE = { 23 * V(Q2D) }
+
+.control
+* (unrolled: a foreach with reset + B-sources stopped after two passes in ngspice 42)
+alterparam cfg = 0
+reset
+op
+ac lin 3 100 120
+meas ac ta100 FIND vdb(PA_OUT_A) AT=100
+meas ac ta120 FIND vdb(PA_OUT_A) AT=120
+meas ac tb100 FIND vdb(PA_OUT_B) AT=100
+meas ac tb120 FIND vdb(PA_OUT_B) AT=120
+meas ac ma100 FIND vm(PA_OUT_A) AT=100
+meas ac mb100 FIND vm(PA_OUT_B) AT=100
+let hum_a = 0.25 * ma100 * 1000
+let hum_b = 0.25 * mb100 * 1000
+let hum_tot = sqrt(hum_a*hum_a + hum_b*hum_b)
+let hum_db = 20*log10(hum_tot/1000/9.8)
+set sa100 = "$&ta100"
+set sa120 = "$&ta120"
+set sb100 = "$&tb100"
+set sb120 = "$&tb120"
+set sha = "$&hum_a"
+set shb = "$&hum_b"
+set sht = "$&hum_tot"
+set shd = "$&hum_db"
+echo cfg=0 pathA bias-divider dB at 100/120 Hz: $sa100 / $sa120 | pathB LM317-preamp dB at 100/120 Hz: $sb100 / $sb120 | hum at speaker for 0.25 Vrms ripple: A=$sha mV B=$shb mV total=$sht mVrms = $shd dB re 12 W
+alterparam cfg = 1
+reset
+op
+ac lin 3 100 120
+meas ac ta100 FIND vdb(PA_OUT_A) AT=100
+meas ac ta120 FIND vdb(PA_OUT_A) AT=120
+meas ac tb100 FIND vdb(PA_OUT_B) AT=100
+meas ac tb120 FIND vdb(PA_OUT_B) AT=120
+meas ac ma100 FIND vm(PA_OUT_A) AT=100
+meas ac mb100 FIND vm(PA_OUT_B) AT=100
+let hum_a = 0.25 * ma100 * 1000
+let hum_b = 0.25 * mb100 * 1000
+let hum_tot = sqrt(hum_a*hum_a + hum_b*hum_b)
+let hum_db = 20*log10(hum_tot/1000/9.8)
+set sa100 = "$&ta100"
+set sa120 = "$&ta120"
+set sb100 = "$&tb100"
+set sb120 = "$&tb120"
+set sha = "$&hum_a"
+set shb = "$&hum_b"
+set sht = "$&hum_tot"
+set shd = "$&hum_db"
+echo cfg=1 pathA bias-divider dB at 100/120 Hz: $sa100 / $sa120 | pathB LM317-preamp dB at 100/120 Hz: $sb100 / $sb120 | hum at speaker for 0.25 Vrms ripple: A=$sha mV B=$shb mV total=$sht mVrms = $shd dB re 12 W
+alterparam cfg = 2
+reset
+op
+ac lin 3 100 120
+meas ac ta100 FIND vdb(PA_OUT_A) AT=100
+meas ac ta120 FIND vdb(PA_OUT_A) AT=120
+meas ac tb100 FIND vdb(PA_OUT_B) AT=100
+meas ac tb120 FIND vdb(PA_OUT_B) AT=120
+meas ac ma100 FIND vm(PA_OUT_A) AT=100
+meas ac mb100 FIND vm(PA_OUT_B) AT=100
+let hum_a = 0.25 * ma100 * 1000
+let hum_b = 0.25 * mb100 * 1000
+let hum_tot = sqrt(hum_a*hum_a + hum_b*hum_b)
+let hum_db = 20*log10(hum_tot/1000/9.8)
+set sa100 = "$&ta100"
+set sa120 = "$&ta120"
+set sb100 = "$&tb100"
+set sb120 = "$&tb120"
+set sha = "$&hum_a"
+set shb = "$&hum_b"
+set sht = "$&hum_tot"
+set shd = "$&hum_db"
+echo cfg=2 pathA bias-divider dB at 100/120 Hz: $sa100 / $sa120 | pathB LM317-preamp dB at 100/120 Hz: $sb100 / $sb120 | hum at speaker for 0.25 Vrms ripple: A=$sha mV B=$shb mV total=$sht mVrms = $shd dB re 12 W
+alterparam cfg = 3
+reset
+op
+ac lin 3 100 120
+meas ac ta100 FIND vdb(PA_OUT_A) AT=100
+meas ac ta120 FIND vdb(PA_OUT_A) AT=120
+meas ac tb100 FIND vdb(PA_OUT_B) AT=100
+meas ac tb120 FIND vdb(PA_OUT_B) AT=120
+meas ac ma100 FIND vm(PA_OUT_A) AT=100
+meas ac mb100 FIND vm(PA_OUT_B) AT=100
+let hum_a = 0.25 * ma100 * 1000
+let hum_b = 0.25 * mb100 * 1000
+let hum_tot = sqrt(hum_a*hum_a + hum_b*hum_b)
+let hum_db = 20*log10(hum_tot/1000/9.8)
+set sa100 = "$&ta100"
+set sa120 = "$&ta120"
+set sb100 = "$&tb100"
+set sb120 = "$&tb120"
+set sha = "$&hum_a"
+set shb = "$&hum_b"
+set sht = "$&hum_tot"
+set shd = "$&hum_db"
+echo cfg=3 pathA bias-divider dB at 100/120 Hz: $sa100 / $sa120 | pathB LM317-preamp dB at 100/120 Hz: $sb100 / $sb120 | hum at speaker for 0.25 Vrms ripple: A=$sha mV B=$shb mV total=$sht mVrms = $shd dB re 12 W
+.endc
+.end

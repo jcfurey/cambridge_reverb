@@ -17,7 +17,7 @@
 | Dimensions | 190 × 115 mm | Matches original 25-5274-2 board footprint |
 | PCB Qty | 5 | Minimum order |
 | PCB Thickness | 1.6 mm | Matches original board thickness |
-| Copper Weight | 2 oz | Handles power-amp traces better |
+| Copper Weight | 2 oz *(1 oz is enough — see the 2026-09-07 rules note below)* | Handles power-amp traces better |
 | Surface Finish | HASL (with lead) | Best for hand-soldering through-hole; cheapest |
 | Solder Mask | Green | Fastest processing |
 | Silkscreen | White | Standard |
@@ -27,19 +27,54 @@
 
 Estimated cost: ~$2–7 for 5 boards + ~$5–15 shipping. Under $25 total.
 
-## KiCad design rules for JLCPCB — recovered verbatim
+> **2026-09-07:** 190 × 115 mm is above the $2 "100 × 100 mm" tier, so the bare board is
+> area-priced (a live quote is the only reliable number); choose **1 oz** copper and
+> **lead-free HASL** unless you have a reason not to — both are the no-surcharge defaults.
 
-| Rule | Value | JLCPCB min | Notes |
+## SMT assembly of the mixed SMD/THT board (`kicad/smd/`) — cost model, added 2026-09-07
+
+JLCPCB's economic assembly is priced per **solder joint** and per **part type**, not per
+board area: setup $8 + stencil $1.50 + $0.0016 per joint, plus **$3 per order for every
+"extended" (non-basic-library) part type**. `kicad/gen/jlc_cost.py` reads the generated
+assembly BOM and shows which knob moves the number:
+
+| | Before | After (errata #23) |
+|---|---:|---:|
+| SMD parts placed / assembly lines | 90 / 31 | 91 / 29 |
+| Extended part types (× $3) | 7 ($21) | 2 ($6: MMBF5457 SOT-23, 3.09 k E96) |
+| Joints per board | 183 | ~187 |
+| Assembly for 5 boards (estimate) | ~$32 | **~$17** |
+
+What changed: every SMD capacitor is **1206** (the 1210 line — 1 µF X7R 50 V and the
+Zobel 100 nF — was an extended part for no electrical gain; 1206 1 µF/50 V X7R is a
+basic part), the two optional MRB caps (`C_mrb_450`, `C_mrb_750`, marked "(opt)") are
+**DNP** — on the board, excluded from the assembly BOM and the position file — and the
+mid-cut gyrator uses **2.2 nF / 180 k** (E24, same 1.86 H) instead of 1.8 nF / 220 k.
+Three **fiducials** (1 mm copper, 2 mm mask; `FID1–3`, an asymmetric set) sit in the
+margins for the placement camera. Rotation of SOT-23 and SMA parts in JLC's preview must
+still be checked by eye (KiCad's 0° and JLC's 0° differ for some packages).
+
+## KiCad design rules for JLCPCB — recovered, re-checked 2026-09-07
+
+The "JLCPCB min" column is from jlcpcb.com/capabilities (2-layer, 1 oz, checked
+2026-09-07); the "Value" column is what both `.kicad_pro` files now enforce in DRC, so
+`kicad/gen/check.sh` catches a fab violation before the Gerbers do. Where our own margin
+was already stricter than JLC it stays.
+
+| Rule | Value (DRC) | JLCPCB min | Notes |
 |------|-------|------------|-------|
-| Min track width | 0.25 mm (10 mil) | 0.127 mm | Comfort; audio doesn't need tighter |
-| Min clearance | 0.20 mm (8 mil) | 0.127 mm | Safe, avoids extra fees |
-| Min via drill | 0.3 mm | 0.3 mm | No surcharge |
-| Min via diameter | 0.6 mm | 0.45 mm | Solid annular ring |
-| Min through-hole drill | 0.8 mm | 0.3 mm | Most leads 1.0 mm |
-| Min annular ring | 0.15 mm | 0.13 mm | Comfortable margin |
-| Board edge clearance | 0.5 mm | 0.3 mm | |
-| Min silkscreen width | 0.15 mm | 0.15 mm | |
-| Min silkscreen text height | 1.0 mm | 0.8 mm | |
+| Min track width | 0.25 mm (10 mil) | 0.10 mm (1 oz) / 0.16 mm (2 oz) | Comfort; audio doesn't need tighter |
+| Min clearance | 0.20 mm (8 mil) | 0.10 mm | Safe, avoids extra fees |
+| Min via drill / diameter | 0.3 / 0.6 mm | 0.3 / 0.45 mm (0.15 mm holes or < 0.45 mm vias cost extra) | No surcharge; classes use 0.4/0.8, 0.8/1.4, 1.0/1.6 |
+| Min through-hole drill | 0.3 mm | 0.15 mm | Smallest used: 0.75 mm (TO-92) |
+| **Min annular ring (PTH + via)** | **0.18 mm** | **0.18 mm absolute, 0.25 mm recommended** | Errata #23: stock TO-92 (0.15) and the LM1875 footprint (0.175) failed this — fixed (0.35 / 0.20) |
+| **Hole-to-hole (different nets)** | **0.5 mm** | 0.45 mm (PTH), 0.2 mm (vias) | was 0.25 |
+| **Hole-to-copper** | **0.3 mm** | 0.254 mm | was 0.25 |
+| Pad-to-pad (SMD, different nets) | 0.20 mm (class clearance) | 0.15 mm | |
+| Board edge clearance | 0.5 mm | 0.2 mm | plus a 2 mm routing keepout frame (`gen_pcb.py`) |
+| **Solder-mask dam** | **0.10 mm** | 0.10 mm (green) | |
+| Min silkscreen width / text height | 0.15 mm / 1.0 mm | 0.15 mm / 1.0 mm | |
+| Copper weight | **1 oz** | — | 2 oz was in the recovered order spec; 1 oz is enough (Part 6c: 2.5 mm / 2.0 mm traces at 1.7 A peak) and cheaper |
 
 ### Net classes — recovered verbatim
 

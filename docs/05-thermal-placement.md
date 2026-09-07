@@ -21,6 +21,17 @@ so with a ≤2.5 °C/W sink + mica the junction stays comfortably within limits 
 sink is over-spec'd, which is safe). Thermal shutdown backstops sustained drive.
 Still verify against the LM1875 datasheet SOA/thermal curves for your duty cycle.
 
+`[MODELLED 2026-09-07]` **Part 6c §5** puts numbers on it (`spice/tran_thermal_lm1875.cir`,
+2 K/W junction-case + 1.6 K/W greased mica): worst-case continuous sine is **9.4 W** of
+dissipation (at 7 W out, not at full power). Junction temperature with a **2.5 K/W** sink:
+82 / 97 / 112 °C at 25 / 40 / 55 °C ambient — the spec above holds with margin. **4 K/W**
+is still fine to 55 °C (126 °C); **6 K/W** passes a sine test only in a cool room (145 °C
+at 55 °C); **8–10 K/W** clip-on sinks reach thermal shutdown on sustained notes. A 40 g
+sink saturates in ~5 minutes (τ ≈ 145 s), so a set of loud songs equals the steady-state
+sine column. Bolting the tab directly to a grounded sink (single supply: tab = GND) saves
+~6 K. The LM317 now carries ~25 mA (IC3 + the tremolo LED driver): 0.4–0.5 W, +25 K bare
+— still no heatsink, but chassis-mount it in a hot cabinet.
+
 ## Component placement floor plan (recovered verbatim)
 ```
 +-------------------------------------------------------------+

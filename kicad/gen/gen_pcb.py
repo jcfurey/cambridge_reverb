@@ -131,6 +131,8 @@ def add_footprint(board, c, x, y, netmap, rot=0, hide_text=True):
         return None
     board.Add(fp)
     fp.SetReference(c["ref"]); fp.SetValue(c["value"])
+    if "(opt)" in c["value"]:                # optional MRB caps: on the board, not fitted
+        fp.SetAttributes(fp.GetAttributes() | pcbnew.FP_DNP)   # -> excluded from the JLC position file
     if hide_text:
         fp.Value().SetVisible(False); fp.Reference().SetVisible(False)
     if c["libsym"] == "TP":                      # the value IS the silk label (net alias)
@@ -225,6 +227,18 @@ def keepouts(board, w, h, edge=2.0, hole_inset=5.0, hole_r=3.6):
             sps.Append(mm(px), mm(py))
         board.Add(z)
 
+def fiducials(board, w, h):
+    """Three 1 mm copper / 2 mm mask fiducials for the pick-and-place camera (JLCPCB asks
+    for >= 3 on the assembled side; a non-symmetric set so orientation is unambiguous).
+    They sit in the margin strip between the corner holes' courtyards and the first row
+    of parts (top) / below the wiring-edge pads (bottom right)."""
+    for i, (x, y) in enumerate([(12.0, 4.0), (w - 12.0, 4.0), (w - 12.0, h - 4.0)]):
+        fp = pcbnew.FootprintLoad(os.path.join(SYS_FP, "Fiducial.pretty"), "Fiducial_1mm_Mask2mm")
+        if fp is None:
+            return
+        board.Add(fp); fp.SetReference(f"FID{i+1}"); fp.Reference().SetVisible(False); fp.Value().SetVisible(False)
+        fp.SetPosition(V(x, y))
+
 def mounting_holes(board, w, h, inset=5.0):
     for i, (x, y) in enumerate([(inset, inset), (w - inset, inset), (inset, h - inset), (w - inset, h - inset)]):
         fp = pcbnew.FootprintLoad(os.path.join(SYS_FP, "MountingHole.pretty"), "MountingHole_3.2mm_M3")
@@ -251,26 +265,54 @@ def put(fp, cx, cy, rot=0):
     fp.SetPosition(V(cx - ox, cy - oy))
     return w, h
 
+def layout_row(row, x0, y, row_h):
+    """Lay one shelf out left -> right. Parts no taller than half the row are STACKED
+    vertically beside their neighbours (as many as fit in row_h), so a row that holds
+    one tall can or DIP does not waste 20 mm of height under every resistor next to it.
+    Returns [(c, fp, cx, cy)] and the width used."""
+    x, i, out = x0, 0, []
+    while i < len(row):
+        c, fp, w, h = row[i]
+        if h <= row_h / 2 + 1e-6:
+            stack, hsum = [], 0.0
+            while (i < len(row) and row[i][3] <= row_h / 2 + 1e-6
+                   and hsum + row[i][3] + (GAP if stack else 0.0) <= row_h + 1e-6):
+                hsum += row[i][3] + (GAP if stack else 0.0); stack.append(row[i]); i += 1
+            sw, yy = max(p[2] for p in stack), y
+            for c2, fp2, w2, h2 in stack:
+                out.append((c2, fp2, x + sw / 2, yy + h2 / 2)); yy += h2 + GAP
+            x += sw + GAP
+        else:
+            out.append((c, fp, x + w / 2, y + h / 2)); x += w + GAP; i += 1
+    return out, x - GAP - x0
+
 def shelf_pack(parts, x0, x1, y0, ybot, rot=0):
     """Row ('shelf') packing, keeping the given part order, top->bottom; rows run
     serpentine (left->right, then right->left) so consecutive parts stay
-    neighbours across a row wrap. Returns the y below the last row + (ref, w, h)."""
-    rows, row, roww = [], [], 0.0
+    neighbours across a row wrap; short parts stack beside tall ones (layout_row).
+    Returns the y below the last row + (ref, w, h)."""
+    sized = []
     for c, fp in parts:
         fp.SetOrientationDegrees(rot)
         w, h, _, _ = bbox_mm(fp)
-        if row and roww + w > (x1 - x0) + 1e-6:      # wrap to the next row
-            rows.append(row); row, roww = [], 0.0
-        row.append((c, fp, w, h)); roww += w + GAP
+        sized.append((c, fp, w, h))
+    rows, row = [], []
+    for item in sized:
+        trial = row + [item]
+        if row and layout_row(trial, x0, 0.0, max(p[3] for p in trial))[1] > (x1 - x0) + 1e-6:
+            rows.append(row); row = [item]
+        else:
+            row = trial
     if row:
         rows.append(row)
     y, out = y0, []
     for i, row in enumerate(rows):
         row_h = max(h for _, _, _, h in row)
-        x = x0
-        for c, fp, w, h in (row if i % 2 == 0 else row[::-1]):
-            put(fp, x + w / 2, y + h / 2, rot)
-            out.append((c["ref"], w, h)); x += w + GAP
+        placed, _ = layout_row(row if i % 2 == 0 else row[::-1], x0, y, row_h)
+        for c, fp, cx, cy in placed:
+            put(fp, cx, cy, rot)
+            w, h, _, _ = bbox_mm(fp)
+            out.append((c["ref"], w, h))
         y += row_h + GAP
     return y - GAP, out
 
@@ -370,21 +412,31 @@ def main():
     widths = [w * total_w / sum(widths) for w in widths]
     # shelf packing is discrete, so the proportional balance can leave one column a
     # fraction of a row over MAIN_BOT while another has slack: repair by moving width
-    # in 0.5 mm steps from the slackest column to the overflowing one
-    for _ in range(40):
-        x = MARGIN; bots = []
+    # from a column that can spare it to the overflowing one, 1 mm at a time. A donor is
+    # accepted only if it still fits after the move (a 0.5 mm step used to oscillate:
+    # the donor wrapped a row, overflowed, and took the width straight back).
+    def heights(ws):
+        x = MARGIN; bs = []
         for ci in range(ncol):
-            bots.append(pack_column(ci, x, x + widths[ci])); x += widths[ci] + ZONE_GAP
+            bs.append(pack_column(ci, x, x + ws[ci])); x += ws[ci] + ZONE_GAP
+        return bs
+    step = 1.0
+    for _ in range(60):
+        bots = heights(widths)
         over = [ci for ci in range(ncol) if bots[ci] > MAIN_BOT + 1e-6]
         if not over:
             break
         worst = max(over, key=lambda ci: bots[ci])
-        donors = [ci for ci in range(ncol) if ci != worst and widths[ci] - 0.5 >= minw[ci]
-                  and bots[ci] <= MAIN_BOT - 1.0]
-        if not donors:
+        moved = False
+        for donor in sorted((ci for ci in range(ncol) if ci != worst and widths[ci] - step >= minw[ci]),
+                            key=lambda ci: bots[ci]):
+            trial = list(widths); trial[donor] -= step; trial[worst] += step
+            tb = heights(trial)
+            if tb[donor] <= MAIN_BOT + 1e-6 and tb[worst] <= bots[worst] + 1e-6:
+                widths = trial; moved = True
+                break
+        if not moved:
             break
-        donor = min(donors, key=lambda ci: bots[ci])
-        widths[donor] -= 0.5; widths[worst] += 0.5
 
     # final placement, plus the wiring-edge connector row (one global cursor so
     # neighbouring groups never collide; T1 pinned to the far right)
@@ -416,6 +468,8 @@ def main():
     outline(board, BW, BH)
     mounting_holes(board, BW, BH)
     keepouts(board, BW, BH)
+    if TOP_POUR:                              # the assembled (SMD) board: JLCPCB fiducials
+        fiducials(board, BW, BH)
     stubs = escape_stubs(board, fps)
     gnd_pour(board, netmap, BW, BH)
     if TOP_POUR:

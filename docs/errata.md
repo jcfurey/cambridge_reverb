@@ -233,3 +233,57 @@ was a Volume + single treble "cut" pot: the Bass hole had nothing to drive.
 **Severity:** HIGH ((a) alone made the amp sound like a treble-only transistor
 radio) — fixed in the generator; both boards regenerated and re-routed. The
 "designed substitute" wording in cross-check §4 is superseded.
+
+## Issue 21 — Hum and hiss: the LM1875 bias divider had no bypass, and the LM317's noise reached the JFETs (2026-09-07) — HIGH
+Found by the first noise / hum models (`spice/ac_hum_psrr.cir`, `spice/noise_frontend.cir`,
+Part 6c). **(a) Hum.** The power-amp input was biased by `R_bias1`/`R_bias2` (22 k/22 k
+from +33V5) with the LM1875's + input sitting *on* the divider node and no bypass
+capacitor: half the rail ripple went straight into the amplifier, ×23, to the speaker —
+**+4 dB ripple-to-speaker, 0.4 Vrms of 100 Hz at idle (−28 dB below full power)**. Fix:
+the textbook single-supply network — divider node bypassed by `C_bref` **100 µF**, then
+`R_bias3` **22 k** into the + input (input impedance unchanged, LF corner 7 Hz with
+`C_in_pa`): **−58 dB**, 0.3 mV. **(b) Hiss.** The LM317 puts out ~510 µV rms of noise
+(TI: 0.003 % of V_out, 10 Hz–10 kHz) and the JFET common-source stages have ~0 dB PSRR,
+so the regulator — not the JFETs — set the preamp noise floor, **23 dB above** the JFETs'
+own: input-referred 37 µV rms, SNR 34 dB at 12 W. Fix: `C_adj` **10 µF** on the LM317 ADJ
+pin (TI: ripple rejection 65 → 80 dB, noise ÷ ~10) and an RC-decoupled rail for the
+three JFET stages, `R_pre` **100 Ω** + `C_pre` **220 µF** (`+17V_PRE`, 7 Hz corner) —
+EIN 2.7 µV, SNR 57 dB, hum path B −95 dB. Four cheap parts. **Severity:** HIGH (the amp
+would have hummed audibly at idle and hissed like a much worse design).
+
+## Issue 22 — Tremolo had no depth: the vactrol LED ran at 7 mA DC (2026-09-07) — HIGH
+`spice/tran_tremolo_depth.cir` (a behavioural VTL5C1 added to the errata #19 LFO) shows
+the tremolo as drawn: the LFO output sits at the 8.5 V mid-rail with a ±0.5 V swing
+(1N4148 limiter), and the vactrol LED was returned to **ground** through 1 k — so it
+carried **6.4–7.4 mA DC**, the LDR sat at ~1 kΩ, and the "tremolo" was a permanent
+**−19.5 dB pad with 1.7 dB of wobble**. The rate LED (2.2 k to ground) glowed steadily
+for the same reason. Fix: the limiter diodes become two antiparallel **red LEDs** across
+`R_lfo_fb1` (knee ~1.6 V → **2 V** LFO swing; `LED_rate` is one of them and now really
+blinks; `LED_lim` is the other; `D_lfo1`/`D_lfo2`/`R_led_diag`/`R_led` are gone) and the
+vactrol LED gets a driver: `Q_trem` (2N3904; MMBT3904 on the SMD board, on a SOT-23
+footprint renumbered to the TO-92's E-B-C order) as an emitter follower, AC-coupled from
+the depth pot by `C_drv` **100 µF** into a **180 k/10 k** base bias (~0.9 V, just below
+conduction), `R_e` **470 Ω**, vactrol LED from +17 V via `R_c` **100 Ω** in the collector.
+Result: LED 0…4.7 mA at the LFO rate, LDR 1.9 k…50 MΩ, **15 dB depth**, 0.8 dB insertion
+loss. The LM317 sees ≤ 6 mA more at the LFO peak (Part 6c §5). **Severity:** HIGH (the
+effect did not work); the depth pot and the footswitch tap are unchanged.
+
+## Issue 23 — Fab rules: two footprints under JLCPCB's annular-ring minimum; assembly cost knobs (2026-09-07) — MEDIUM
+Checking both boards against JLCPCB's published 2-layer limits (Part 4, updated): the stock
+`TO-92_Inline` (1.05 mm pads on 0.75 mm holes) has a **0.15 mm** ring and the project's
+LM1875 footprint (1.45 mm pads on 1.1 mm holes) **0.175 mm** — both under JLC's 0.18 mm
+absolute minimum (0.25 recommended). Fixes: JFETs and the new `Q_trem` on
+`TO-92_Inline_Wide` (2.54 mm pitch — which also matches the SOT-23→TO-92 adapters —
+1.5 mm pads, 0.35 mm ring); LM1875 pads 1.5 × 2.6 mm (0.20 mm ring; the 1.7 mm pitch
+cannot give 0.25 without a 1.0 mm drill that the 0.97 mm lead diagonal would not
+survive — JLC's absolute minimum is met, the recommendation is not, and it is stated on
+the footprint). Both `.kicad_pro` files now carry the JLC limits as DRC constraints
+(hole-to-hole 0.5, hole-to-copper 0.3, annular 0.18, mask dam 0.1, silk 0.15 / 1.0 mm),
+so the check is automatic. Cost: on the assembled SMD board the price is driven by
+part **types** (an "extended" library part costs $3 per type per order) rather than
+board area, so the 1210 capacitor line (an extended part) is folded into 1206, the two
+optional MRB caps are marked **DNP** (not placed, not in the assembly BOM), and the
+gyrator moves to E24 values (2.2 nF / 180 k, same 1.86 H): 31 → 29 lines, 7 → 2
+extended types (`kicad/gen/jlc_cost.py`). Three fiducials were added for the
+pick-and-place camera. **Severity:** MEDIUM (a fab would have flagged the rings or
+produced breakouts; the rest is money).

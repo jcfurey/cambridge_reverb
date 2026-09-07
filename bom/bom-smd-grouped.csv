@@ -4,46 +4,47 @@ qty,value,footprint,refs
 1,2200uF/35V,CP_Radial_D16.0mm_P7.50mm,C_out
 1,4700uF/50V,CP_Radial_D18.0mm_P7.50mm,C_main
 2,10uF,CP_Radial_D5.0mm_P2.00mm,C_dc_blk C_rec_byp
-2,10uF/25V,CP_Radial_D5.0mm_P2.00mm,C_s1 C_s2
+3,10uF/25V,CP_Radial_D5.0mm_P2.00mm,C_adj C_s1 C_s2
 1,10uF/50V,CP_Radial_D5.0mm_P2.00mm,C_byp2
 1,1uF,CP_Radial_D5.0mm_P2.00mm,C_rev1
 1,22uF/25V,CP_Radial_D5.0mm_P2.00mm,C_gain
 1,10uF/25V,CP_Radial_D5.0mm_P2.50mm,C_reg_out1
 1,10uF/50V,CP_Radial_D5.0mm_P2.50mm,C_reg_in
+2,100uF/25V,CP_Radial_D6.3mm_P2.50mm,C_bref C_drv
+1,220uF/25V,CP_Radial_D6.3mm_P2.50mm,C_pre
 3,47uF/25V,CP_Radial_D6.3mm_P2.50mm,C_vb3 C_vbr C_vbt
-1,1.8nF,C_1206_3216Metric,C_gg
-8,100nF,C_1206_3216Metric,C_byp1 C_byp3 C_cpl12 C_drvin C_mrb_in C_mrb_out C_reg_out2 C_rev4
+9,100nF,C_1206_3216Metric,C_byp1 C_byp3 C_cpl12 C_drvin C_mrb_in C_mrb_out C_reg_out2 C_rev4 C_zobel
 1,100pF,C_1206_3216Metric,C_pres
 1,10nF,C_1206_3216Metric,C_rev2
 4,10nF/100V,C_1206_3216Metric,C101 C102 C103 C104
+1,120nF (opt),C_1206_3216Metric,C_mrb_450
 1,1nF,C_1206_3216Metric,C_fb_hf
-2,2.2nF,C_1206_3216Metric,C_j3 C_j4
+8,1uF,C_1206_3216Metric,C_cpl_out C_drymix C_in_pa C_lfo1 C_lfo2 C_obuf_in C_tout C_wetmix
+3,2.2nF,C_1206_3216Metric,C_gg C_j3 C_j4
 3,22nF,C_1206_3216Metric,C_j1 C_j2 C_res
 1,470pF,C_1206_3216Metric,C_treble
 1,47nF,C_1206_3216Metric,C_in_pre
 1,47nF (opt),C_1206_3216Metric,C_mrb_750
 1,68nF,C_1206_3216Metric,C_mrb_600
-1,100nF,C_1210_3225Metric,C_zobel
-1,120nF (opt),C_1210_3225Metric,C_mrb_450
-8,1uF,C_1210_3225Metric,C_cpl_out C_drymix C_in_pa C_lfo1 C_lfo2 C_obuf_in C_tout C_wetmix
 1,TL074CN,DIP-14_W7.62mm,IC3
 2,TL072CP,DIP-8_W7.62mm,IC1 IC2
 2,1N4007,D_SMA,D1 D2
-2,1N4148,D_SOD-123,D_lfo1 D_lfo2
 1,1A SB,Fuseholder_Clip-5x20mm_Eaton_1A5601-01_Inline_P20.80x6.76mm_D1.70mm_Horizontal,F1
 1,1H toroid,Inductor_MRB_1H_Toroid,L1
-1,3mm red,LED_D3.0mm,LED_rate
+2,3mm red,LED_D3.0mm,LED_lim LED_rate
+2,100R,R_0805_2012Metric,R_c R_pre
 14,100k,R_0805_2012Metric,R_drv1 R_drymix R_fs_mrb R_fs_rev R_fs_trem R_mixfb R_obuf_b R_vb31 R_vb32 R_vbr1 R_vbr2 R_vbt1 R_vbt2 R_wetmix
 1,10R,R_0805_2012Metric,R_drv3
-13,10k,R_0805_2012Metric,R_d1 R_d2 R_drv2 R_fx_pad R_j1 R_j2 R_lfo_fb1 R_mid R_mk1 R_mk2 R_mrb_ser R_rec1 R_trem1
+14,10k,R_0805_2012Metric,R_b2 R_d1 R_d2 R_drv2 R_fx_pad R_j1 R_j2 R_lfo_fb1 R_mid R_mk1 R_mk2 R_mrb_ser R_rec1 R_trem1
 2,15k,R_0805_2012Metric,R_lfo_ser R_lfo_sh
+2,180k,R_0805_2012Metric,R_b1 R_gg
 4,1M,R_0805_2012Metric,R_g1 R_g2 R_inb R_rec_bias
-3,1k,R_0805_2012Metric,R_gain R_j4 R_led
-1,2.2k,R_0805_2012Metric,R_led_diag
-2,220k,R_0805_2012Metric,R_drvbias R_gg
-3,22k,R_0805_2012Metric,R_bias1 R_bias2 R_fb
+2,1k,R_0805_2012Metric,R_gain R_j4
+1,220k,R_0805_2012Metric,R_drvbias
+4,22k,R_0805_2012Metric,R_bias1 R_bias2 R_bias3 R_fb
 1,240R,R_0805_2012Metric,R_reg1
 2,4.7k,R_0805_2012Metric,R_gL R_lfo_fb2
+1,470R,R_0805_2012Metric,R_e
 1,68k,R_0805_2012Metric,R_j3
 1,3.09k,R_1206_3216Metric,R_reg2
 1,10R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_zobel
@@ -52,6 +53,7 @@ qty,value,footprint,refs
 1,100R/1W,R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal,R_27V
 1,10k/5W,R_Axial_Power_L20.0mm_W6.4mm_P25.40mm,R_bleed
 3,MMBF5457,SOT-23,Q1 Q2 Q_rec
+1,2N3904,SOT-23_MMBT3904_as_EBC,Q_trem
 1,LM317T,TO-220-3_Vertical,U1
 1,LM1875T,TO-220-5_Vertical_P1.70mm_LM1875,IC_PA
 28,test point (label = net),TestPoint_THT_D2.0mm_Label,TP_17V TP_33V5 TP_BLEND TP_GND_PA TP_GND_PRE TP_GND_PSU TP_GND_REV TP_GND_TREM TP_LFO TP_MK_OUT TP_MRB_OUT TP_PA_BIAS TP_PA_IN TP_PA_OUT TP_PRE_OUT TP_Q1D TP_Q2D TP_QRD TP_SPK TP_TANK_IN TP_TANK_OUT TP_TONE_OUT TP_TREM_OUT TP_VBIAS_3 TP_VBIAS_R TP_VBIAS_T TP_VRAW TP_VREG_IN

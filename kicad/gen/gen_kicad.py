@@ -87,6 +87,9 @@ SYMS = {
  "NJFET":dict(ref="Q", desc="N-channel JFET (1=D 2=S 3=G, onsemi 2N5457/MMBF5457)", hide_nums=False,
             pins=[("3","G",-7.62,0,-1,0),("1","D",2.54,7.62,0,1),("2","S",2.54,-7.62,0,-1)],
             body=[(-2.54,-3.81,2.54,3.81)]),
+ "NPN":dict(ref="Q", desc="NPN BJT (1=E 2=B 3=C: onsemi 2N3904 TO-92; MMBT3904 goes on the EBC-renumbered SOT-23)", hide_nums=False,
+            pins=[("2","B",-7.62,0,-1,0),("3","C",2.54,7.62,0,1),("1","E",2.54,-7.62,0,-1)],
+            body=[(-2.54,-3.81,2.54,3.81)]),
  "BRIDGE":dict(ref="BR", desc="Bridge rectifier (KBP pin order: 1=+ 2=~ 3=~ 4=-)", hide_nums=False,
             pins=[("2","~",-7.62,0,-1,0),("3","~",7.62,0,1,0),
                   ("1","+",0,7.62,0,1),("4","-",0,-7.62,0,-1)],
@@ -207,7 +210,7 @@ class Sheet:
         COMPONENTS.append(dict(ref=ref, libsym=libsym, value=value, fp=fp,
                                sheet=self.title, x=x, y=y, nets=dict(nets),
                                pins=PINS[libsym]))
-        self.ops.append(('sym', libsym, ref, value, fp, x, y, U()))
+        self.ops.append(('sym', libsym, ref, value, fp, x, y, U(), "(opt)" in value))   # last: DNP (optional MRB caps)
         for (num, nm, ex, ey, ox, oy) in PINS[libsym]:
             if num not in nets:
                 continue
@@ -225,10 +228,10 @@ class Sheet:
     def note(self, text, x, y):
         self.ops.append(('text', text, x, y))
 
-    def _sym_sexpr(self, libsym, ref, value, fp, x, y, cu):
+    def _sym_sexpr(self, libsym, ref, value, fp, x, y, cu, dnp=False):
         lib_id = "cr_primitives:%s" % libsym if libsym in PRIM else "cambridge_reverb:%s" % libsym
         s = [f'  (symbol (lib_id "{lib_id}") (at {x} {y} 0) (unit 1)',
-             '    (in_bom yes) (on_board yes) (dnp no)',
+             f'    (in_bom yes) (on_board yes) (dnp {"yes" if dnp else "no"})',
              f'    (uuid {cu})',
              f'    (property "Reference" "{ref}" (at {x+2.54} {y-7.62} 0) (effects (font (size 1.27 1.27)) (justify left)))',
              f'    (property "Value" "{value}" (at {x+2.54} {y-5.08} 0) (effects (font (size 1.27 1.27)) (justify left)))',
@@ -260,8 +263,8 @@ class Sheet:
         items = []
         for op in self.ops:
             if op[0] == 'sym':
-                _, libsym, ref, value, fp, x, y, cu = op
-                items.append(self._sym_sexpr(libsym, ref, value, fp, x + dx, y + dy, cu))
+                _, libsym, ref, value, fp, x, y, cu, dnp = op
+                items.append(self._sym_sexpr(libsym, ref, value, fp, x + dx, y + dy, cu, dnp))
             elif op[0] == 'wire':
                 _, x1, y1, x2, y2 = op
                 items.append(f'  (wire (pts (xy {x1+dx} {y1+dy}) (xy {x2+dx} {y2+dy})) '
@@ -314,7 +317,8 @@ FOOTPRINTS = {
  # / 1.2 mm drill on 2.54 mm pitch, power pads (speaker, transformer) 3.0 mm /
  # 1.5 mm drill on 5.08 mm pitch.
  "POT": "cambridge_reverb:WirePad_1x03_P2.54mm_D1.2mm",
- "NJFET":"Package_TO_SOT_THT:TO-92_Inline",
+ "NJFET":"Package_TO_SOT_THT:TO-92_Inline_Wide",   # 2.54 mm pitch: fits the SOT-23 adapter, 0.35 mm annular (JLC)
+ "NPN":  "Package_TO_SOT_THT:TO-92_Inline_Wide",
  "BRIDGE":"cambridge_reverb:Bridge_KBP_P3.81mm",            # KBP410G, datasheet-derived (PCB-AUDIT s1)
  "LM317":"Package_TO_SOT_THT:TO-220-3_Vertical",
  "LM1875":"cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875",  # wide-pad: fixes the annular-ring DRC error
@@ -354,7 +358,7 @@ FP_BY_REF = {
 SMD_KEEP_THT = {"R_s1", "R_s2", "R_rec2",          # bench-trimmed (errata #15)
                 "R_zobel", "R_spk_rtn"}            # speaker-current parts
 SMD_R_1206 = {"R_reg2"}                            # ~85 mW: 1206 (0.25 W) not 0805
-SMD_C_1210 = {"C_zobel"}                           # 100 nF / 100 V across the speaker
+SMD_C_1210 = set()                                 # (1210 no longer used: every SMD C is 1206, JLC basic library)
 def _nf(value):
     m = _re.match(r'(\d+(?:\.\d+)?)\s*(pF|nF|uF)', value)
     if not m: return None
@@ -367,12 +371,13 @@ def footprint_smd(libsym, ref, value):
                 else "Resistor_SMD:R_0805_2012Metric")
     if libsym == "C":
         nf = _nf(value) or 0
-        if ref in SMD_C_1210 or nf > 100: return "Capacitor_SMD:C_1210_3225Metric"   # 120 nF MRB, 1 uF coupling (X7R 50 V or PPS film)
-        return "Capacitor_SMD:C_1206_3216Metric"                                    # <= 100 nF: C0G/NP0 in the signal path
+        return "Capacitor_SMD:C_1206_3216Metric"   # all values incl. 1 uF: 1206 X7R 50 V is a JLC basic part (C0G/NP0 for <= 10 nF signal caps); the former 1210 line was an extended-part fee for nothing
     if libsym == "D":
         return "Diode_SMD:D_SMA" if "4007" in value else "Diode_SMD:D_SOD-123"      # S1M / 1N4148W
     if libsym == "NJFET":
         return "Package_TO_SOT_SMD:SOT-23"                                          # MMBF5457 as-is, no adapter
+    if libsym == "NPN":
+        return "cambridge_reverb:SOT-23_MMBT3904_as_EBC"                            # MMBT3904 (B-E-C) on pads numbered E-B-C
     return None
 
 def footprint_for(libsym, ref, value):
@@ -431,7 +436,7 @@ def load_custom():
         SYMS.setdefault(name, dict(pins=pins))
 
 GLOBAL_NETS = {
- "+33V5","VREG_IN","+17V","GND","SPK_P","SPK_N",
+ "+33V5","VREG_IN","+17V","+17V_PRE","GND","SPK_P","SPK_N",
  "GUITAR_IN","PREAMP_OUT","TONE_OUT","BLEND","TREM_OUT","PA_IN",
  "MRB_OUT","FX_RET","VBIAS_R","VBIAS_T","FS_REV","FS_TREM","FS_MRB",
 }
@@ -510,6 +515,10 @@ def build():
     s.comp("R","R_reg2","3.09k",130,160,{"1":"ADJ17","2":"GND"})
     s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"VREG_IN","2":"GND"})
     s.comp("CP","C_reg_out1","10uF/25V",160,140,{"1":"+17V","2":"GND"})
+    s.comp("CP","C_adj","10uF/25V",160,170,{"1":"ADJ17","2":"GND"})        # ripple rejection 65 -> 80 dB, output noise /10 (noise_frontend.cir)
+    s.note("+17V_PRE: RC-decoupled rail for the JFET stages (0 dB PSRR): 100R + 220uF, 7 Hz corner -- kills the LM317's 0.5 mV noise + ripple before Q1/Q2/Q_rec",40,235)
+    s.comp("R","R_pre","100R",215,140,{"1":"+17V","2":"+17V_PRE"})
+    s.comp("CP","C_pre","220uF/25V",245,140,{"1":"+17V_PRE","2":"GND"})
     s.comp("C","C_reg_out2","100nF",185,140,{"1":"+17V","2":"GND"})
     # Mid-rail references for single-supply op-amps. SPLIT into VBIAS_R (reverb)
     # and VBIAS_T (tremolo) so LFO current on the tremolo ref cannot modulate the
@@ -532,13 +541,13 @@ def build():
     s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"Q1G"})
     s.comp("R","R_g1","1M",40,90,{"1":"Q1G","2":"GND"})
     s.comp("NJFET","Q1","MMBF5457",90,70,{"3":"Q1G","1":"Q1D","2":"Q1S"})   # 1=D 2=S 3=G
-    s.comp("R","R_d1","10k",90,40,{"1":"+17V","2":"Q1D"})
+    s.comp("R","R_d1","10k",90,40,{"1":"+17V_PRE","2":"Q1D"})
     s.comp("R","R_s1","2K2",90,110,{"1":"Q1S","2":"GND"})
     s.comp("CP","C_s1","10uF/25V",130,110,{"1":"Q1S","2":"GND"})
     s.comp("C","C_cpl12","100nF",130,70,{"1":"Q1D","2":"Q2G"})
     s.comp("R","R_g2","1M",130,95,{"1":"Q2G","2":"GND"})
     s.comp("NJFET","Q2","MMBF5457",175,70,{"3":"Q2G","1":"Q2D","2":"Q2S"})
-    s.comp("R","R_d2","10k",175,40,{"1":"+17V","2":"Q2D"})
+    s.comp("R","R_d2","10k",175,40,{"1":"+17V_PRE","2":"Q2D"})
     s.comp("C","C_pres","100pF",175,110,{"1":"Q2D","2":"GND"})
     s.comp("R","R_s2","2K2",215,95,{"1":"Q2S","2":"GND"})
     s.comp("CP","C_s2","10uF/25V",215,120,{"1":"Q2S","2":"GND"})
@@ -580,8 +589,8 @@ def build():
     s.comp("SW_SPST","SW_MID","MID CUT",215,185,{"1":"MID","2":"MIDSW"})
     s.comp("C","C_res","22nF",250,185,{"1":"MIDSW","2":"GYA"})
     s.comp("R","R_gL","4.7k",285,185,{"1":"GYA","2":"GYO"})
-    s.comp("C","C_gg","1.8nF",285,215,{"1":"GYA","2":"GYP"})
-    s.comp("R","R_gg","220k",320,215,{"1":"GYP","2":"VBIAS_3"})
+    s.comp("C","C_gg","2.2nF",285,215,{"1":"GYA","2":"GYP"})
+    s.comp("R","R_gg","180k",320,215,{"1":"GYP","2":"VBIAS_3"})
     # output buffer -> volume pot (chime cap as a BRIGHT cap across the top half) -> TONE_OUT feeds summer / tank driver / FX send
     s.comp("C","C_tout","1uF",95,215,{"1":"OBUF","2":"VOLTOP"})
     s.comp("POT","POT_VOL","250k log",140,215,{"1":"VOLTOP","2":"TONE_OUT","3":"GND"})
@@ -605,7 +614,7 @@ def build():
     s.comp("C","C_rev2","10nF",60,120,{"1":"TANK_OUT","2":"QRG"})
     s.comp("NJFET","Q_rec","MMBF5457",110,140,{"3":"QRG","1":"QRD","2":"QRS"})
     s.comp("R","R_rec_bias","1M",60,150,{"1":"QRG","2":"GND"})
-    s.comp("R","R_rec1","10k",110,115,{"1":"+17V","2":"QRD"})
+    s.comp("R","R_rec1","10k",110,115,{"1":"+17V_PRE","2":"QRD"})
     s.comp("R","R_rec2","2K2",110,170,{"1":"QRS","2":"GND"})
     s.comp("CP","C_rec_byp","10uF",150,170,{"1":"QRS","2":"GND"})
     s.comp("C","C_rev4","100nF",150,140,{"1":"QRD","2":"REVWCW"})
@@ -621,12 +630,12 @@ def build():
 
     # ---- Sheet 5: Tremolo (netlist-notes sheet 5) ----
     s=Sheet("Tremolo","tremolo.kicad_sch"); sheets.append(s)
-    s.note("TREMOLO -- IC2-A: Wien LFO (~16Hz) -> VTL5C1. IC2-B: post-MRB output buffer -> PA_IN. All on VBIAS_T.",40,20)
+    s.note("TREMOLO -- IC2-A: Wien LFO (0.6-10.6 Hz), limited by two antiparallel LEDs (~2 V swing; LED_rate blinks). Q_trem: AC-coupled emitter follower drives the VTL5C1 LED 0..6 mA -> 15 dB depth, 0.8 dB insertion loss (was 7 mA DC: -20 dB pad, 1.7 dB depth). IC2-B: post-MRB output buffer -> PA_IN.",40,20)
     # IC2-A = LFO (pins 1,2,3) ; IC2-B = output buffer (pins 5,6,7), follower to PA_IN
     s.comp("OPAMP8","IC2","TL072CP",110,90,{"3":"LFO_P","2":"LFO_N","1":"LFO_OUT",
             "8":"+17V","4":"GND","5":"OBUF_IN","6":"PA_IN","7":"PA_IN"})
     s.comp("C","C_obuf_in","1uF",30,40,{"1":"MRB_OUT","2":"OBUF_IN"})  # post-MRB into buffer
-    s.comp("R","R_obuf_b","100k",30,70,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
+    s.comp("R","R_obuf_b","100k",75,40,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
     # Wien network -- SYMMETRIC, dual-gang speed pot (errata #19). The recovered
     # single-arm pot (10k+500k vs a fixed 33k) only oscillates for ~5 % of the pot
     # travel, at 45-80 Hz (spice/sweep_lfo_speed_recovered.cir). With one gang in
@@ -640,13 +649,18 @@ def build():
     s.comp("C","C_lfo2","1uF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS_T"}) # AC gnd via VBIAS_T
-    s.comp("D","D_lfo1","1N4148",40,70,{"1":"LFO_OUT","2":"LFO_N"})
-    s.comp("D","D_lfo2","1N4148",40,100,{"1":"LFO_N","2":"LFO_OUT"})
-    s.comp("POT","POT_DPT","100k lin",115,150,{"1":"LFO_OUT","2":"DPT_W","3":"VBIAS_T"})  # DEPTH: scales LFO into the LED
-    s.comp("R","R_led","1k",155,150,{"1":"DPT_W","2":"VLED"})
-    s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"1":"VLED","2":"GND","3":"TREM_S","4":"GND"})
-    s.comp("R","R_led_diag","2K2",150,180,{"1":"LFO_OUT","2":"DLED"})
-    s.comp("LED","LED_rate","3mm red",195,180,{"1":"DLED","2":"GND"})
+    s.comp("LED","LED_rate","3mm red",40,70,{"1":"LFO_OUT","2":"LFO_N"})   # limiter + rate indicator (positive half-cycle)
+    s.comp("LED","LED_lim","3mm red",40,100,{"1":"LFO_N","2":"LFO_OUT"})   # limiter, negative half-cycle
+    s.comp("POT","POT_DPT","100k lin",100,150,{"1":"LFO_OUT","2":"DPT_W","3":"VBIAS_T"})  # DEPTH: scales LFO into the LED
+    # LED driver: depth-pot wiper -> C_drv -> base (biased ~0.9 V, just below conduction) -> emitter
+    # follower, R_e sets ~6 mA peak; vactrol LED in the collector from +17V via R_c
+    s.comp("CP","C_drv","100uF/25V",115,185,{"1":"DPT_W","2":"QB"})
+    s.comp("R","R_b1","180k",85,215,{"1":"+17V","2":"QB"})
+    s.comp("R","R_b2","10k",145,215,{"1":"QB","2":"GND"})
+    s.comp("NPN","Q_trem","2N3904",200,195,{"2":"QB","3":"QC","1":"QE"})
+    s.comp("R","R_e","470R",240,215,{"1":"QE","2":"GND"})
+    s.comp("R","R_c","100R",240,150,{"1":"+17V","2":"VLED"})
+    s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"1":"VLED","2":"QC","3":"TREM_S","4":"GND"})
     s.comp("R","R_trem1","10k",60,150,{"1":"BLEND","2":"TREM_OUT"})  # series; VTL1 LDR shunts to GND
     s.comp("CP","C_dc_blk","10uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
     # (removed dead C_trem_out/R_trem_pass MRB_FEED branch -- TREM_OUT feeds MRB directly)
@@ -668,8 +682,12 @@ def build():
     s=Sheet("Power Amp","power_amp.kicad_sch"); sheets.append(s)
     s.note("POWER AMP -- LM1875, gain 23x. Sim: HF -3dB 6.8kHz (C_fb_hf), LF ~17Hz.",40,20)
     s.comp("C","C_in_pa","1uF film",40,70,{"1":"PA_IN","2":"PA_BIAS"})
-    s.comp("R","R_bias1","22k",40,45,{"1":"+33V5","2":"PA_BIAS"})
-    s.comp("R","R_bias2","22k",40,95,{"1":"PA_BIAS","2":"GND"})
+    # bias divider -> BYPASSED node (C_bref) -> R_bias3 -> the + input. Without C_bref/R_bias3 the
+    # divider fed half the rail ripple into the + input: +4 dB ripple->speaker (ac_hum_psrr.cir)
+    s.comp("R","R_bias1","22k",15,45,{"1":"+33V5","2":"PA_BREF"})
+    s.comp("R","R_bias2","22k",15,95,{"1":"PA_BREF","2":"GND"})
+    s.comp("CP","C_bref","100uF/25V",15,125,{"1":"PA_BREF","2":"GND"})
+    s.comp("R","R_bias3","22k",60,45,{"1":"PA_BREF","2":"PA_BIAS"})
     s.comp("LM1875","IC_PA","LM1875T",110,80,{"1":"PA_BIAS","2":"PA_INV","4":"PA_OUT","5":"+33V5","3":"GND"})
     s.comp("R","R_fb","22k",150,50,{"1":"PA_INV","2":"PA_OUT"})
     s.comp("C","C_fb_hf","1nF",150,30,{"1":"PA_INV","2":"PA_OUT"})

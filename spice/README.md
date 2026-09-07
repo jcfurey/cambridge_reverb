@@ -20,6 +20,11 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | `tran_reverb_mixer.cir` | Reverb summer | **Rail-aware**: mid-rail bias, unity sum, headroom / clipping |
 | `ac_tonestack.cir` | Tone | **Rail-aware**: IC3 bias, noon response, MID CUT on/off (errata #20) |
 | `tran_classa_output.cir` | Class-A stage | AB vs A: idle current and crossover THD |
+| **`noise_frontend.cir`** | whole front end | `.noise` 20 Hz–20 kHz incl. the LM317's rail noise; EIN, SNR at 12 W, per supply fix (Part 6c) |
+| **`ac_hum_psrr.cir`** | PSU → PA / preamp | Rail-ripple paths to the speaker (bias divider, LM317 → JFETs), before / after errata #21 |
+| **`tran_tremolo_depth.cir`** | Tremolo | LFO → LED driver → behavioural VTL5C1 → audio: depth in dB, as drawn vs errata #22 |
+| **`tran_thermal_lm1875.cir`** | Power amp | Electro-thermal RC ladder: Tj vs heatsink / ambient, heatsink saturation time |
+| `models/opamp_noise.sub` | shared | Op-amp macromodel with an en source and noiseless internals, for `.noise` |
 | **`sweep_preamp_bias.cir`** | Preamp | **Vd vs R_s for LO / TYP / HI JFET corners** (datasheet Idss 1–5 mA) |
 | **`sweep_tonestack.cir`** | Tone | Bass / Treble pot travel + the mid-cut switch |
 | **`sweep_lfo_speed.cir`** | Tremolo LFO | Rate and amplitude vs the speed pot (built network) |
@@ -44,6 +49,10 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Reverb summer bias / gain / clip | **8.50 V**, **0.0 dB**, clips 15.5 / 1.5 V | mid-rail, unity, ±7 V | ✅ |
 | Tone stack, pots at noon / MID CUT on | **−0.21 dB** flat 100 Hz–10 kHz / **−9.6 dB @ 796 Hz**; all IC3 nodes 8.50 V | flat / ~−10 dB @ ~800 Hz, mid-rail | ✅ (errata #20) |
 | Class-A stage AB → A | THD 1.05 % → 0.0025 %, idle 0.11 → 0.49 A | crossover removed | ✅ |
+| Front-end noise, as drawn → errata #21 | EIN **37 µV → 2.7 µV** rms; SNR at 12 W **34 → 57 dB** | LM317 noise was 23 dB above the JFET floor | ✅ fixed |
+| Hum at the speaker (0.25 Vrms rail ripple), as drawn → #21 | **408 mV → 0.3 mV** rms (−28 → −90 dB re 12 W) | unbypassed PA bias divider | ✅ fixed |
+| Tremolo depth, as drawn → errata #22 | **1.7 dB → 15 dB**; insertion loss −19.5 → −0.8 dB | vactrol LED was 7 mA DC | ✅ fixed |
+| LM1875 Tj, 2.5 K/W sink, worst sine, Ta 40 °C | **97 °C** (4 K/W: 111; 8 K/W: 149) | < 150 °C | ✅ Part 5 spec confirmed |
 
 ## Sweeps
 ### JFET bias vs R_s across the device spread (`sweep_preamp_bias`, errata #15)

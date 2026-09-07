@@ -23,6 +23,7 @@
 | U1 | Voltage regulator (17V rail) | LM317T | TO-220 | 926-LM317T/NOPB | $1.50 |
 | R_reg1 | Regulator set resistor | 240Ω 1% 1/4W metal film | Axial | 603-MFR-25FBF52-240R | $0.10 |
 | R_reg2 | Regulator set resistor | 3.0kΩ 1% 1/4W metal film | Axial | 603-MFR-25FBF52-3K | $0.10 |
+| C_adj | LM317 ADJ-pin bypass (errata #21: ripple rejection 65 → 80 dB, output noise ÷ ~10) | 10µF/25V electrolytic | Radial | — | $0.15 |
 
 > **Errata Issue 10:** 240 Ω + 3.0 kΩ gives Vout = 1.25 × (1 + 3000/240) =
 > **16.88 V**, ~0.13 V below the 17.0–17.5 V band quoted in the setup/troubleshooting
@@ -48,6 +49,7 @@
 | C_pres | Presence rolloff at Q2 drain | 100pF | Guitar-frequency optimization |
 | C_cpl_out | Q2 drain → tone coupling | 1µF film | errata #20: the recovered 470 pF-only coupling was a 1.3 kHz high-pass |
 | C_treble | Vox "chime" cap — bright cap across the top of the volume pot | 470pF | |
+| R_pre, C_pre | `+17V_PRE` rail decoupling for Q1/Q2/Q_rec | 100R, 220µF/25V | errata #21: the JFET stages have ~0 dB PSRR; 7 Hz corner keeps the LM317's noise and ripple out |
 
 ### Tone stack — Bass / Treble + MID CUT `[DESIGNED — errata #20]`
 
@@ -70,7 +72,7 @@ output buffer (`IC3`, own mid-rail `VBIAS_3`). Swept in `spice/sweep_tonestack.c
 | R_mid | Series resistor ahead of the mid shunt | 10K | sets the cut depth with R_gL |
 | SW_MID | **MID CUT** toggle, SPST, panel | — | in the original line-reverse switch hole |
 | C_res | Resonating cap | 22nF | f₀ = 1/(2π√(L·C)) ≈ 790 Hz |
-| R_gL, C_gg, R_gg | Gyrator (simulated inductor) | 4K7, 1.8nF, 220K | L = R_gL·R_gg·C_gg = 1.86 H |
+| R_gL, C_gg, R_gg | Gyrator (simulated inductor) | 4K7, 2.2nF, 180K | L = R_gL·R_gg·C_gg = 1.86 H (E24 values, errata #23) |
 | C_tout | Output buffer → volume pot | 1µF film | |
 | POT_VOL | Volume (reused) | 250K log | C_treble across pins 1–2 |
 | R_fx_pad | Internal FX-send tap | 10K | |
@@ -84,8 +86,10 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 | Ref | Description | Value | Notes |
 |-----|-------------|-------|-------|
 | IC_PA | Power amplifier, TO-220 | LM1875T/NOPB | |
-| R_bias1 | Input bias high | 22K 1% | V+ to input |
-| R_bias2 | Input bias low | 22K 1% | input to GND |
+| R_bias1 | Input bias high | 22K 1% | V+ to the bias node `PA_BREF` |
+| R_bias2 | Input bias low | 22K 1% | `PA_BREF` to GND |
+| C_bref | Bias-node bypass | 100µF/25V | errata #21: without it the divider fed rail ripple ×23 to the speaker |
+| R_bias3 | Bias node → + input | 22K 1% | errata #21; input impedance 22 k, 7 Hz corner with C_in_pa |
 | R_fb | Feedback resistor | 22K 1% | |
 | C_fb_hf | Feedback HF rolloff (across R_fb) | 1nF | 7.2 kHz bandwidth limit |
 | R_gain | Gain-setting resistor | 1K 1% | |
@@ -145,6 +149,16 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 ```
 
 ### Tremolo (Wien-bridge LFO + LED/LDR) — recovered verbatim
+
+> **Superseded twice — kept for the record.** Errata #19 replaced the single-arm speed
+> pot with a symmetric dual-gang network (the LFO below cannot oscillate at tremolo
+> rates), and **errata #22** replaced the LED drive: as drawn the vactrol LED is returned
+> to ground from a mid-rail LFO, so it carries ~7 mA DC and the "tremolo" is a fixed
+> −20 dB pad with 1.7 dB of wobble. Built design (`kicad/tremolo.kicad_sch`, Part 6c §3):
+> antiparallel red LEDs as the LFO limiter (`LED_rate` doubles as the rate indicator),
+> `Q_trem` 2N3904 emitter follower AC-coupled from the depth pot (`C_drv` 100 µF,
+> 180 k/10 k bias, `R_e` 470 Ω) driving the vactrol LED from +17 V via `R_c` 100 Ω —
+> 15 dB depth, 0.8 dB insertion loss.
 ```
 #   IC_TREM   TL072CP    LFO oscillator (uses half)
 #   VTL1      VTL5C1     LED/LDR optocoupler

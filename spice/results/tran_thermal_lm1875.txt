@@ -1,0 +1,38 @@
+--- steady state Tj (C) with greased mica (RthCS 1.6): one line per RthSA / Pd columns Ta = 25 / 40 / 55 C
+RthSA=1.5 Pd=2.3 Tj: 36.73 51.73 66.73
+RthSA=1.5 Pd=9.4 Tj: 72.94 87.94 102.94
+RthSA=1.5 Pd=4.0 Tj: 45.4 60.4 75.4
+ows : 1
+RthSA=2.5 Pd=2.3 Tj: 39.03 54.03 69.03
+RthSA=2.5 Pd=9.4 Tj: 82.34 97.34 112.34
+RthSA=2.5 Pd=4.0 Tj: 49.4 64.4 79.4
+RthSA=4 Pd=2.3 Tj: 42.48 57.48 72.48
+RthSA=4 Pd=9.4 Tj: 96.44 111.44 126.44
+tion temperature vs heatsink, and the heatsink's time to saturate
+RthSA=4 Pd=4.0 Tj: 55.4 70.4 85.4
+RthSA=6 Pd=2.3 Tj: 47.08 62.08 77.08
+RthSA=6 Pd=9.4 Tj: 115.24 130.24 145.24
+RthSA=6 Pd=4.0 Tj: 63.4 78.4 93.4
+vs heatsink, and the heatsink's time to saturate
+RthSA=8 Pd=2.3 Tj: 51.68 66.68 81.68
+RthSA=8 Pd=9.4 Tj: 134.04 149.04 164.04
+RthSA=8 Pd=4.0 Tj: 71.4 86.4 101.4
+RthSA=10 Pd=2.3 Tj: 56.28 71.28 86.28
+Error: Only a single param - value pair supported.
+Cannot alter parameters.
+RthSA=10 Pd=9.4 Tj: 152.84 167.84 182.84
+RthSA=10 Pd=4.0 Tj: 79.4 94.4 109.4
+--- same LM1875 bolted directly to a grounded sink (RthCS 1.0) worst sine 9.4 W Ta 40
+RthSA=1.5 Tj=82.3
+RthSA=2.5 Tj=91.7
+RthSA=4 Tj=105.8
+RthSA=6 Tj=124.6
+RthSA=8 Tj=143.4
+RthSA=10 Tj=162.2
+--- transient: 40 g sink RthSA 4 Ta 40: 60 s worst-case sine / 60 s music 10 minutes
+tj_60               =  1.128229e+02
+tj_300              =  1.117055e+02
+tj_540              =  1.114910e+02
+--- continuous worst-case sine RthSA 4 Ta 40: time for the sink to reach 63 % of its rise
+ts_ss               =  7.760425e+01
+tj_ss               =  1.114443e+02

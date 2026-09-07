@@ -1,0 +1,16 @@
+* Noisy one-pole op-amp macromodel for ngspice .noise analysis.
+* Same small-signal core as opamp1p.sub, plus an input voltage-noise source made
+* from a resistor whose thermal noise equals the op-amp's en (default 18 nV/rtHz
+* = TL07x family typical, 37 nV/rtHz at 1 kHz in the newest TI datasheet -- pass
+* en=37n to be pessimistic). Every internal resistor is declared noiseless so the
+* macromodel adds NOTHING but that one source. Current noise (JFET input) ignored.
+*   R_n = en^2 / (4 k T)  ->  18 nV -> 19.5 kOhm,  37 nV -> 82.5 kOhm   (T = 300 K)
+.subckt OPAMP_N inp inn out PARAMS: aol=2e5 gbw=3e6 rout=75 en=18e-9
+Rn    inp  inx  {en*en/1.6567e-20}
+Rin   inx  inn  1G  noisy=0
+Gm    0 p  inx inn 1m
+Rp    p 0  {aol/1m}  noisy=0
+Cp    p 0  {1m/(2*3.141592653589793*gbw)}
+Eout  o 0  p 0 1
+Rout  o out {rout}  noisy=0
+.ends OPAMP_N

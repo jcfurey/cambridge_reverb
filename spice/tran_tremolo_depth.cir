@@ -1,0 +1,120 @@
+TREMOLO DEPTH: LFO -> LED driver -> VTL5C1 vactrol model -> audio shunt. As drawn vs redesign.
+* The earlier tremolo sims verified only that the LFO oscillates (errata #19). This one
+* follows the modulation to the AUDIO: a behavioural VTL5C1 (LDR resistance vs LED
+* current from the PerkinElmer datasheet: 20 k @ 1 mA, 600 R @ 10 mA, 200 R @ 40 mA,
+* dark 50 M; first-order response ~5 ms) and the R_trem1 10k / LDR shunt on a 1 kHz,
+* 1 Vpk carrier. LFO = the errata #19 Wien oscillator (IC2-A, 15k floors, 1 uF), speed
+* pot at ~4 Hz.
+*   cfg 0  AS DRAWN: LED driven from the depth-pot wiper through R_led 1k to GND. The
+*          LFO sits at VBIAS_T (8.5 V) +/- ~0.5 V, so the LED carries ~7 mA DC with a
+*          +/-0.5 mA wiggle: the LDR is permanently ~800 R (a fixed -22 dB pad) and
+*          barely moves.
+*   cfg 1  REDESIGN: (a) the LFO limiter diodes become two antiparallel red LEDs (knee
+*          ~1.6 V instead of 0.5 V -> ~2.5 V swing; the one that lights on the positive
+*          half-cycle IS the rate indicator, so LED_rate/R_led_diag go away); (b) an NPN
+*          emitter-follower LED driver, AC-coupled from the depth-pot wiper (C_drv 100 uF
+*          into a 180k/10k base bias ~0.9 V, R_e 470), so the vactrol LED current goes
+*          0 .. ~6 mA at the LFO rate instead of 7 mA DC +/- 0.5 mA.
+* Measured: LFO amplitude, LED current min/max, LDR min/max, and the carrier envelope
+* max/min at TREM_OUT over the last LFO cycles -> depth in dB and insertion loss.
+
+.include models/opamp_rail.sub
+.param cfg=0
+.param pot_speed = 40k
+
+Vcc VCC 0 17
+R_vbt1 VCC VBT 100k
+R_vbt2 VBT 0 100k
+C_vbt VBT 0 47u
+* ---- Wien LFO (IC2-A), errata #19 network
+X_LFO LFO_P LFO_N LFO_OUT VCC 0 OPAMP_RAIL
+R_lfo_ser LFO_OUT SPD_A 15k
+R_spdA SPD_A WN1 {pot_speed}
+C_lfo1 WN1 LFO_P 1u
+R_lfo_sh LFO_P SPD_B 15k
+R_spdB SPD_B VBT {pot_speed}
+C_lfo2 LFO_P VBT 1u
+R_lfo_fb1 LFO_OUT LFO_N 10k
+R_lfo_fb2 LFO_N VBT 4.7k
+* limiter across R_lfo_fb1: cfg 0 = antiparallel 1N4148 (as drawn, clamps at ~0.5 V);
+* cfg 1 = antiparallel red LEDs (knee ~1.6 V -> ~2.5 V LFO swing; one of them IS the rate indicator)
+R_sw0 LFO_OUT LIM0 {cfg==0 ? 1e-3 : 1e12}
+D_lfo1 LIM0 LFO_N D1N4148
+D_lfo2 LFO_N LIM0 D1N4148
+R_sw1 LFO_OUT LIM1 {cfg==1 ? 1e-3 : 1e12}
+D_lim1 LIM1 LFO_N DLED
+D_lim2 LFO_N LIM1 DLED
+.model D1N4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 Tt=20n Bv=100)
+* start-up kick
+I_kick 0 LFO_P PULSE(0 20u 0 1m 1m 5m 100)
+* ---- depth pot (max) and LED drive
+R_dptA LFO_OUT DPT_W 1
+R_dptB DPT_W VBT 100k
+.model DLED D(Is=1e-18 N=1.7 Rs=3)
+* as drawn (cfg 0): R_led 1k from the wiper to the LED, cathode to GND
+R_led DPT_W VLED0 {cfg==0 ? 1e3 : 1e12}
+D_v0 VLED0 SENS0 DLED
+V_s0 SENS0 0 0
+* redesign (cfg 1): AC-coupled NPN emitter follower, LEDs in the collector
+C_drv DPT_W QB {cfg==1 ? 100e-6 : 1e-15}
+R_b1 VCC QB {cfg==1 ? 180e3 : 1e12}
+R_b2 QB 0 {cfg==1 ? 10e3 : 1e12}
+Q_drv QC QB QE Q2N3904
+R_e QE 0 470
+R_c VCC VLR 100
+D_v1 VLR SENS1 DLED
+V_s1 SENS1 QC 0
+.model Q2N3904 NPN(Is=6.7f Bf=200 Vaf=74 Ikf=0.08 Rb=10 Rc=1 Cje=4.5p Cjc=3.5p Tf=400p)
+* ---- vactrol: light = lagged LED current (both configs summed; only one is active)
+B_i ILED 0 V = { I(V_s0) + I(V_s1) }
+R_lag ILED LIGHT 1k
+C_lag LIGHT 0 5u
+* LDR: 20k*(I/1mA)^-1.52 below 10 mA, 600*(I/10mA)^-0.79 above; floor 1 uA, cap 50 M
+B_r RLDR 0 V = { min(50e6, (V(LIGHT) < 10e-3) ? 20e3*pow(max(V(LIGHT),1e-6)/1e-3,-1.52) : 600*pow(V(LIGHT)/10e-3,-0.79)) }
+* ---- audio: 1 kHz carrier from the summer (BLEND) through R_trem1, LDR shunt via C_dc_blk
+V_aud BLEND 0 SIN(0 1 1000)
+R_trem1 BLEND TREM_OUT 10k
+C_dc_blk TREM_OUT TREM_S 10u
+R_ldr TREM_S 0 R = { V(RLDR) }
+R_ts TREM_S 0 1e9
+R_load TREM_OUT 0 100k
+* envelope detector on the carrier (|v| -> two 2 ms lags): its max/min over the last LFO
+* cycles give the modulation depth without needing to locate individual peaks
+B_abs ABSV 0 V = { abs(V(TREM_OUT)) }
+R_e1 ABSV ENV1 1k
+C_e1 ENV1 0 2u
+R_e2 ENV1 ENV 1k
+C_e2 ENV 0 2u
+
+.control
+foreach c 0 1
+  alterparam cfg = $c
+  reset
+  tran 20u 3.0 0 20u
+  let t1 = 2.4
+  meas tran lfo_max MAX v(LFO_OUT) from=t1 to=3.0
+  meas tran lfo_min MIN v(LFO_OUT) from=t1 to=3.0
+  meas tran i_max MAX v(ILED) from=t1 to=3.0
+  meas tran i_min MIN v(ILED) from=t1 to=3.0
+  meas tran r_max MAX v(RLDR) from=t1 to=3.0
+  meas tran r_min MIN v(RLDR) from=t1 to=3.0
+  meas tran env_max MAX v(ENV) from=t1 to=3.0
+  meas tran env_min MIN v(ENV) from=t1 to=3.0
+  meas tran car_pk MAX v(TREM_OUT) from=t1 to=3.0
+  let lfo_pk = (lfo_max - lfo_min)/2
+  let depth = 20*log10(env_max/env_min)
+  let loss = 20*log10(car_pk)
+  set slfo="$&lfo_pk"
+  set simax="$&i_max"
+  set simin="$&i_min"
+  set srmax="$&r_max"
+  set srmin="$&r_min"
+  set senvmax="$&env_max"
+  set senvmin="$&env_min"
+  set sdepth="$&depth"
+  set sloss="$&loss"
+  echo cfg=$c LFO_pk=$slfo V | I_led min/max=$simin / $simax A | R_ldr min/max=$srmin / $srmax ohm | carrier env max/min=$senvmax / $senvmin V | DEPTH=$sdepth dB, insertion loss at env max=$sloss dB
+  destroy all
+end
+.endc
+.end

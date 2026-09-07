@@ -27,6 +27,11 @@ run ac_power_amp_lm1875.cir
 run tran_reverb_mixer.cir
 run ac_tonestack.cir "= |^DC:"
 run tran_classa_output.cir "= |THD"
+# --- noise, hum, tremolo depth, thermal (2026-09-07) ---
+run noise_frontend.cir           "^cfg="
+run ac_hum_psrr.cir              "^cfg="
+run tran_tremolo_depth.cir       "^cfg="
+run tran_thermal_lm1875.cir      "^(RthSA|---|t[js]_)"
 # --- parameter sweeps (tables) ---
 run sweep_preamp_bias.cir        "^[0-9R]"
 run sweep_tonestack.cir          "^(---|bass=|treble=|mid_)"

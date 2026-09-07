@@ -43,7 +43,17 @@ KiCad project files.
   190×115 mm outline, bottom GND pour — **0 DRC errors, 0 warnings before routing**.
 - `gen/route_board.py` — **headless autoroute** via Freerouting (DSN → SES →
   import, GND pour refilled). Needs Java + the Freerouting jar (git-ignored; see
-  the script docstring). Routing status and numbers: `PCB-NOTES.md`.
+  the script docstring). It also injects the per-class *routing* clearances
+  (HighCurrent 0.6 mm, TankDrive 1.2 mm) that `cambridge_reverb.kicad_dru` checks
+  afterwards for tracks/vias. Routing status and numbers: `PCB-NOTES.md`.
+- `gen/crosstalk_audit.py` — geometric **crosstalk screen** of a routed board:
+  mutual capacitance of parallel runs between power/AC/tank-drive nets and the
+  sensitive nodes, coupled level vs signal, loop gain (Part 6c §4).
+- `gen/jlc_cost.py` — JLCPCB assembly **cost model** from the generated BOM (joints,
+  basic vs extended part types) — Part 4.
+- `gen/check.sh tht|smd [--no-regen]` — regenerate + ERC/DRC with the **JLCPCB
+  fab limits** stored in both `.kicad_pro` files (hole-to-hole 0.5, hole-to-copper
+  0.3, annular 0.18, mask dam 0.1 mm …) and the custom `.kicad_dru` rules.
 
 ## `smd/` — the mixed SMD/THT variant (same schematic, second footprint profile)
 - `smd/cambridge_reverb_smd.kicad_pro/.kicad_sch` + the 8 sheets, `smd/cambridge_reverb_smd.kicad_pcb`

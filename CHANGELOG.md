@@ -3,6 +3,51 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Noise, hum, crosstalk and thermal models; JLCPCB rules and cost (2026-09-07)
+- **New models (Part 6c, `spice/`):** `.noise` of the whole front end with the
+  regulator's own noise; rail-ripple paths to the speaker; a vactrol-level tremolo
+  depth model; an electro-thermal LM1875 ladder; and `kicad/gen/crosstalk_audit.py`,
+  a geometric crosstalk screen of the routed boards. Three design defects fell out:
+- 🔴 **Errata #21 — hum and hiss.** The LM1875's input bias divider had no bypass
+  (+4 dB ripple → speaker: **0.4 Vrms of 100 Hz at idle**), and the LM317's 0.5 mV of
+  noise reached the 0 dB-PSRR JFET stages (**23 dB above** their own floor, SNR 34 dB
+  at 12 W). Fixed: `C_bref` 100 µF + `R_bias3` 22 k on the power amp; `C_adj` 10 µF
+  on the LM317; `R_pre` 100 Ω + `C_pre` 220 µF `+17V_PRE` rail for Q1/Q2/Q_rec.
+  Hum 408 mV → 0.3 mV, EIN 37 → 2.7 µV, SNR 34 → 57 dB.
+- 🔴 **Errata #22 — the tremolo had 1.7 dB of depth.** The vactrol LED was returned to
+  ground from a mid-rail LFO: 7 mA DC, a permanent −20 dB pad. Fixed: LED limiter
+  (2 V LFO swing; `LED_rate` is one limiter LED and now blinks) + `Q_trem` 2N3904 /
+  MMBT3904 emitter follower, AC-coupled from the depth pot → **15 dB depth**, 0.8 dB
+  insertion loss. `D_lfo1/2`, `R_led`, `R_led_diag` removed.
+- **Crosstalk → routing rules.** Reverb drive ran 11 mm beside the reverb return
+  (−37 dB) and PA_OUT 0.25 mm from the recovery gate (SMD). `cambridge_reverb.kicad_dru`
+  now enforces HighCurrent 0.6 mm / TankDrive 1.2 mm from signal copper (tracks and
+  vias; 1.0 / 2.0 mm left 14–27 links unroutable), and `route_board.py` hands the
+  router the same numbers as class clearances;
+  keepout rule areas keep it 2 mm off the edge and away from the mounting holes.
+- **Thermal.** Part 5's ≤ 2.5 K/W heatsink confirmed with numbers (Tj 97 °C at 40 °C
+  ambient under a worst-case continuous sine; 4 K/W still fine; 8–10 K/W clip-ons reach
+  shutdown); a 40 g sink saturates in ~5 min. LM317 0.4–0.5 W bare, bridge 1.2 W,
+  25 VA transformer adequate for music.
+- ⚠️ **Errata #23 — JLCPCB.** Both `.kicad_pro` files now carry JLC's 2-layer limits as
+  DRC constraints; the stock TO-92 (0.15 mm ring) and LM1875 (0.175 mm) footprints were
+  under the 0.18 mm minimum → `TO-92_Inline_Wide` (also the adapter pitch) and 1.5 mm
+  LM1875 pads. Assembly cost: all SMD caps 1206 (basic library), "(opt)" MRB caps DNP,
+  gyrator on E24 values (2.2 nF / 180 k, same 1.86 H): 7 → 2 extended part types,
+  ≈ $32 → $17 for five assembled boards (`kicad/gen/jlc_cost.py`); three fiducials.
+- **Placer:** short parts now **stack** beside tall ones in a shelf (a DIP or can no
+  longer wastes 20 mm under every resistor next to it) and the overflow repair moves
+  width only where the donor still fits — both boards took the eight new parts with room
+  to spare (THT tone column at 74 % height).
+- **Boards regenerated and re-routed with the new rules:** THT **215/222 routed, 1
+  starved thermal, 0 rule hits** (×7 / via 60); SMD **210/223, 4 starved thermals, 0
+  rule hits** (×6 / via 80 with 0.4 / 0.8 mm class clearances — a plain routing gets 9
+  open but breaks the rules 47 times). Fourteen settings per board; the open links are
+  listed in `kicad/PCB-NOTES.md`. Lesson recorded there: DRC a candidate *in place* —
+  a copy in another directory is checked without the net classes and the `.kicad_dru`.
+  Post-routing crosstalk: THT worst pair −50 dB (was −37), SMD −42 dB
+  (`kicad/reports/crosstalk-*.md`).
+
 ### Bass / Treble tone stack + switchable MID CUT (2026-09-07)
 - 🔴 **Errata #20 — tone.** Two findings: the recovered coupling from Q2's drain
   to the volume pot was the **470 pF chime cap alone** (a 1.3 kHz high-pass — no

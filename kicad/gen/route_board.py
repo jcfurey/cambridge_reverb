@@ -34,6 +34,13 @@ import sys, os, json, time, argparse, subprocess
 import pcbnew
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Per-class ROUTING clearances (um) handed to Freerouting, per board (see inject_settings()).
+# THT 190x115: HighCurrent 0.6 mm, TankDrive 1.2 mm (1.0 / 2.0 left 14 links unroutable).
+# SMD 155x90: 0.4 / 0.8 mm -- what its .kicad_dru checks. Costs ~4 open links against a
+# plain routing (9 -> 13), but the plain routing breaks those rules 47 times; 0.6 / 1.2 there
+# left 13-27 open. Evaluate candidates IN PLACE (next to the .kicad_pro/.kicad_dru) or the
+# DRC silently runs without the net classes and the rules.
+CLASS_CLEARANCE_UM = {"tht": {"HighCurrent": 600, "TankDrive": 1200}, "smd": {"HighCurrent": 400, "TankDrive": 800}}
 REPO_KI = os.path.abspath(os.path.join(HERE, ".."))
 DEFAULT_IN = os.path.join(REPO_KI, "cambridge_reverb.kicad_pcb")
 JAR = os.environ.get("FREEROUTING_JAR", os.path.join(HERE, "freerouting.jar"))
@@ -128,6 +135,19 @@ def inject_autoroute_settings(dsn, a):
     key = "    (boundary\n"          # after the (layer ...) definitions, which the block refers to
     assert key in txt, "unexpected DSN: no (boundary"
     txt = txt.replace(key, block + key, 1)
+    # Per-class ROUTING clearances (um) that the KiCad net classes deliberately do not carry
+    # (they would flag fixed pad geometry): the same numbers the .kicad_dru rules check for
+    # tracks/vias afterwards. HighCurrent (PA_OUT / SPK / +33V5 / AC) 1.0 mm from everything,
+    # TankDrive (reverb tank drive) 2.0 mm -- see kicad/gen/crosstalk_audit.py.
+    import re as _re
+    cc = dict(CLASS_CLEARANCE_UM["smd" if os.sep + "smd" + os.sep in os.path.abspath(a.src) else "tht"])
+    if a.class_clearance:
+        cc.update({k: int(v) for k, v in (kv.split("=") for kv in a.class_clearance.split(","))})
+    for cls, clr in cc.items():
+        m = _re.search(r"\(class %s [^\n]*\n(?:[^\n]*\n)*?\s*\(rule\n\s*\(width \d+\)\n\s*\(clearance (\d+)\)" % _re.escape(cls), txt)
+        if m and int(m.group(1)) < clr:
+            txt = txt[:m.start(1)] + str(clr) + txt[m.end(1):]
+            print(f"  class {cls}: routing clearance {int(m.group(1))} -> {clr} um")
     open(dsn, "w").write(txt)
     print(f"  autoroute_settings: B.Cu {'OFF' if a.top_only else f'cost x{bc:g}'}, via cost {a.via_cost}")
 
@@ -159,6 +179,9 @@ def main():
                          "jumpers, so the GND pour stays whole; a sweep of 3/4/6 on this board gave "
                          "7/3/1 unrouted); 1.0 = both layers equal")
     ap.add_argument("--via-cost", type=int, default=60, help="Freerouting via cost (default 60; both committed boards used 60)")
+    ap.add_argument("--class-clearance", default=None,
+                    help="per-class ROUTING clearances handed to Freerouting, e.g. 'HighCurrent=600,TankDrive=1200' (um); "
+                         "overrides the per-board defaults in CLASS_CLEARANCE_UM")
     ap.add_argument("--drop-planes", choices=("top", "all", "none"), default="top",
                     help="pours hidden from the router: top (default; SMD GND pads get vias to the bottom pour), "
                          "all (route every GND link in copper), none")

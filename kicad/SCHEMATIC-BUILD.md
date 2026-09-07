@@ -6,7 +6,7 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  166 components (138 + 28 test points) · 79 nets · 0 unconnected pins
+kicad-cli sch export netlist ->  174 components (146 + 28 test points) · 83 nets · 0 unconnected pins
 GND spans 65 nodes · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 
@@ -43,7 +43,7 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
 - PDF/SVG render of all sheets is correct (title blocks, values, labels).
 - ERC does not check reference *annotation* (that's a separate tool), so the
   descriptive non-numeric refs do not produce ERC violations; `export netlist`
-  prints an "annotation" notice but exports all 166 components correctly.
+  prints an "annotation" notice but exports all 174 components correctly.
 
 ## Design additions beyond the recovered notes (clearly marked)
 - **Mid-rail `VBIAS`.** Single-supply TL072 stages need their inputs biased to

@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-09-07T03:47:32+0000",
+    "date": "2026-09-07T19:26:07+0000",
     "kicad_version": "8.0.9",
     "schematic_parity": [],
     "source": "cambridge_reverb_smd.kicad_pcb",
@@ -10,43 +10,112 @@
             "description": "Missing connection between items",
             "items": [
                 {
-                    "description": "Track [AC2] on F.Cu, length 2.8396 mm",
+                    "description": "Pad 1 [+17V] of R_vbt1 on F.Cu",
                     "pos": {
-                        "x": 125.2311,
+                        "x": 48.1797,
+                        "y": 41.175
+                    },
+                    "uuid": "b6855eb1-693b-448b-bef0-0a7fb24ab0a5"
+                },
+                {
+                    "description": "Track [+17V] on F.Cu, length 5.4142 mm",
+                    "pos": {
+                        "x": 45.4683,
+                        "y": 54.5645
+                    },
+                    "uuid": "16851a39-add1-4306-9366-ff711eaef41d"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "PTH pad 1 [+33V5] of C_byp2",
+                    "pos": {
+                        "x": 79.9105,
+                        "y": 52.745
+                    },
+                    "uuid": "c869cee4-a7f3-40d6-a9ce-4c376d479d66"
+                },
+                {
+                    "description": "Pad 1 [+33V5] of R_bias1 on F.Cu",
+                    "pos": {
+                        "x": 83.8882,
+                        "y": 58.195
+                    },
+                    "uuid": "45d554fc-adf9-4c7d-a0ab-503ea4443e06"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [+33V5] on F.Cu, length 0.4921 mm",
+                    "pos": {
+                        "x": 83.6157,
+                        "y": 65.195
+                    },
+                    "uuid": "c9527e3a-8bb3-44e6-bf36-8c7f9319a93b"
+                },
+                {
+                    "description": "Pad 1 [+33V5] of R_bias1 on F.Cu",
+                    "pos": {
+                        "x": 83.8882,
+                        "y": 58.195
+                    },
+                    "uuid": "45d554fc-adf9-4c7d-a0ab-503ea4443e06"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 1 [AC1] of C103 on F.Cu",
+                    "pos": {
+                        "x": 113.9308,
                         "y": 75.235
                     },
-                    "uuid": "e29e87e0-7147-44ee-aa73-66249b611d79"
+                    "uuid": "917b87e0-8072-4589-a456-d3d96c3d02bd"
                 },
+                {
+                    "description": "Pad 1 [AC1] of C101 on F.Cu",
+                    "pos": {
+                        "x": 103.8308,
+                        "y": 75.235
+                    },
+                    "uuid": "5c41abec-2cbc-45fc-a5a4-090caf70070d"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
                 {
                     "description": "Pad 1 [AC2] of C102 on F.Cu",
                     "pos": {
-                        "x": 115.1311,
+                        "x": 108.8808,
                         "y": 75.235
                     },
-                    "uuid": "bb9cb7c3-8cfa-4d0f-a7b5-e17a33aaad00"
-                }
-            ],
-            "severity": "error",
-            "type": "unconnected_items"
-        },
-        {
-            "description": "Missing connection between items",
-            "items": [
-                {
-                    "description": "Zone [GND] on F.Cu",
-                    "pos": {
-                        "x": 0.5,
-                        "y": 0.5
-                    },
-                    "uuid": "545f60b0-f3f3-4c2c-8f33-35ba22e0436b"
+                    "uuid": "d83c2e69-a58f-458e-95e7-3c39eec3142b"
                 },
                 {
-                    "description": "Zone [GND] on F.Cu",
+                    "description": "Track [AC2] on F.Cu, length 1.0235 mm",
                     "pos": {
-                        "x": 0.5,
-                        "y": 0.5
+                        "x": 118.9808,
+                        "y": 76.2585
                     },
-                    "uuid": "545f60b0-f3f3-4c2c-8f33-35ba22e0436b"
+                    "uuid": "ef299a7a-acc2-4149-8d5a-bcc247a5dfa1"
                 }
             ],
             "severity": "error",
@@ -56,35 +125,12 @@
             "description": "Missing connection between items",
             "items": [
                 {
-                    "description": "PTH pad 1 [GND] of TP_GND_REV",
+                    "description": "PTH pad 2 [GND] of C_s1",
                     "pos": {
-                        "x": 63.2411,
-                        "y": 57.15
+                        "x": 9.8648,
+                        "y": 19.675
                     },
-                    "uuid": "9705b859-4bb3-4ddd-9d22-cf9b3afdda49"
-                },
-                {
-                    "description": "Zone [GND] on F.Cu",
-                    "pos": {
-                        "x": 0.5,
-                        "y": 0.5
-                    },
-                    "uuid": "545f60b0-f3f3-4c2c-8f33-35ba22e0436b"
-                }
-            ],
-            "severity": "error",
-            "type": "unconnected_items"
-        },
-        {
-            "description": "Missing connection between items",
-            "items": [
-                {
-                    "description": "PTH pad 1 [GND] of TP_GND_REV",
-                    "pos": {
-                        "x": 63.2411,
-                        "y": 57.15
-                    },
-                    "uuid": "9705b859-4bb3-4ddd-9d22-cf9b3afdda49"
+                    "uuid": "af54ee2a-1362-4ede-92b9-8090a72b11cd"
                 },
                 {
                     "description": "Zone [GND] on B.Cu",
@@ -92,7 +138,7 @@
                         "x": 0.5,
                         "y": 0.5
                     },
-                    "uuid": "268b54c4-713e-41b5-ac1b-c8441e6a8bf3"
+                    "uuid": "92fce098-ed90-459e-bd8b-1b211d00e191"
                 }
             ],
             "severity": "error",
@@ -102,20 +148,20 @@
             "description": "Missing connection between items",
             "items": [
                 {
-                    "description": "Track [Q2D] on F.Cu, length 5.0798 mm",
+                    "description": "PTH pad 2 [GND] of C_bref",
                     "pos": {
-                        "x": 16.3327,
-                        "y": 22.3854
+                        "x": 94.9355,
+                        "y": 53.395
                     },
-                    "uuid": "15630232-4347-41b4-ac73-7715062ad0b3"
+                    "uuid": "80e866c4-7796-41d9-944c-d3ce21845f7d"
                 },
                 {
-                    "description": "Track [Q2D] on F.Cu, length 1.3540 mm",
+                    "description": "Zone [GND] on F.Cu",
                     "pos": {
-                        "x": 10.8175,
-                        "y": 27.825
+                        "x": 0.5,
+                        "y": 0.5
                     },
-                    "uuid": "a789fae1-2c9e-42b4-bd10-74143a126a69"
+                    "uuid": "56354215-6aac-4262-9187-5eac02793515"
                 }
             ],
             "severity": "error",
@@ -125,20 +171,135 @@
             "description": "Missing connection between items",
             "items": [
                 {
-                    "description": "Pad 2 [VRAW] of C101 on F.Cu",
+                    "description": "Zone [GND] on F.Cu",
                     "pos": {
-                        "x": 113.0311,
-                        "y": 75.235
+                        "x": 0.5,
+                        "y": 0.5
                     },
-                    "uuid": "141d6296-a067-4b11-ae33-de9913a1048e"
+                    "uuid": "56354215-6aac-4262-9187-5eac02793515"
                 },
                 {
-                    "description": "Track [VRAW] on F.Cu, length 1.3665 mm",
+                    "description": "Zone [GND] on F.Cu",
                     "pos": {
-                        "x": 118.0811,
-                        "y": 73.8685
+                        "x": 0.5,
+                        "y": 0.5
                     },
-                    "uuid": "6cbf6479-6503-4a0e-8c7c-866aa765d14f"
+                    "uuid": "56354215-6aac-4262-9187-5eac02793515"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Zone [GND] on F.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "56354215-6aac-4262-9187-5eac02793515"
+                },
+                {
+                    "description": "PTH pad 4 [GND] of IC1",
+                    "pos": {
+                        "x": 33.3622,
+                        "y": 64.82
+                    },
+                    "uuid": "8cd5e3c6-7d5e-444e-8cc8-db85f5cb8e64"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "PTH pad 1 [LFO_OUT] of IC2",
+                    "pos": {
+                        "x": 66.2122,
+                        "y": 13.975
+                    },
+                    "uuid": "751eb5a0-ea0b-4af3-b70f-1a304a30dc19"
+                },
+                {
+                    "description": "Track [LFO_OUT] on F.Cu, length 2.6979 mm",
+                    "pos": {
+                        "x": 39.3295,
+                        "y": 12.3077
+                    },
+                    "uuid": "9436b96e-663a-444b-a330-1823ce2e30d4"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [Q2D] on F.Cu, length 1.8425 mm",
+                    "pos": {
+                        "x": 14.75,
+                        "y": 27.275
+                    },
+                    "uuid": "067fded5-46c2-49b0-b291-7df5ee09afd3"
+                },
+                {
+                    "description": "Track [Q2D] on F.Cu, length 1.6908 mm",
+                    "pos": {
+                        "x": 7.0075,
+                        "y": 27.25
+                    },
+                    "uuid": "781b55e3-fe53-4064-aa71-9e6ef19b90b9"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [Q2G] on F.Cu, length 2.2850 mm",
+                    "pos": {
+                        "x": 8.8825,
+                        "y": 28.2
+                    },
+                    "uuid": "a35dc8e9-6d4f-434e-996d-0a9ed5dda316"
+                },
+                {
+                    "description": "Pad 2 [Q2G] of C_cpl12 on F.Cu",
+                    "pos": {
+                        "x": 13.61,
+                        "y": 24.025
+                    },
+                    "uuid": "d9ca8aab-f970-4f3c-b24c-9efdef8769f8"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "PTH pad 2 [TKDRV] of C_rev1",
+                    "pos": {
+                        "x": 53.7373,
+                        "y": 58.4
+                    },
+                    "uuid": "37c2149d-682e-4681-8d87-22d8abd5633e"
+                },
+                {
+                    "description": "Pad 1 [TKDRV] of R_drv3 on F.Cu",
+                    "pos": {
+                        "x": 68.4145,
+                        "y": 61.3
+                    },
+                    "uuid": "76b6df56-8f9e-4599-9611-7670d5c6324f"
                 }
             ],
             "severity": "error",
@@ -146,52 +307,6 @@
         }
     ],
     "violations": [
-        {
-            "description": "Thermal relief connection to zone incomplete (layer B.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on B.Cu",
-                    "pos": {
-                        "x": 0.5,
-                        "y": 0.5
-                    },
-                    "uuid": "268b54c4-713e-41b5-ac1b-c8441e6a8bf3"
-                },
-                {
-                    "description": "PTH pad 2 [GND] of C_s1",
-                    "pos": {
-                        "x": 9.8648,
-                        "y": 19.675
-                    },
-                    "uuid": "44de8c3f-c1cf-4d1c-b00d-15be343bcfe7"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer B.Cu; 3 spokes connected to isolated island)",
-            "items": [
-                {
-                    "description": "Zone [GND] on B.Cu",
-                    "pos": {
-                        "x": 0.5,
-                        "y": 0.5
-                    },
-                    "uuid": "268b54c4-713e-41b5-ac1b-c8441e6a8bf3"
-                },
-                {
-                    "description": "PTH pad 2 [GND] of C_vbr",
-                    "pos": {
-                        "x": 45.3013,
-                        "y": 62.575
-                    },
-                    "uuid": "3d116dd6-0544-485f-8813-bc074efaaf78"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
         {
             "description": "Thermal relief connection to zone incomplete (layer B.Cu; 1 spokes connected to isolated island)",
             "items": [
@@ -201,15 +316,15 @@
                         "x": 0.5,
                         "y": 0.5
                     },
-                    "uuid": "268b54c4-713e-41b5-ac1b-c8441e6a8bf3"
+                    "uuid": "92fce098-ed90-459e-bd8b-1b211d00e191"
                 },
                 {
                     "description": "PTH pad 11 [GND] of IC3",
                     "pos": {
                         "x": 14.745,
-                        "y": 50.245
+                        "y": 48.77
                     },
-                    "uuid": "ea05230c-5ba7-47b3-b586-f0862cb6695f"
+                    "uuid": "9e5a7db3-693b-4594-9884-c5dd18dc82ae"
                 }
             ],
             "severity": "error",
@@ -224,15 +339,61 @@
                         "x": 0.5,
                         "y": 0.5
                     },
-                    "uuid": "268b54c4-713e-41b5-ac1b-c8441e6a8bf3"
+                    "uuid": "92fce098-ed90-459e-bd8b-1b211d00e191"
+                },
+                {
+                    "description": "PTH pad 2 [GND] of C_s2",
+                    "pos": {
+                        "x": 15.9046,
+                        "y": 19.675
+                    },
+                    "uuid": "63939255-4a4b-454f-b614-f931b146235b"
+                }
+            ],
+            "severity": "error",
+            "type": "starved_thermal"
+        },
+        {
+            "description": "Thermal relief connection to zone incomplete (layer B.Cu; zone min spoke count 2; actual 1)",
+            "items": [
+                {
+                    "description": "Zone [GND] on B.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "92fce098-ed90-459e-bd8b-1b211d00e191"
+                },
+                {
+                    "description": "PTH pad 2 [GND] of R_spk_rtn",
+                    "pos": {
+                        "x": 94.7607,
+                        "y": 69.895
+                    },
+                    "uuid": "8ade1c70-9284-4f45-abf1-935acd69042a"
+                }
+            ],
+            "severity": "error",
+            "type": "starved_thermal"
+        },
+        {
+            "description": "Thermal relief connection to zone incomplete (layer B.Cu; zone min spoke count 2; actual 1)",
+            "items": [
+                {
+                    "description": "Zone [GND] on B.Cu",
+                    "pos": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "uuid": "92fce098-ed90-459e-bd8b-1b211d00e191"
                 },
                 {
                     "description": "PTH pad 2 [GND] of C_rec_byp",
                     "pos": {
-                        "x": 57.7809,
-                        "y": 61.925
+                        "x": 59.777,
+                        "y": 58.4
                     },
-                    "uuid": "223321a4-c203-47ad-9857-db4f4359b475"
+                    "uuid": "7a79b0ef-58fb-4896-a010-491343addf30"
                 }
             ],
             "severity": "error",

@@ -6,14 +6,21 @@
    (`gen_kicad.py`'s component list) is placed into the **Part 5 floor plan**:
    columns left → right `INPUT/PREAMP (+TONE below it) | TREMOLO/MRB (+REVERB
    below it, next to its tank pads) | POWER AMP | POWER SUPPLY`, signal-chain
-   order inside each zone, column widths auto-balanced to equal height, a
-   **labelled test-point strip** at the top of every zone (see *Test points*). `IC_PA` (LM1875) and `U1` (LM317) sit on the
-   **top edge**, tab outward, with the Part 5 **10 mm keep-out**; all off-board
-   wiring lands on **Part 4 wire pads along the bottom edge** (2.0 mm signal
-   pads, 3.0 mm speaker/transformer pads), `T1` at the far right. 4 × M3 mounting
-   holes, 190 × 115 mm `Edge.Cuts`, bottom **GND pour**, and two **locked escape
-   stubs** off the LM1875's pins 4/5 (see below). **DRC before routing: 0 errors,
-   0 warnings** apart from the two dangling stubs.
+   order inside each zone (ICs and cans tallest-first, small parts in schematic
+   order, short parts **stacked** beside tall ones so a can or DIP does not waste
+   the row height under every resistor), column widths auto-balanced to equal
+   height and repaired until no column overflows, a **labelled test-point strip**
+   at the top of every zone (see *Test points*). `IC_PA` (LM1875) and `U1` (LM317)
+   sit on the **top edge**, tab outward, with the Part 5 **10 mm keep-out**; all
+   off-board wiring lands on **Part 4 wire pads along the bottom edge** (2.0 mm
+   signal pads, 3.0 mm speaker/transformer pads), `T1` at the far right. 4 × M3
+   mounting holes, 190 × 115 mm `Edge.Cuts`, bottom **GND pour**, **keepout rule
+   areas** (2 mm edge frame + squares round the holes, tracks/vias only) so the
+   router respects the fab's edge clearance, and two **locked escape stubs** off the
+   LM1875's pins 4/5 (see below). Design rules in the `.kicad_pro` are **JLCPCB's
+   2-layer limits** (Part 4) and `cambridge_reverb.kicad_dru` adds two crosstalk
+   rules (below). **DRC before routing: 0 errors, 0 warnings** apart from the two
+   dangling stubs.
 2. **`gen/route_board.py` — routing.** Exports a Specctra DSN (the project's three
    net classes come through: 0.5 / 1.5 / 2.5 mm), injects Freerouting's
    `autoroute_settings` (bottom layer 6× trace cost so it is used only for short
@@ -30,30 +37,32 @@ file. Without `--no-regen` the script regenerates first (which discards routing)
 ## Routing result — THT board (`kicad-cli 8.0.9 pcb drc`, this commit; `kicad/reports/tht-drc.json`)
 | Item | Result |
 |------|-------:|
-| Connections (ratsnest, incl. the 28 test points, the dual-gang speed pot and the errata #20 tone stack) | 212 |
-| **Routed** | **208 / 212** (`unconnected_items`: 4) |
-| DRC violations (`--severity-all`) | **0 errors, 0 warnings** |
-| Track segments | 1 143 — **F.Cu 4 780 mm**, B.Cu 742 mm (short jumpers) |
-| Vias | 99 |
-| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×7, via cost 60 (`route_board.py --bottom-cost 7 --via-cost 60`) |
+| Connections (ratsnest, incl. 28 test points, the dual-gang speed pot, the errata #20 tone stack and the #21/#22 parts) | 222 |
+| **Routed** | **215 / 222** (`unconnected_items`: 7) |
+| DRC violations (`--severity-all`, JLCPCB limits + `.kicad_dru` crosstalk rules) | **1 error** — `starved_thermal` on the GND pad of `C_rec_byp`; 0 warnings; **0 rule hits** |
+| Track segments | 1 421 — **F.Cu 5 645 mm**, B.Cu 902 mm (short jumpers) |
+| Vias | 86 |
+| Router settings | Freerouting 1.9.0, `-mp 150`, B.Cu trace cost ×7, via cost 60, class clearances HighCurrent 0.6 mm / TankDrive 1.2 mm (`route_board.py --bottom-cost 7 --via-cost 60`) |
 
-The four open connections: `MIDSW` (`C_res` at ≈ (12, 86) to the `SW_MID` pad on
-the wiring edge at ≈ (57, 102) — the mid-cut toggle's return, a 45 mm run under the
-pot pads), two pieces of the 2.5 mm **`PA_OUT`** trace that the router left
-unjoined next to the power amp (≈ (122–124, 46–81) — a HighCurrent trace, so join
-it at full width by hand), and one GND pour fragment (`TP_GND_REV` / `C_rec_byp`
-— a stitching via). Four GUI touches; listed so nobody trusts the copper blindly.
+The seven open connections: two pieces of **`+33V5`** at the power amp (`C_byp2` ↔ a
+bottom jumper at ≈ (113, 62), and a 40 mm top run ending at ≈ (137, 68) — the 2.5 mm
+Power trace could not thread the 0.6 mm rule past the PA parts; join at full width),
+`JWT` (`R_j4` → the treble-pot pad on the wiring edge), `LFO_OUT` (two trace ends in the
+tremolo zone), `R_DRVO` and `TKDRV` (the tank-drive path `C_rev1` / `R_drv3`, held apart
+by the 1.2 mm TankDrive rule; 3–10 mm links) and `TREM_S` (`VTL1` LDR → `C_dc_blk`).
+Eight GUI touches; listed so nobody trusts the copper blindly.
 
-Honest note: the placement before the errata #20 tone stack routed to **167/168 with
-3 starved thermals**, and the one before that (pre-#19) to 166/166 clean. The tone
-sheet added 22 parts, so the THT profile now packs at a **1.2 mm** part gap
-(was 1.4) with 3.5 mm channels (was 4) — the board is 40 % parts by area, but the
-columns use 97 % of their height and the router feels it. Twelve settings were
-tried on this placement (4–11 open: ×6/80 → 6 + 5 starved, ×7/80 → 6 + 1, ×6/100
-→ 7 + 1, ×6/60 → 10, ×8/80 → 11, ×7/100 → 11, **×7/60 → 4, DRC clean —
-committed**). Freerouting is deterministic for identical input but sensitive to
-small placement changes, so the count moves with every schematic edit — always
-re-check `kicad/reports/` after regenerating.
+Honest note: the previous placement (before errata #21/#22) routed to 208/212, DRC clean,
+without the crosstalk rules. This placement carries eight more parts and the two
+clearance rules; fourteen settings were tried (6–16 open): ×8 / 60 → 6 open but 3 starved
+thermals, **×7 / 60 → 7 open + 1 thermal (committed)**, ×6 / 80 → 13, ×7 / 80 → 12,
+×8 / 80 → 10, ×9 / 60 → 10; with a 1.0 / 2.0 mm rule set every run left 14; with only
+the HighCurrent rule 10–13; with TankDrive at 0.8 mm 8–16. **Evaluate candidates in
+place** (next to the `.kicad_pro` / `.kicad_dru`): `kicad-cli pcb drc` on a copy in
+another directory silently runs without the net classes and the rules and under-counts
+(that cost an hour here). Freerouting is deterministic for identical input but
+sensitive to small placement changes — always re-check `kicad/reports/` after
+regenerating.
 
 ## Mixed SMD / THT variant — `smd/cambridge_reverb_smd.kicad_pcb` (155 × 90 mm)
 Same schematic, second footprint profile (`--profile smd` on all three scripts),
@@ -90,30 +99,33 @@ else stays on the bottom edge, `T1` far right. Two more deliberate differences:
   pads on a 155×90 board (errata #11 addendum). Parts area **~5 090 mm² → 54 % of the 155 × 90 usable area**
 (the THT-profile parts would be 68 %). **Pre-route DRC: 0 errors, 0 warnings** beyond the two stub warnings.
 
-**Routing result (this commit; `kicad/reports/smd-drc.json`)** — `route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb --bottom-cost 7 --via-cost 100`:
+**Routing result (this commit; `kicad/reports/smd-drc.json`)** — `route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb --bottom-cost 6 --via-cost 80` (class clearances HighCurrent 0.4 mm / TankDrive 0.8 mm, the board's `.kicad_dru` numbers):
 
 | Item | Result |
 |------|-------:|
-| Connections (incl. 28 test points, the dual-gang speed pot and the tone stack; SMD ground pads count via the top pour) | 213 |
-| **Routed** | **207 / 213** |
-| DRC (`--severity-all`) | **4 errors** — `starved_thermal` on the GND pads of `C_s1`, `C_vbr`, `C_rec_byp`, `IC3` pin 11; 0 warnings |
-| Track segments | 1 272 — F.Cu 3 538 mm, B.Cu 976 mm |
-| Vias | 150 (most are SMD-ground-pad drops to the bottom pour) |
+| Connections (incl. 28 test points, the dual-gang speed pot, tone stack, #21/#22 parts; SMD ground pads count via the top pour) | 223 |
+| **Routed** | **210 / 223** |
+| DRC (`--severity-all`, JLC limits + rules) | **4 errors** — `starved_thermal` on the GND pads of `IC3` pin 11, `C_s2`, `R_spk_rtn`, `C_rec_byp`; 0 warnings; **0 rule hits** |
+| Track segments | 1 154 — F.Cu 3 740 mm, B.Cu 1 124 mm |
+| Vias | 120 (most are SMD-ground-pad drops to the bottom pour) |
 
-The six open items: three GND pour fragments (a top-pour island and
-`TP_GND_REV` on both pours — stitching vias), `AC2` (`C102` ↔ `C104`, the two
-snubber caps 10 mm apart under the transformer pads), `Q2D` (two trace ends 5 mm
-apart in the preamp) and `VRAW` (`C101` to its trace end, 5 mm). All are short GUI
-touches; with the four thermals that is ten.
+The thirteen open items: four GND pour fragments (`C_s1`, `C_bref`, `IC1` pin 4 and a
+top-pour island — stitching vias), `+33V5` ×2 and `+17V` ×1 (short rail links at the power
+amp / tremolo bias, 3–6 mm), `AC1` / `AC2` (the snubber caps `C102` / `C103` to the
+transformer pads, 10 mm), `LFO_OUT` (IC2 pin 1 to its trace, 27 mm along the top),
+`Q2D` and `Q2G` (two 2 mm gaps in the preamp) and `TKDRV` (tank drive, 14 mm). All are
+GUI touches; with the four thermals that is seventeen — the price of the crosstalk rules
+on a 56 %-full board.
 
-Sweep on this placement (150 passes): ×6 / via 80 → 8 open + 2 starved + 1
-clearance; ×6 / via 60 → 14 open; ×6 / via 100 → 12 open; ×7 / via 80 → 7 open +
-6 starved; ×5 / via 80 → 11 open; ×8 / via 60 → 14 open; ×8 / via 80 → 8 open +
-3 starved; ×9 / via 80 → 12 open; **×7 / via 100 → 6 open + 4 starved
-(committed)**. The placement before the tone stack routed to 7 open, DRC clean;
-the one before errata #19 to 2 open + 1 starved. The SMD board sits close to the
-router's limit at 155 × 90 (54 % parts by area), so expect to finish a handful of
-links by hand after any regeneration.
+Sweep on this placement (150 passes; every candidate DRC'd *in place* with the rules):
+plain routing (no class clearances) ×7 / 100 → **9 open but 47 rule violations** (32
+HighCurrent, 15 TankDrive); 0.4 / 0.8 mm: ×7 / 100 → 13 open + 3 clearance + 3 mask
+errors, **×6 / 80 → 13 open, 4 thermals, rules clean (committed)**; 0.35 / 0.6 mm →
+12–14 open with 12–14 rule hits; HighCurrent-only 0.4 → 13 open, 8–11 TankDrive hits;
+0.6 / 1.2 mm → 13–27 open. The placement before errata #21/#22 routed to 7 open without
+rules; the SMD board sits at the router's limit at 155 × 90 (56 % parts by area), so
+expect to finish a dozen links by hand after any regeneration — or drop the two rules
+in `smd/cambridge_reverb_smd.kicad_dru` and take the 9-open plain routing knowingly.
 
 **Assembly path:** JLCPCB places the SMD side (all are basic-class part sizes),
 you hand-solder the ~76 THT parts. `production/smd/bom-jlcpcb.csv` (Comment /
@@ -165,6 +177,32 @@ Bring-up order (Part 5): rails (`VRAW`/`+33V5`/`VREG`/`+17V`) with the series
 light bulb → `PA_B`/`PA_OUT`/`SPK` DC with no signal → JFET drains (`Q1D`,
 `Q2D`, `QRD`) and trim → `VB_R`/`VB_T` → signal generator into IN1, follow
 `PRE` → `TMK` → `TONE` → `BLEND` → `TREM` → `MRB` → `PA_IN` → `SPK`.
+
+## Crosstalk screen and the two routing rules it produced (Part 6c §4)
+`kicad/gen/crosstalk_audit.py` estimates the mutual capacitance of every parallel run
+between an aggressor net (PA_OUT / SPK / ZOB at 9.8 Vrms, the 24 Vrms AC1/AC2, VRAW,
++33V5 ripple, TANK_IN at 3 Vrms) and a sensitive node, and turns it into "coupled level
+vs signal" and a loop gain. On the first routing of the errata #20 boards the worst pairs
+were `TANK_IN` → `TANK_OUT` (11 mm side by side, **−37 dB**, THT) and `PA_OUT` →
+`TANK_OUT` (0.25 mm apart, −37 dB, loop gain −44 dB, SMD); nothing near oscillation,
+but not a layout anyone would sign. So:
+
+| Rule (`.kicad_dru`, tracks/vias only) | Clearance | Also given to the router as | Why |
+|---|---:|---|---|
+| `HighCurrent` (PA_OUT, SPK, +33V5, VRAW, AC1, AC2) ↔ `Default` copper | **0.6 mm** | class HighCurrent clearance 600 µm in the DSN | 9.8 Vrms / 24 Vrms aggressors beside 20 mV–1 V nodes; 1.0 mm was tried first and left 14 (THT) / 27 (SMD) links unroutable |
+| `TankDrive` (R_DRVO, TKDRV, TANK_IN) ↔ TANK_OUT / QRG / WET / DRVP | **1.2 mm** | class TankDrive clearance 1200 µm | reverb drive leaking into the reverb return |
+
+Pad geometry is exempt (the LM1875's 1.7 mm pin row, 0805 feedback parts, snubber
+caps), which is why the numbers are carried as *rules* rather than net-class clearances.
+On the SMD board the rules are 0.4 / 0.8 mm (`smd/cambridge_reverb_smd.kicad_dru`) —
+more left the router short of links (see the SMD sweep above).
+
+After re-routing (`kicad/reports/crosstalk-{tht,smd}.md`): THT worst pair `TANK_IN` →
+`TANK_OUT` **−50 dB** (was −37), then `PA_OUT` → `PA_BIAS` −66 dB (loop −59 dB); SMD
+`TANK_IN` → `TANK_OUT` −42 dB (was −37; the two nets share adjacent pads on the tank
+connector, so a few mm of side-by-side copper is unavoidable), `PA_OUT` → `TANK_OUT`
+gone from the table, worst loop −68 dB. A hand pass should still move the tank return
+away from the drive at the connector — the audit will show whether it helped.
 
 ## What the autorouter does NOT know — review by hand before fab
 - **Audio layout.** It routes by cost, not by ear: the JFET gate inputs

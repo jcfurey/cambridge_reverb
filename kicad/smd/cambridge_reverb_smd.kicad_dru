@@ -1,0 +1,16 @@
+(version 1)
+# Custom DRC rules -- routing hygiene the plain net classes cannot express. Both rules
+# apply to TRACKS and VIAS only, so fixed pad geometry (the LM1875's 1.7 mm pin row, the
+# 0805 feedback parts, the transformer snubber caps) is not flagged; route_board.py
+# gives the router the same numbers as per-class clearances in the DSN.
+# 1. HighCurrent copper (PA_OUT / SPK / +33V5 / VRAW and the 24 Vrms AC1 / AC2 secondary)
+#    keeps 0.4 mm on this 155x90 board (0.6 mm on the THT board; more left the router short of links): the crosstalk audit
+#    (kicad/gen/crosstalk_audit.py) found PA_OUT 0.25 mm from the reverb-return trace.
+(rule hc_to_signal
+  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'HighCurrent' && B.NetClass == 'Default'")
+  (constraint clearance (min 0.4mm)))
+# 2. Reverb tank DRIVE (3 Vrms; class TankDrive = R_DRVO / TKDRV / TANK_IN) keeps 0.8 mm (THT board: 1.2 mm) from
+#    the tank RETURN path (20 mV): 11 mm parallel runs at -37 dB on the first routing.
+(rule tank_drive_to_return
+  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'TankDrive' && (B.NetName == 'TANK_OUT' || B.NetName == 'QRG' || B.NetName == 'WET' || B.NetName == 'DRVP')")
+  (constraint clearance (min 0.8mm)))

@@ -1,0 +1,143 @@
+Front-end NOISE: guitar -> JFET preamp -> tone stack -> summer -> PA, with the +17 V rail's own noise
+* ngspice .noise over 20 Hz - 20 kHz (onoise_total = V rms, onoise_spectrum = V/rtHz). Supply configurations:
+*   cfg 0  as drawn: LM317 with no ADJ capacitor (TI: 0.003 % of Vout rms = ~510 uV
+*          over 10 Hz-10 kHz -> 5.1 uV/rtHz white-equivalent), JFET drain loads
+*          straight on the rail
+*   cfg 1  + C_adj 10 uF on the LM317 ADJ pin (noise ~ the 1.25 V reference alone:
+*          ~ 50 uV rms -> 0.5 uV/rtHz)
+*   cfg 2  + C_adj AND an RC-decoupled preamp rail (R_pre 100 R + C_pre 220 uF)
+*   cfg 3  rail noise switched off: the floor set by the JFETs, resistors and op-amps alone
+* The rail noise enters at the JFET drains (a resistor-loaded common-source
+* stage has ~0 dB PSRR: v_drain/v_rail = r_ds/(r_ds+R_d) ~ 0.98 with this model).
+* Noise sources: JFET channel + flicker (Kf/Af in the model), every resistor,
+* op-amps as 18 nV/rtHz (OPAMP_N), the rail. Op-amp offsets / DC are irrelevant here.
+* Source: guitar pickup, single coil ~ 6 kOhm + 2.5 H, 470 pF cable; nominal
+* pickup output 100 mV rms for the SNR figures.
+
+.include models/jfet_2n5457.lib
+.include models/opamp_noise.sub
+.param cfg=0
+.param rail_en = {cfg==0 ? 5.1e-6 : (cfg==3 ? 1e-12 : 0.5e-6)}
+.param r_pre   = {cfg==2 ? 100 : 1e-3}
+.param c_pre   = {cfg==2 ? 220e-6 : 1e-12}
+
+* ---- +17 V rail with its noise: Rnz's thermal noise (4kT R = rail_en^2) rides on E_rail
+Rnz   nz 0 {rail_en*rail_en/1.6567e-20}
+E_rail RAIL 0 VALUE = {17 + V(nz)}
+* preamp supply node (decoupled in cfg 2)
+R_pre RAIL VPRE {r_pre}
+C_pre VPRE 0 {c_pre}
+
+* ---- guitar + preamp (values as on the sheet; R_s per errata #15 trim = 1.2k so Vd ~ 8-9 V)
+Vin  gsrc 0 AC 1
+R_pu gsrc pu1 6k
+L_pu pu1 GUITAR_IN 2.5
+C_cab GUITAR_IN 0 470p
+C_in_pre GUITAR_IN Q1G 47n
+R_g1 Q1G 0 1meg
+J1 Q1D Q1G Q1S 2N5457
+R_d1 VPRE Q1D 10k
+R_s1 Q1S 0 1.2k
+C_s1 Q1S 0 10u
+C_cpl12 Q1D Q2G 100n
+R_g2 Q2G 0 1meg
+J2 Q2D Q2G Q2S 2N5457
+R_d2 VPRE Q2D 10k
+R_s2 Q2S 0 1.2k
+C_s2 Q2S 0 10u
+C_pres Q2D 0 100p
+C_cpl_out Q2D PREAMP_OUT 1u
+R_inb PREAMP_OUT VB 1meg
+* VBIAS_3 as a quiet node (100k/100k + 47u -> its noise is shorted by the 47 uF at audio)
+R_vb31 RAIL VB 100k
+R_vb32 VB 0 100k
+C_vb3 VB 0 47u
+
+* ---- tone stack (errata #20), pots at noon
+X_A PREAMP_OUT BUF BUF OPAMP_N
+R_j1 BUF JA 10k
+R_bA JA JWB 125k
+R_bB JWB JB 125k
+C_j1 JA JWB 22n
+C_j2 JWB JB 22n
+R_j2 JB VB 10k
+R_j3 JWB JOUT 68k
+C_j3 BUF JTA 2.2n
+R_tA JTA JWT 125k
+R_tB JWT JTB 125k
+C_j4 JTB VB 2.2n
+R_j4 JWT JOUT 1k
+X_B JOUT MKN MK_OUT OPAMP_N
+R_mk1 MK_OUT MKN 10k
+R_mk2 MKN VB 10k
+R_mid MK_OUT MID 10k
+X_D MID OBUF OBUF OPAMP_N
+C_tout OBUF VOLTOP 1u
+R_volA VOLTOP TONE_OUT 1k
+R_volB TONE_OUT 0 249k
+C_treble VOLTOP TONE_OUT 470p
+R_fx_pad TONE_OUT 0 10k
+
+* ---- reverb summer (dry path, unity) and the tremolo output buffer -> PA input
+C_drymix TONE_OUT DRMX 1u
+R_drymix DRMX SUMJ 100k
+R_wetmix WMX SUMJ 100k
+R_wetsrc WMX 0 10k
+R_mixfb SUMJ BLEND 100k
+X_SUM VB SUMJ BLEND OPAMP_N
+R_trem1 BLEND TREM_OUT 10k
+C_obuf_in TREM_OUT OBUF_IN 1u
+R_obuf_b OBUF_IN VB 100k
+X_OB OBUF_IN PA_IN PA_IN OPAMP_N
+* ---- power amp (LM1875 gain 23, en ~ 3 uVrms CCIR/600R -> ~15 nV/rtHz, its own PSRR path ignored)
+C_in_pa PA_IN PA_BIAS 1u
+R_bias1 RAIL PA_BIAS 22k
+R_bias2 PA_BIAS 0 22k
+X_PA PA_BIAS PA_INV PA_OUT OPAMP_N PARAMS: aol=3e4 gbw=5.5e6 rout=0.1 en=15e-9
+R_fb PA_OUT PA_INV 22k
+R_gain PA_INV PA_GAIN 1k
+C_gain PA_GAIN 0 22u
+R_ld PA_OUT 0 8
+
+.control
+foreach c 0 1 2 3
+  alterparam cfg = $c
+  reset
+  op
+  let vq1d = v(Q1D)
+  let vq2d = v(Q2D)
+  set sv1 = "$&vq1d"
+  set sv2 = "$&vq2d"
+  ac dec 20 20 20k
+  meas ac g_q2d  FIND vm(Q2D) AT=1000
+  meas ac g_tone FIND vm(TONE_OUT) AT=1000
+  meas ac g_pa   FIND vm(PA_OUT) AT=1000
+  let gq = g_q2d
+  let gt = g_tone
+  let gp = g_pa
+  set sgq = "$&gq"
+  noise v(Q2D) Vin dec 20 20 20k
+  let n_q2d = onoise_total
+  let ein = n_q2d / $sgq
+  set sn_q2d = "$&n_q2d"
+  set sein = "$&ein"
+  setplot previous
+  let d100 = onoise_spectrum[16]
+  let d1k  = onoise_spectrum[36]
+  let d10k = onoise_spectrum[56]
+  set sd100 = "$&d100"
+  set sd1k = "$&d1k"
+  set sd10k = "$&d10k"
+  noise v(TONE_OUT) Vin dec 20 20 20k
+  let n_tone = onoise_total
+  set sn_tone = "$&n_tone"
+  noise v(PA_OUT) Vin dec 20 20 20k
+  let n_pa = onoise_total
+  let snr_pa = 20*log10(9.8/n_pa)
+  set sn_pa = "$&n_pa"
+  set ssnr = "$&snr_pa"
+  echo cfg=$c Vd1=$sv1 Vd2=$sv2 | gain(1k) to Q2D=$sgq | Q2D noise density V/rtHz @100Hz=$sd100 @1k=$sd1k @10k=$sd10k | noise_rms(20Hz-20kHz) Q2D=$sn_q2d TONE_OUT=$sn_tone PA_OUT=$sn_pa | EIN(rms, re Q2D gain)=$sein | SNR_at_12W=$ssnr dB
+  destroy all
+end
+.endc
+.end
