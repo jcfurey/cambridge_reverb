@@ -42,6 +42,8 @@ DESC = {
  "C_adj":"LM317 ADJ bypass: +15 dB ripple rejection, ~10x less rail noise","R_pre":"Preamp rail decoupling (with C_pre)",
  "C_pre":"Preamp rail decoupling (with R_pre)","R_bias3":"LM1875 + input bias feed (from the bypassed divider)",
  "C_bref":"LM1875 bias-divider bypass (kills the rail-ripple path into the + input)",
+ "R_rf1":"RF stopper, guitar input (with C_rf1: 1.6 MHz)","C_rf1":"RF stopper, guitar input (C0G)",
+ "R_rf2":"RF stopper, reverb tank return (with C_rf2)","C_rf2":"RF stopper, tank return (C0G)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference

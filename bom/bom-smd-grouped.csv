@@ -14,7 +14,7 @@ qty,value,footprint,refs
 1,220uF/25V,CP_Radial_D6.3mm_P2.50mm,C_pre
 3,47uF/25V,CP_Radial_D6.3mm_P2.50mm,C_vb3 C_vbr C_vbt
 9,100nF,C_1206_3216Metric,C_byp1 C_byp3 C_cpl12 C_drvin C_mrb_in C_mrb_out C_reg_out2 C_rev4 C_zobel
-1,100pF,C_1206_3216Metric,C_pres
+3,100pF,C_1206_3216Metric,C_pres C_rf1 C_rf2
 1,10nF,C_1206_3216Metric,C_rev2
 4,10nF/100V,C_1206_3216Metric,C101 C102 C103 C104
 1,120nF (opt),C_1206_3216Metric,C_mrb_450
@@ -39,7 +39,7 @@ qty,value,footprint,refs
 2,15k,R_0805_2012Metric,R_lfo_ser R_lfo_sh
 2,180k,R_0805_2012Metric,R_b1 R_gg
 4,1M,R_0805_2012Metric,R_g1 R_g2 R_inb R_rec_bias
-2,1k,R_0805_2012Metric,R_gain R_j4
+4,1k,R_0805_2012Metric,R_gain R_j4 R_rf1 R_rf2
 1,220k,R_0805_2012Metric,R_drvbias
 4,22k,R_0805_2012Metric,R_bias1 R_bias2 R_bias3 R_fb
 1,240R,R_0805_2012Metric,R_reg1

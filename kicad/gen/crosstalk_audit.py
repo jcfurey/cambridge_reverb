@@ -26,7 +26,9 @@ noon, volume max; from spice/noise_frontend.cir) + coupling = loop gain; < -20 d
 import sys, os, math, argparse, collections
 import pcbnew
 
-EPS0, EPSR, H = 8.854e-12, 4.5, 1.5e-3
+EPS0, EPSR = 8.854e-12, 4.5
+H = 1.5e-3            # trace-to-reference-plane height: 2-layer = 1.5 mm core; 4-layer (JLC
+                      # JLC04161H-7628) = 0.21 mm prepreg to In1 / In2 -- set in audit()
 # aggressors: net -> (Vrms at full drive, frequency for the estimate, what it is)
 AGGR = {"PA_OUT": (9.8, 5e3, "LM1875 output, 12 W"), "SPK_P": (9.8, 5e3, "speaker +"),
         "ZOB": (9.8, 5e3, "Zobel node = output"),
@@ -34,7 +36,8 @@ AGGR = {"PA_OUT": (9.8, 5e3, "LM1875 output, 12 W"), "SPK_P": (9.8, 5e3, "speake
         "VRAW": (1.0, 150, "rectifier output, pulsating"), "+33V5": (0.25, 150, "main rail ripple"),
         "TANK_IN": (3.0, 5e3, "reverb tank drive")}
 # victims: net -> (|Z_node| ohms at the estimate frequency, signal Vrms, note)
-VICT = {"GUITAR_IN": (50e3, 0.1, "jack -> C_in; pickup + 1 M"), "Q1G": (50e3, 0.1, "Q1 gate"),
+VICT = {"GUITAR_IN": (50e3, 0.1, "jack -> C_in; pickup + 1 M"), "RF1": (50e3, 0.1, "RF stopper node"), "Q1G": (50e3, 0.1, "Q1 gate"),
+        "RF2": (10e3, 0.02, "tank return after C_rev2"),
         "Q1D": (10e3, 1.3, "Q1 drain"), "Q2G": (10e3, 1.3, "Q2 gate"), "Q2D": (10e3, 16, "Q2 drain (clips)"),
         "PREAMP_OUT": (10e3, 3.0, "tone buffer in"), "JA": (50e3, 3.0, "bass ladder"), "JB": (50e3, 3.0, "bass ladder"),
         "JWB": (50e3, 1.5, "bass wiper"), "JTA": (50e3, 3.0, "treble ladder"), "JTB": (50e3, 3.0, "treble ladder"),
@@ -48,7 +51,7 @@ VICT = {"GUITAR_IN": (50e3, 0.1, "jack -> C_in; pickup + 1 M"), "Q1G": (50e3, 0.
         "PA_IN": (11e3, 1.0, "PA input (22k||22k)"), "PA_BIAS": (11e3, 1.0, "PA +in"),
         "PA_INV": (1e3, 0.4, "PA -in (1k||22k)"), "MID": (10e3, 1.5, "mid-cut node"), "GYA": (5e3, 0.5, "gyrator")}
 # forward gain from the victim node to PA_OUT (dB, 1 kHz, pots noon, volume max; noise_frontend.cir)
-FWD_DB = {"GUITAR_IN": 74.3, "Q1G": 74.3, "Q1D": 50.0, "Q2G": 50.0, "Q2D": 25.5, "PREAMP_OUT": 25.5,
+FWD_DB = {"GUITAR_IN": 74.3, "RF1": 74.3, "Q1G": 74.3, "RF2": 47.3, "Q1D": 50.0, "Q2G": 50.0, "Q2D": 25.5, "PREAMP_OUT": 25.5,
           "JA": 27.0, "JB": 27.0, "JWB": 27.0, "JTA": 27.0, "JTB": 27.0, "JWT": 27.0, "JOUT": 33.0,
           "MID": 27.0, "TONE_OUT": 27.3, "DRVP": 27.3, "SUMJ": 27.3, "TREM_OUT": 27.3, "TREM_S": 27.3,
           "OBUF_IN": 27.3, "MRB_T": 27.3, "PA_IN": 27.3, "PA_BIAS": 27.3, "PA_INV": 27.3 - 27.0,
@@ -99,7 +102,10 @@ def parallel_overlap(s1, s2, max_d=4.0):
     return ov, d
 
 def audit(path):
+    global H
     board = pcbnew.LoadBoard(path)
+    four = board.GetCopperLayerCount() >= 4
+    H = 0.21e-3 if four else 1.5e-3
     segs = segs_by_net(board)
     rows = []
     for an, (va, f, what) in AGGR.items():
@@ -119,7 +125,7 @@ def audit(path):
                         c = k * c_self_per_m(w) * ov * 1e-3
                         detail["same"] += 1
                     else:                             # broadside, only if really on top of each other
-                        if d > 1.0:
+                        if d > 1.0 or four:           # (with planes between F.Cu and B.Cu there is none)
                             continue
                         c = EPS0 * EPSR * min(sa[4], sv[4]) * 1e-3 / H * ov * 1e-3
                         detail["cross"] += 1
@@ -139,7 +145,7 @@ def audit(path):
 
 def report(path, rows, top=18):
     name = os.path.basename(path)
-    out = [f"### Crosstalk screen — `{name}`", "",
+    out = [f"### Crosstalk screen — `{name}` ({'4-layer, h = 0.21 mm' if H < 1e-3 else '2-layer, h = 1.5 mm'})", "",
            "| Aggressor | Victim | C_m (pF) | longest run (mm) | f | on victim (µV) | vs signal (dB) | loop gain (dB) |",
            "|---|---|---:|---:|---:|---:|---:|---:|"]
     worst = sorted(rows, key=lambda r: -r["ratio_db"])[:top]

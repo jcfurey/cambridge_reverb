@@ -3,6 +3,41 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Four-layer boards, no routes through footprints, rules by impedance (2026-09-08)
+- **Errata #24.** Both boards move to a **4-layer** stack (JLC04161H-7628): F.Cu signal,
+  **In1 solid GND plane**, In2 inner signal layer, B.Cu signal + GND pour, perimeter GND
+  stitching vias every 15 mm (generated, locked). F.Cu / In2 traces sit 0.21 mm from the
+  plane instead of 1.5 mm — ~10× less trace-to-trace coupling and a real RF/EMI return.
+  (In2 was a +17 V plane first; two routing layers under the keepouts left 33–43 links
+  open, so it routes signals and +17 V is a 1.0 mm trace — `IN2_PLANE` switches it back.)
+- **No routes through footprints:** `gen_pcb.py` writes keepout rule areas (`kp_<ref>`,
+  tracks + vias, F.Cu + B.Cu) between every part's pads — pin-to-pin strips and the body
+  between rows — so nothing runs between the legs of a resistor, under an IC or through
+  the toroid (147 / 139 areas; power-only parts exempt). Freerouting gets them as
+  keepouts; KiCad DRC checks them. Part gaps widened to 1.6 / 0.5 mm: they are the
+  routing channels now.
+- **Net classes by impedance:** new `HiZ` (0.3 mm, gates / RF nodes / tone ladder and
+  wipers / LFO timing / MRB tank / PA + input), `Default` = low-Z signal, `Power` (1.0 mm),
+  `HighCurrent` (1.5 mm; 2.5 was a no-plane figure), `TankDrive`; `.kicad_dru` rules
+  HighCurrent ≥ 0.6 mm from any signal, tank drive ≥ 0.8 mm from the return (SMD 0.4 /
+  0.6), tracks and vias only; `route_board.py` hands the router the same per-class
+  numbers and strips the plane layer from the DSN (Freerouting 1.9 ignores
+  `active off` — 7 m of copper on the planes — and a `power`-typed layer made it treat
+  every through-hole pad on the plane as connected: adjacent same-net pins stayed open).
+- **RF stoppers** `R_rf1`/`C_rf1` (1 k + 100 pF) at Q1's gate and `R_rf2`/`C_rf2` at the
+  recovery JFET's gate — the guitar and tank cables are the antennas.
+- **SMD board 170 × 100 mm** (was Part 7's 155 × 90): on four layers with the keepouts
+  every SMD ground / rail pad needs a via beside it, and at a 0.5 mm gap none fitted
+  (30 of 52 open links); 1.0 mm gap, top GND pour kept for the SMD ground pads.
+- **Boards regenerated and re-routed:** THT **218/226 routed, 0 DRC errors, 0 rule
+  hits** (via cost 50; the same placement without keepouts gives 21 open, so they cost
+  nothing now); SMD **216/226, 1 starved thermal** (via cost 40). Long runs live on In2
+  under the GND plane, the outer layers carry escapes only. Crosstalk after routing:
+  worst pair −66 dB (THT) / −74 dB (SMD), every entry below −65 dB. The Freerouting
+  lessons (ignores `active off`; a `power` layer makes pads look connected; keepouts
+  must skip same-net pin gaps; keepouts on both outer layers or 1.0 mm rail clearances
+  leave a third of the links open) are in `kicad/PCB-NOTES.md`.
+
 ### Noise, hum, crosstalk and thermal models; JLCPCB rules and cost (2026-09-07)
 - **New models (Part 6c, `spice/`):** `.noise` of the whole front end with the
   regulator's own noise; rail-ripple paths to the speaker; a vactrol-level tremolo
@@ -33,8 +68,8 @@ deliverables produced during the design phase.
   DRC constraints; the stock TO-92 (0.15 mm ring) and LM1875 (0.175 mm) footprints were
   under the 0.18 mm minimum → `TO-92_Inline_Wide` (also the adapter pitch) and 1.5 mm
   LM1875 pads. Assembly cost: all SMD caps 1206 (basic library), "(opt)" MRB caps DNP,
-  gyrator on E24 values (2.2 nF / 180 k, same 1.86 H): 7 → 2 extended part types,
-  ≈ $32 → $17 for five assembled boards (`kicad/gen/jlc_cost.py`); three fiducials.
+  gyrator on E24 values (2.2 nF / 180 k, same 1.86 H): 7 → 3 extended part types,
+  ≈ $32 → $20 for five assembled boards (`kicad/gen/jlc_cost.py`); three fiducials.
 - **Placer:** short parts now **stack** beside tall ones in a shelf (a DIP or can no
   longer wastes 20 mm under every resistor next to it) and the overflow repair moves
   width only where the donor still fits — both boards took the eight new parts with room

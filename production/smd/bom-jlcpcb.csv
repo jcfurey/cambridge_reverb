@@ -1,6 +1,6 @@
 Comment,Designator,Footprint,LCSC Part #
 100nF,"C_byp1,C_byp3,C_cpl12,C_drvin,C_mrb_in,C_mrb_out,C_reg_out2,C_rev4,C_zobel",C_1206_3216Metric,
-100pF,C_pres,C_1206_3216Metric,
+100pF,"C_pres,C_rf1,C_rf2",C_1206_3216Metric,
 10nF,C_rev2,C_1206_3216Metric,
 10nF/100V,"C101,C102,C103,C104",C_1206_3216Metric,
 1nF,C_fb_hf,C_1206_3216Metric,
@@ -18,7 +18,7 @@ Comment,Designator,Footprint,LCSC Part #
 15k,"R_lfo_ser,R_lfo_sh",R_0805_2012Metric,
 180k,"R_b1,R_gg",R_0805_2012Metric,
 1M,"R_g1,R_g2,R_inb,R_rec_bias",R_0805_2012Metric,
-1k,"R_gain,R_j4",R_0805_2012Metric,
+1k,"R_gain,R_j4,R_rf1,R_rf2",R_0805_2012Metric,
 220k,R_drvbias,R_0805_2012Metric,
 22k,"R_bias1,R_bias2,R_bias3,R_fb",R_0805_2012Metric,
 240R,R_reg1,R_0805_2012Metric,

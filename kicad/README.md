@@ -40,7 +40,10 @@ KiCad project files.
   placed into the **Part 5 floor-plan zones** (Input/Preamp | Tone | Reverb/Trem |
   Power Amp | PSU, left→right), off-board connectors on the bottom wiring edge,
   LM1875/LM317 on the top edge with the 10 mm keep-out, 4× M3 mounting holes,
-  190×115 mm outline, bottom GND pour — **0 DRC errors, 0 warnings before routing**.
+  190×115 mm outline, **4 copper layers** (In1 GND plane, In2 inner signal, B.Cu GND
+  pour, perimeter stitching vias), keepout areas between every part's pins, JLCPCB
+  design rules + `cambridge_reverb.kicad_dru` impedance-class rules — **0 DRC errors,
+  0 warnings before routing**.
 - `gen/route_board.py` — **headless autoroute** via Freerouting (DSN → SES →
   import, GND pour refilled). Needs Java + the Freerouting jar (git-ignored; see
   the script docstring). It also injects the per-class *routing* clearances
@@ -57,7 +60,7 @@ KiCad project files.
 
 ## `smd/` — the mixed SMD/THT variant (same schematic, second footprint profile)
 - `smd/cambridge_reverb_smd.kicad_pro/.kicad_sch` + the 8 sheets, `smd/cambridge_reverb_smd.kicad_pcb`
-  (**155 × 90 mm**, the Part 7 safe-bet size): generated with `--profile smd` by the
+  (**170 × 100 mm** since errata #24; was the Part 7 155 × 90 safe-bet size): generated with `--profile smd` by the
   same three scripts. Small passives and semis are SMD (0805 R, 1206/1210 C,
   SMA/SOD-123 D, SOT-23 JFETs); power parts, all electrolytics, the socketed
   TL072s / TL074, the bench-trimmed JFET source resistors, connectors and test points stay

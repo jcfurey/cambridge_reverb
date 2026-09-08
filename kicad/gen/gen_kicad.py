@@ -538,7 +538,11 @@ def build():
     # ---- Sheet 2: Preamp ----
     s=Sheet("Preamp","preamp.kicad_sch"); sheets.append(s)
     s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15)",50,20)
-    s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"Q1G"})
+    s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"RF1"})
+    # RF stopper at the gate (the guitar cable is the antenna): 1k + 100 pF = 1.6 MHz corner,
+    # nothing at audio; 1k adds 4 nV/rtHz against the pickup's own 10 (2026-09-08)
+    s.comp("R","R_rf1","1k",15,75,{"1":"RF1","2":"Q1G"})
+    s.comp("C","C_rf1","100pF",15,105,{"1":"Q1G","2":"GND"})
     s.comp("R","R_g1","1M",40,90,{"1":"Q1G","2":"GND"})
     s.comp("NJFET","Q1","MMBF5457",90,70,{"3":"Q1G","1":"Q1D","2":"Q1S"})   # 1=D 2=S 3=G
     s.comp("R","R_d1","10k",90,40,{"1":"+17V_PRE","2":"Q1D"})
@@ -611,7 +615,9 @@ def build():
     s.comp("R","R_drv3","10R",195,80,{"1":"TKDRV","2":"TANK_IN"})
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
             {"1":"TANK_IN","2":"GND","3":"TANK_OUT","4":"GND"})
-    s.comp("C","C_rev2","10nF",60,120,{"1":"TANK_OUT","2":"QRG"})
+    s.comp("C","C_rev2","10nF",60,120,{"1":"TANK_OUT","2":"RF2"})
+    s.comp("R","R_rf2","1k",30,135,{"1":"RF2","2":"QRG"})            # RF stopper: the tank cable is the other antenna
+    s.comp("C","C_rf2","100pF",30,105,{"1":"QRG","2":"GND"})
     s.comp("NJFET","Q_rec","MMBF5457",110,140,{"3":"QRG","1":"QRD","2":"QRS"})
     s.comp("R","R_rec_bias","1M",60,150,{"1":"QRG","2":"GND"})
     s.comp("R","R_rec1","10k",110,115,{"1":"+17V_PRE","2":"QRD"})
@@ -728,8 +734,12 @@ def write_smd_project_files():
     # Net-class widths for the compact board: Part 4's 2.5 / 1.5 mm were sized for
     # the 190x115 THT board. At ~1.7 A peak / <1 A RMS, 1 oz copper needs well under
     # 1 mm; 2.0 / 1.0 mm keep a wide margin and fit between 0805/1206 pads.
-    SMD_CLASS = {"HighCurrent": dict(track_width=2.0, clearance=0.25, via_diameter=1.4, via_drill=0.8),
-                 "Power":       dict(track_width=1.0, clearance=0.25, via_diameter=1.2, via_drill=0.6)}
+    # SMD board: rail vias sized to fit the 1.2 mm gaps between parts (a 1.2 / 1.4 mm via
+    # never found room and the +17V / +33V5 links stayed open); 0.5 mm is plenty for the
+    # ~30 mA +17V rail, 1.5 mm x 0.6 mm holes for the 1.7 A peak of PA_OUT / +33V5
+    SMD_CLASS = {"HighCurrent": dict(track_width=1.5, clearance=0.25, via_diameter=1.2, via_drill=0.6),
+                 "Power":       dict(track_width=0.5, clearance=0.25, via_diameter=0.8, via_drill=0.4),
+                 "HiZ":         dict(track_width=0.3, clearance=0.25, via_diameter=0.8, via_drill=0.4)}
     for cls in pro.get("net_settings", {}).get("classes", []):
         cls.update(SMD_CLASS.get(cls.get("name"), {}))
     json.dump(pro, open(os.path.join(OUTDIR, "cambridge_reverb_smd.kicad_pro"), "w"), indent=2)

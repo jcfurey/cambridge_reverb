@@ -1,16 +1,21 @@
 (version 1)
-# Custom DRC rules -- routing hygiene the plain net classes cannot express. Both rules
-# apply to TRACKS and VIAS only, so fixed pad geometry (the LM1875's 1.7 mm pin row, the
-# 0805 feedback parts, the transformer snubber caps) is not flagged; route_board.py
-# gives the router the same numbers as per-class clearances in the DSN.
-# 1. HighCurrent copper (PA_OUT / SPK / +33V5 / VRAW and the 24 Vrms AC1 / AC2 secondary)
-#    keeps 0.6 mm from Default-class (signal) copper (1.0 mm left the router 14-27 links short): the crosstalk audit
-#    (kicad/gen/crosstalk_audit.py) found PA_OUT 0.25 mm from the reverb-return trace.
+# Custom DRC rules (2026-09-08): routing hygiene by IMPEDANCE, on top of the net classes
+# (Default = low-Z signal 0.5 mm, HiZ = high-impedance nodes 0.3 mm / 0.3 mm clearance,
+# Power 1.0 mm, HighCurrent 1.5 mm, TankDrive). All rules apply to TRACKS and VIAS only,
+# so fixed pad geometry (the LM1875's 1.7 mm pin row, 0805 feedback parts, snubber caps)
+# is not flagged; route_board.py hands the router the same numbers as per-class
+# clearances. The per-footprint "kp_*" rule areas (no tracks / vias between a part's
+# pins or under its body) and the edge / hole keepouts use KiCad's own keepout test.
+# On this 4-layer stack every outer trace sits 0.21 mm over a plane, so 0.6 mm of spacing
+# couples like ~2 mm did on the two-layer boards; Power<->HiZ separation comes from that
+# geometry plus the 0.3 mm class clearance (a wider rule blocked DIP pin access).
+# 1. HighCurrent copper (PA_OUT / ZOB / SPK / +33V5 / VRAW, the 24 Vrms AC1 / AC2 secondary)
+#    keeps 0.6 mm from every signal trace, high- or low-impedance.
 (rule hc_to_signal
-  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'HighCurrent' && B.NetClass == 'Default'")
+  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'HighCurrent' && (B.NetClass == 'Default' || B.NetClass == 'HiZ')")
   (constraint clearance (min 0.6mm)))
-# 2. Reverb tank DRIVE (3 Vrms; class TankDrive = R_DRVO / TKDRV / TANK_IN) keeps 1.2 mm from
-#    the tank RETURN path (20 mV): 11 mm parallel runs at -37 dB on the first routing.
+# 2. Reverb tank DRIVE (3 Vrms; class TankDrive = R_DRVO / TKDRV / TANK_IN) keeps 0.8 mm from
+#    the tank RETURN path (20 mV): 11 mm parallel runs at -37 dB on the first 2-layer routing.
 (rule tank_drive_to_return
-  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'TankDrive' && (B.NetName == 'TANK_OUT' || B.NetName == 'QRG' || B.NetName == 'WET' || B.NetName == 'DRVP')")
-  (constraint clearance (min 1.2mm)))
+  (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'TankDrive' && (B.NetName == 'TANK_OUT' || B.NetName == 'RF2' || B.NetName == 'QRG' || B.NetName == 'WET' || B.NetName == 'DRVP')")
+  (constraint clearance (min 0.8mm)))

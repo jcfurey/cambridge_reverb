@@ -13,7 +13,7 @@
 
 | Parameter | Setting | Notes |
 |-----------|---------|-------|
-| Layers | 2 | Top copper + bottom copper (ground plane) |
+| Layers | **4** *(2026-09-08, errata #24; was 2)* | F.Cu signal / In1 GND plane / In2 signal / B.Cu signal + GND pour — stackup **JLC04161H-7628** (0.035 mm outer copper, 0.2104 mm 7628 prepreg, 1.065 mm core, 0.0152 mm inner copper) |
 | Dimensions | 190 × 115 mm | Matches original 25-5274-2 board footprint |
 | PCB Qty | 5 | Minimum order |
 | PCB Thickness | 1.6 mm | Matches original board thickness |
@@ -27,9 +27,13 @@
 
 Estimated cost: ~$2–7 for 5 boards + ~$5–15 shipping. Under $25 total.
 
-> **2026-09-07:** 190 × 115 mm is above the $2 "100 × 100 mm" tier, so the bare board is
-> area-priced (a live quote is the only reliable number); choose **1 oz** copper and
-> **lead-free HASL** unless you have a reason not to — both are the no-surcharge defaults.
+> **2026-09-07/08:** 190 × 115 mm is above the "100 × 100 mm" tier (2-layer $2, **4-layer
+> ~$7** per five), so the bare board is area-priced (a live quote is the only reliable
+> number — expect roughly $30–60 per five for the 4-layer 170 × 100 / 190 × 115 boards); choose **1 oz** outer
+> copper and **lead-free HASL** unless you have a reason not to — both are the no-surcharge
+> defaults. Order the **JLC04161H-7628** stackup (the default 4-layer 1.6 mm), no impedance
+> control needed; the In1 GND plane is generated as a full-board zone and Gerbers must
+> include `In1.Cu` / `In2.Cu`.
 
 ## SMT assembly of the mixed SMD/THT board (`kicad/smd/`) — cost model, added 2026-09-07
 
@@ -40,10 +44,10 @@ assembly BOM and shows which knob moves the number:
 
 | | Before | After (errata #23) |
 |---|---:|---:|
-| SMD parts placed / assembly lines | 90 / 31 | 91 / 29 |
-| Extended part types (× $3) | 7 ($21) | 2 ($6: MMBF5457 SOT-23, 3.09 k E96) |
-| Joints per board | 183 | ~187 |
-| Assembly for 5 boards (estimate) | ~$32 | **~$17** |
+| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 |
+| Extended part types (× $3) | 7 ($21) | 3 ($9: MMBF5457 SOT-23, 3.09 k E96, 68 nF) |
+| Joints per board | 183 | 194 |
+| Assembly for 5 boards (estimate) | ~$32 | **~$20** |
 
 What changed: every SMD capacitor is **1206** (the 1210 line — 1 µF X7R 50 V and the
 Zobel 100 nF — was an extended part for no electrical gain; 1206 1 µF/50 V X7R is a
@@ -95,7 +99,7 @@ was already stricter than JLC it stays.
 | Ground pad | 3.0 mm | 1.5 mm | GND (star ground) |
 | Footswitch pads | 2.0 mm | 1.2 mm | FS_REV, FS_TREM, FS_MRB, FS_GND |
 
-## Ground plane design — recovered verbatim
+## Ground plane design — recovered verbatim (2-layer), superseded by the 4-layer stack (errata #24)
 1. Pour covers the entire bottom layer except pad clearances.
 2. Connect to the star ground via multiple vias near C_main.
 3. Ground-stitching vias every 15 mm along the perimeter.
@@ -103,6 +107,12 @@ was already stricter than JLC it stays.
 5. Route all signal traces on the TOP layer only.
 6. Bottom layer is ground plane only.
 7. Use thermal-relief pads (4 spokes) for through-hole ground connections.
+
+> **4-layer (generated):** In1 is the solid, unbroken GND plane (rule 4 now holds by
+> construction — nothing is routed on it), In2 is an inner signal layer, B.Cu keeps a GND pour
+> around the bottom traces, and `gen_pcb.py` places the perimeter stitching vias of rule 3
+> (every 15 mm, locked). Signals route on F.Cu, In2 and B.Cu; every part has keepout
+> areas between its pins on the outer layers so traces cannot run through footprints.
 
 In KiCad: Edit → Fill Zones → B.Cu → Net GND; clearance 0.3 mm, min width
 0.25 mm, thermal relief gap 0.5 mm, spoke width 0.5 mm.
@@ -112,7 +122,7 @@ In KiCad: Edit → Fill Zones → B.Cu → Net GND; clearance 0.3 mm, min width
 2. Refill zones (Edit → Fill All Zones, shortcut B).
 3. File → Fabrication Outputs → Gerbers (.gbr).
 4. Output folder: `JLCPCB`.
-5. Layers: F.Cu, B.Cu, F.SilkS, B.SilkS, F.Mask, B.Mask, Edge.Cuts.
+5. Layers: F.Cu, In1.Cu, In2.Cu, B.Cu, F.SilkS, B.SilkS, F.Mask, B.Mask, Edge.Cuts (4-layer since errata #24).
 6. General options: plot reference designators; check zone fills before plotting.
 7. Gerber options: Protel filename extensions; subtract soldermask from silkscreen; coordinate format 4.6 mm.
 8. Plot.

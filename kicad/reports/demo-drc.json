@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-09-07T19:26:06+0000",
+    "date": "2026-09-08T05:06:58+0000",
     "kicad_version": "8.0.9",
     "schematic_parity": [],
     "source": "power_section_demo.kicad_pcb",
@@ -15,7 +15,7 @@
                         "x": 22.0,
                         "y": 20.0
                     },
-                    "uuid": "37e263c4-7894-47a5-927e-79242818805f"
+                    "uuid": "036a7fa5-52ec-419b-9144-10a0a756062c"
                 },
                 {
                     "description": "PTH pad 1 [VRAW] of F1",
@@ -23,7 +23,7 @@
                         "x": 28.76,
                         "y": 20.0
                     },
-                    "uuid": "0882c021-4926-421f-be44-73e2e40da6f2"
+                    "uuid": "734b3b4a-5a04-4933-98fb-e7c8065c4792"
                 }
             ],
             "severity": "error",
@@ -38,7 +38,7 @@
                         "x": 27.08,
                         "y": 48.0
                     },
-                    "uuid": "f92429a2-117c-47a3-8066-5d2fd7799153"
+                    "uuid": "94a38ca9-9838-45ae-bf91-2ed9e9f8d263"
                 },
                 {
                     "description": "PTH pad 2 [VREG_IN] of R_27V",
@@ -46,7 +46,7 @@
                         "x": 145.24,
                         "y": 20.0
                     },
-                    "uuid": "8b9e9a43-1b7b-444c-b1bc-3b52dc9008ca"
+                    "uuid": "5d288720-794e-4b63-bace-85f28310c5ca"
                 }
             ],
             "severity": "error",

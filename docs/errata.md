@@ -283,7 +283,50 @@ so the check is automatic. Cost: on the assembled SMD board the price is driven 
 part **types** (an "extended" library part costs $3 per type per order) rather than
 board area, so the 1210 capacitor line (an extended part) is folded into 1206, the two
 optional MRB caps are marked **DNP** (not placed, not in the assembly BOM), and the
-gyrator moves to E24 values (2.2 nF / 180 k, same 1.86 H): 31 → 29 lines, 7 → 2
-extended types (`kicad/gen/jlc_cost.py`). Three fiducials were added for the
+gyrator moves to E24 values (2.2 nF / 180 k, same 1.86 H): 31 → 29 lines, 7 → 3
+extended types (`kicad/gen/jlc_cost.py`; the MMBF5457, the 3.09 k E96 set resistor and
+the 68 nF MRB cap). Three fiducials were added for the
 pick-and-place camera. **Severity:** MEDIUM (a fab would have flagged the rings or
 produced breakouts; the rest is money).
+
+## Issue 24 — Layout: traces threaded between component leads; no RF reference plane (2026-09-08) — MEDIUM (design change)
+The two-layer boards routed the way two-layer boards do: signal traces between the legs of
+resistors, under DIPs, beside the toroid, and the bottom "ground plane" was a pour
+sliced by every jumper — the first crosstalk audit (Part 6c §4) put the reverb drive
+0.3 mm from the reverb return and the power-amp output 0.25 mm from the recovery gate.
+Resolution (`kicad/gen/gen_pcb.py`, `route_board.py`, both boards):
+- **Four copper layers** (JLCPCB JLC04161H-7628, 1.6 mm): F.Cu signal — **In1 solid GND
+  plane** — In2 inner signal layer — B.Cu signal with a GND pour. Every F.Cu / In2 trace
+  now sits 0.21 mm from the GND plane instead of 1.5 mm: trace-to-trace coupling falls
+  ~10× and the plane is a real RF/EMI reference and return. Perimeter **GND stitching
+  vias** every 15 mm tie the B.Cu pour to the In1 plane (Part 4's rule, now generated).
+  In2 was a +17 V plane in the first cut; with the keepouts below, two routing layers left
+  33–43 links open on the THT board, so In2 routes signals (under the plane) and +17 V is
+  a 1.0 mm Power trace — `IN2_PLANE = "+17V"` in `gen_pcb.py` restores the plane.
+- **No routes through footprints.** For every real part the generator writes rule areas
+  (no tracks / vias, F.Cu + B.Cu) over the space *between* its pads — the strips between
+  the pins of a row and the body between two rows, across the full courtyard. A trace can
+  reach any pad from outside; it can no longer pass between the legs of a resistor, under
+  an IC, or through the MRB toroid. The router sees them as Specctra keepouts; KiCad DRC
+  checks them.
+- **Rules by impedance.** New `HiZ` net class (0.3 mm, 0.3 / 0.25 mm clearance) for the
+  high-impedance nodes — JFET gates and the RF nodes ahead of them, the tank return, the
+  tone ladder and wipers, the LFO timing nodes, the MRB tank, the LM1875 + input; `Power`
+  (1.0 / 0.8 mm) for the rails, `HighCurrent` (1.5 mm — 1 oz copper carries ~2.5 A at that
+  width, the amp peaks at 1.7 A; Part 4's 2.5 mm was sized for a two-layer board with no
+  plane) for PA_OUT / ZOB / SPK / +33V5 / VRAW / AC; `Default` = low-impedance signal
+  (op-amp outputs, drains). `.kicad_dru`: HighCurrent ≥ 0.6 mm from any signal trace,
+  tank drive ≥ 0.8 mm from the return (SMD board: 0.4 / 0.6), tracks and vias only; the
+  router is given the same numbers per class. On the 0.21 mm plane spacing, 0.6 mm
+  couples like ~2 mm did on the two-layer boards; a wider first attempt (1.0 mm / 0.5 mm
+  HiZ) left ~70 links open because a 0.5 mm clearance cannot enter a DIP pin between its
+  neighbours.
+- **RF stoppers** at the two antennas: `R_rf1` 1 k + `C_rf1` 100 pF at Q1's gate (guitar
+  cable) and `R_rf2` 1 k + `C_rf2` 100 pF at the recovery JFET's gate (tank cable) —
+  1.6 MHz corners, nothing at audio, 4 nV/√Hz against the pickup's own 10.
+**Board size:** the SMD variant grows from Part 7's 155 × 90 to **170 × 100 mm** (1.0 mm
+part gap): at 0.5 mm no ground / rail via fitted beside an SMD pad and 30 of 52 links
+stayed open; 170 × 100 still fits any chassis the 190 × 115 original did (Issue 9).
+**Cost:** a 4-layer 170 × 100 / 190 × 115 board is area-priced above JLC's $7 100 × 100 mm
+tier (Part 4). **Severity:** MEDIUM — the two-layer boards worked on paper; this is the
+layout a low-noise guitar amp should have.

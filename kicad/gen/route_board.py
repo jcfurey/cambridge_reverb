@@ -40,7 +40,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # plain routing (9 -> 13), but the plain routing breaks those rules 47 times; 0.6 / 1.2 there
 # left 13-27 open. Evaluate candidates IN PLACE (next to the .kicad_pro/.kicad_dru) or the
 # DRC silently runs without the net classes and the rules.
-CLASS_CLEARANCE_UM = {"tht": {"HighCurrent": 600, "TankDrive": 1200}, "smd": {"HighCurrent": 400, "TankDrive": 800}}
+# Per-class ROUTING clearances (um) = the .kicad_dru numbers, so the router produces a
+# rule-clean board (Freerouting takes a pair's clearance as the larger of the two class
+# values). On the four-layer boards every outer trace is 0.21 mm over a plane, so 0.6 mm
+# of spacing is worth ~2 mm on the old two-layer boards; a 1.0 mm HighCurrent / 0.5 mm
+# HiZ set was tried first and left 70 links open: a 0.5 mm HiZ clearance cannot enter a
+# DIP pin between its 2.54 mm neighbours, and 1.0 mm + 2.5 mm rail traces do not fit the
+# 1.6 mm gaps between parts. Override: --class-clearance HighCurrent=800,HiZ=400
+CLASS_CLEARANCE_UM = {"tht": {"HighCurrent": 600, "HiZ": 300, "TankDrive": 800},
+                      "smd": {"HighCurrent": 400, "HiZ": 250, "TankDrive": 600}}
 REPO_KI = os.path.abspath(os.path.join(HERE, ".."))
 DEFAULT_IN = os.path.join(REPO_KI, "cambridge_reverb.kicad_pcb")
 JAR = os.environ.get("FREEROUTING_JAR", os.path.join(HERE, "freerouting.jar"))
@@ -102,6 +110,42 @@ def drop_top_plane(dsn):
         open(dsn, "w").write("\n".join(keep))
         print(f"  dropped {len(lines) - len(keep)} F.Cu plane(s) from the DSN: SMD GND pads get vias to the bottom pour")
 
+def strip_layers(txt, names):
+    """Remove copper layers from the DSN text: their (layer ...) definition, (layer_rule ...),
+    (plane ...) / (keepout ...) on them and every padstack (shape ...) on them, then
+    renumber the remaining layers' (property (index n)). Why: Freerouting 1.9 routes on a
+    plane layer whatever (active off) says, and with the layer typed (type power) it treats
+    every through-hole pad touching it as already connected -- adjacent same-net pins were
+    left open. A plane the router never sees is connected on import by KiCad anyway."""
+    lines = txt.split("\n"); out = []; skip_depth = None
+    def starts_block(line):
+        st = line.lstrip()
+        return any(st.startswith(f"({kw} {n}") or st.startswith(f"({kw} \"\" (") and n in st and kw == "keepout"
+                   for kw in ("layer", "layer_rule") for n in names) \
+            or any(st.startswith("(plane ") and f"(polygon {n} " in st for n in names) \
+            or any(st.startswith("(keepout") and f" {n} " in st.split(")")[0] + ")" for n in names) \
+            or any(st.startswith("(shape (") and f" {n} " in st for n in names)
+    for line in lines:
+        if skip_depth is None and starts_block(line):
+            skip_depth = line.count("(") - line.count(")")
+            if skip_depth <= 0:
+                skip_depth = None            # one-liner, dropped
+            continue
+        if skip_depth is not None:
+            skip_depth += line.count("(") - line.count(")")
+            if skip_depth <= 0:
+                skip_depth = None
+            continue
+        out.append(line)
+    txt = "\n".join(out)
+    # renumber (property (index n)) inside the remaining (layer ...) blocks, in order
+    import re as _re
+    idx = [0]
+    def renum(m):
+        r = f"{m.group(1)}(index {idx[0]})"; idx[0] += 1; return r
+    txt = _re.sub(r"(\(layer [^\n]*\n\s*\(type \w+\)\n\s*\(property\s*)\(index \d+\)", renum, txt)
+    return txt
+
 def inject_autoroute_settings(dsn, a):
     """Freerouting reads its own (autoroute_settings ...) block from the DSN
     structure; KiCad does not write one, so we add it: per-layer active flags and
@@ -129,12 +173,26 @@ def inject_autoroute_settings(dsn, a):
         (preferred_direction_trace_costs {bc:.1f})
         (against_preferred_direction_trace_costs {bc * 1.5:.1f})
       )
-    )
+INNER    )
 """
+    # 4-layer boards: In1 (GND plane) and In2 (+17V plane) are planes, never routing layers.
+    # Freerouting 1.9 ignores (active off) in a layer_rule -- it routed 7 m of copper on the
+    # planes -- but it does honour the Specctra layer TYPE: a (type power) layer is not
+    # routed on while its (plane ...) stays a connection target, so the inner layers are
+    # re-typed below (KiCad exports every copper layer as (type signal)).
+    inner = "".join(f"      (layer_rule {ly}\n        (active off)\n      )\n" for ly in getattr(a, "inner_layers", []))
+    for i, ly in enumerate(getattr(a, "inner_route", [])):   # inner signal layers: cheap, alternate direction
+        inner += (f"      (layer_rule {ly}\n        (active on)\n        (preferred_direction {'vertical' if i % 2 == 0 else 'horizontal'})\n"
+                  f"        (preferred_direction_trace_costs 1.0)\n        (against_preferred_direction_trace_costs 1.5)\n      )\n")
+    block = block.replace("INNER", inner)
     txt = open(dsn).read()
     key = "    (boundary\n"          # after the (layer ...) definitions, which the block refers to
     assert key in txt, "unexpected DSN: no (boundary"
     txt = txt.replace(key, block + key, 1)
+    if getattr(a, "inner_layers", []):
+        txt = strip_layers(txt, a.inner_layers)
+        print(f"  plane layers {', '.join(a.inner_layers)} removed from the DSN: the router sees the other "
+              f"copper layers only (GND connects through the B.Cu pour / vias; the plane joins on import)")
     # Per-class ROUTING clearances (um) that the KiCad net classes deliberately do not carry
     # (they would flag fixed pad geometry): the same numbers the .kicad_dru rules check for
     # tracks/vias afterwards. HighCurrent (PA_OUT / SPK / +33V5 / AC) 1.0 mm from everything,
@@ -202,6 +260,15 @@ def main():
         sys.exit(f"no project file {pro} next to the board -- route the board in place "
                  f"(--in kicad/cambridge_reverb.kicad_pcb), not a copy")
     board = pcbnew.LoadBoard(a.src)                 # also loads the .kicad_pro net classes
+    inner = [l for l in board.GetEnabledLayers().CuStack() if l not in (pcbnew.F_Cu, pcbnew.B_Cu)]
+    plane_layers = {z.GetLayer() for z in board.Zones() if not z.GetIsRuleArea()}
+    a.inner_layers = [board.GetLayerName(l) for l in inner if l in plane_layers]        # planes: no routing
+    a.inner_route = [board.GetLayerName(l) for l in inner if l not in plane_layers]     # inner signal layers
+    if inner:
+        print(f"  {board.GetCopperLayerCount()} copper layers: planes {a.inner_layers or '-'} (routing off), "
+              f"inner signal {a.inner_route or '-'}")
+        if "--bottom-cost" not in sys.argv:
+            a.bottom_cost = 1.2                     # B.Cu is a signal layer now (the GND plane is In1)
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         sys.exit("DSN export failed")
     print(f"exported {dsn} ({os.path.getsize(dsn)//1024} kB)")

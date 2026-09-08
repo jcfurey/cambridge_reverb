@@ -23,6 +23,8 @@ common-source JFET stage has essentially **0 dB PSRR**: v_drain/v_rail = r_ds/(r
 | + `R_pre` 100 Ω / `C_pre` 220 µF decoupled `+17V_PRE` rail for Q1/Q2/Q_rec | 0.75 mV | **2.7 µV** | 14 mV | **57 dB** |
 | (reference: rail noise switched off) | 0.75 mV | 2.7 µV | 14 mV | 57 dB |
 
+(With the errata #24 RF stopper at the gate, 1 k + 100 pF, the floor is 2.5 µV / 57.6 dB —
+the 100 pF slightly damps the pickup-cable resonance; the 1 k's 4 nV/√Hz is invisible.)
 The regulator was the dominant noise source by **23 dB**; the last row shows the two
 cheap parts bring the preamp to its own floor (2.7 µV rms ≈ 19 nV/√Hz input-referred —
 the pickup's 6 kΩ alone is 10 nV/√Hz). Both fixes are in the schematic (errata #21).
@@ -92,12 +94,23 @@ carry this into every routing (`kicad/cambridge_reverb.kicad_dru`, and the same 
 as per-class clearances in the DSN the router sees): **HighCurrent tracks/vias ≥ 0.6 mm
 from signal copper**, **tank-drive tracks ≥ 1.2 mm from the return path** (1.0 / 2.0 mm
 were tried first: the router then left 14–27 links open, because a class clearance also
-binds the traces entering pads that sit 0.8 mm from a neighbour; the 155 × 90 SMD board
-takes 0.4 / 0.8 mm). After re-routing: THT worst pair `TANK_IN` → `TANK_OUT` **−50 dB**
+binds the traces entering pads that sit 0.8 mm from a neighbour; the SMD board takes
+0.4 / 0.6 mm). After re-routing: THT worst pair `TANK_IN` → `TANK_OUT` **−50 dB**
 (was −37), `PA_OUT` → `PA_BIAS` −66 dB with loop gain −59 dB; SMD `TANK_IN` → `TANK_OUT`
 −42 dB (the two nets share adjacent pads on the tank connector), `PA_OUT` → `TANK_OUT` no
 longer in the table, worst loop −68 dB. Full tables: `kicad/reports/crosstalk-{tht,smd}.md`,
 routing consequences in `kicad/PCB-NOTES.md`.
+
+**Four layers (errata #24, 2026-09-08).** Both boards moved to a 4-layer stack with a solid
+GND plane under F.Cu (In2 is an inner signal layer against the same plane, B.Cu sits on
+the core with its GND pour): the audit's height term goes from 1.5 mm to 0.21 mm for the
+F.Cu / In2 traces, so the same parallel run couples ~10× less (the Howard-Johnson factor
+1/(1+(d/h)²) at d = 1.5 mm falls from 0.5 to 0.02), there is no broadside F.Cu ↔ B.Cu
+term at all, and the planes give RF a return path instead of a loop. On top of that every
+footprint carries keepout areas between its pins (no traces through parts) and the nets
+are classed by impedance (HiZ / Default / Power / HighCurrent) with clearance rules
+between the classes. Two RC stoppers (1 k + 100 pF) sit at the two antenna inputs.
+The re-audited numbers are in `kicad/PCB-NOTES.md`.
 
 ## 5. Thermal — `spice/tran_thermal_lm1875.cir`
 

@@ -22,6 +22,7 @@ safe-bet) and per-zone utilisation. Run from repo root:  python3 kicad/gen/gen_p
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
+import math
 import pcbnew
 import gen_kicad as g
 
@@ -38,8 +39,18 @@ PROFILES = {
   # TOP_POUR: the SMD board also gets a GND pour on F.Cu (SMD ground pads have no
   # through-hole to reach the bottom pour; two pours + the THT GND pads stitching
   # them is the normal 2-layer SMD arrangement). The THT board keeps top = signal only.
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.2, MARGIN=10.0, ZONE_GAP=3.5, BOT_GAP=4.5, TOP_POUR=False, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
-  "smd": dict(BW=155.0, BH=90.0,  GAP=0.4, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.0, TOP_POUR=True,  OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
+  # GAP: 1.6 / 0.5 mm since the footprint keepouts (errata #24) -- traces now go AROUND parts,
+  # so the gaps between them are the routing channels.
+  # LAYERS: both boards are 4-layer (2026-09-08): F.Cu signal / In1 solid GND plane /
+  # In2 +17V plane / B.Cu signal + GND pour. Every outer-layer trace then sits 0.21 mm
+  # over a plane (JLC 7628 prepreg) instead of 1.5 mm: ~10x less trace-to-trace
+  # coupling, a real RF/EMI reference, and the router no longer has to thread between
+  # pins. Set LAYERS=2 to get the old two-layer boards back (TOP_POUR then applies).
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.6, MARGIN=10.0, ZONE_GAP=3.5, BOT_GAP=4.5, TOP_POUR=False, LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
+  # SMD board 170x100 since the 4-layer / keepout regime (was 155x90, Part 7's "safe bet"):
+  # at a 0.5 mm part gap no via fits next to an SMD ground or rail pad, and 30 of 52 open
+  # links were exactly those. 170x100 still fits any chassis the 190x115 original did.
+  "smd": dict(BW=170.0, BH=100.0, GAP=1.2, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
 }
 PROFILE = "tht"
 MARGIN = 10.0              # (set per profile in configure())
@@ -47,9 +58,10 @@ ZONE_GAP = 4.0             # empty channel between columns (routing room)
 ZONE_VGAP = 2.0            # gap between zones stacked in one column
 def configure(profile):
     """Select the build profile: board size, margins, part gap, output path (+ gen_kicad's footprint map)."""
-    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR
+    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR, LAYERS
     PROFILE = profile; P = PROFILES[profile]
-    BW, BH, GAP, MARGIN, ZONE_GAP, TOP_POUR = P["BW"], P["BH"], P["GAP"], P["MARGIN"], P["ZONE_GAP"], P["TOP_POUR"]
+    BW, BH, GAP, MARGIN, ZONE_GAP, LAYERS = P["BW"], P["BH"], P["GAP"], P["MARGIN"], P["ZONE_GAP"], P["LAYERS"]
+    TOP_POUR = P["TOP_POUR"]        # SMD board: F.Cu GND pour connects the SMD ground pads solid (plus a via each from the router)
     EDGE_Y   = BH - MARGIN - 2.5   # wiring-edge connector row (Part 5: "all pads on one edge")
     MAIN_TOP = MARGIN + 1.5
     MAIN_BOT = EDGE_Y - P["BOT_GAP"]   # bodies stay above the connector row
@@ -171,11 +183,154 @@ def gnd_pour(board, netmap, w, h, layer=None):
         zone.SetPadConnection(pcbnew.ZONE_CONNECTION_NONE)
     zone.SetNetCode(netmap["GND"].GetNetCode())
     zone.SetAssignedPriority(0)
+    if LAYERS == 4 and layer is None:
+        # 4-layer: the In1 plane grounds every pad (thermal reliefs there); the B.Cu pour
+        # is shield and return copper only, so it makes no pad connections -- no starved
+        # spokes where bottom traces crowd a ground pad
+        zone.SetPadConnection(pcbnew.ZONE_CONNECTION_NONE)
     sps = zone.Outline(); sps.NewOutline()
     for (px, py) in [(0.5, 0.5), (w - 0.5, 0.5), (w - 0.5, h - 0.5), (0.5, h - 0.5)]:
         sps.Append(mm(px), mm(py))
     zone.SetIsFilled(True)
     board.Add(zone)
+
+IN2_PLANE = None    # "+17V" to make In2 a +17 V plane; None = In2 is a routing layer (see below)
+
+def planes(board, netmap, w, h):
+    """4-layer stack: In1 = solid GND plane (the reference for every F.Cu trace and every
+    In2 trace). In2 was a +17V plane at first; with the footprint keepouts confining the
+    outer layers to the gaps between parts, two routing layers left 33-43 links open, so
+    In2 is a signal layer (long runs go there, under the GND plane, and +17 V is routed
+    as 1.0 mm Power traces). Set IN2_PLANE = "+17V" to get the plane back. Through-hole
+    pads connect with thermal reliefs; SMD pads get vias from the router."""
+    for layer, net in ((pcbnew.In1_Cu, "GND"), (pcbnew.In2_Cu, IN2_PLANE)):
+        if not net or net not in netmap:
+            continue
+        zone = pcbnew.ZONE(board)
+        zone.SetLayer(layer)
+        zone.SetNetCode(netmap[net].GetNetCode())
+        zone.SetAssignedPriority(0)
+        zone.SetZoneName(f"plane_{net}")
+        sps = zone.Outline(); sps.NewOutline()
+        for (px, py) in [(0.5, 0.5), (w - 0.5, 0.5), (w - 0.5, h - 0.5), (0.5, h - 0.5)]:
+            sps.Append(mm(px), mm(py))
+        zone.SetIsFilled(True)
+        board.Add(zone)
+
+def stitching_vias(board, netmap, w, h, pitch=15.0, inset=3.2):
+    """GND vias around the perimeter every ~15 mm (Part 4's rule), tying the B.Cu pour to
+    the In1 plane: a low-impedance ground ring / shield edge. Skips the corner holes,
+    the wiring-edge pads and the SMD board's left-edge jack pads."""
+    if "GND" not in netmap:
+        return 0
+    pads = [(pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y), pcbnew.ToMM(max(p.GetSize().x, p.GetSize().y)) / 2)
+            for fp in board.GetFootprints() for p in fp.Pads()]
+    holes = [(5.0, 5.0), (w - 5.0, 5.0), (5.0, h - 5.0), (w - 5.0, h - 5.0)]
+    pts = []
+    n_x = max(1, int((w - 2 * inset) // pitch)); n_y = max(1, int((h - 2 * inset) // pitch))
+    for i in range(n_x + 1):
+        x = inset + (w - 2 * inset) * i / n_x
+        pts += [(x, inset), (x, h - inset)]
+    for j in range(1, n_y):
+        y = inset + (h - 2 * inset) * j / n_y
+        pts += [(inset, y), (w - inset, y)]
+    n = 0
+    for x, y in pts:
+        if any(math.dist((x, y), hc) < 5.0 for hc in holes):
+            continue
+        if any(math.dist((x, y), (px, py)) < pr + 1.6 for px, py, pr in pads):
+            continue
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(V(x, y)); v.SetDrill(mm(0.4)); v.SetWidth(mm(0.8))
+        v.SetViaType(pcbnew.VIATYPE_THROUGH); v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
+        v.SetNetCode(netmap["GND"].GetNetCode()); v.SetLocked(True)
+        board.Add(v); n += 1
+    return n
+
+def _merged_intervals(iv, min_gap=0.0):
+    iv = sorted(iv); out = []
+    for a, b in iv:
+        if out and a <= out[-1][1] + min_gap:
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+
+def footprint_keepouts(board, min_gap=0.5):
+    """'No routes through footprints': for every real part, rule areas (tracks disallowed,
+    vias too under SMD parts; component side F.Cu) covering the space BETWEEN its pads -- the strips between
+    the pins of a row and the body between two rows -- across the full courtyard. A
+    trace can still reach any pad from the outside; it can no longer sneak between the
+    legs of a resistor, under a DIP, or through the toroid. The router sees them as
+    Specctra keepouts, KiCad DRC checks them afterwards."""
+    # power-only parts (every pad on a HighCurrent / Power / GND net: the bridge, filter
+    # cans, output cap, clamp diodes, transformer and speaker pads ...) are exempt: the
+    # 1.5 mm rail traces have to pass somewhere, and a rail under a rail part is not the
+    # noise path this rule exists for
+    import json
+    pro = json.load(open(os.path.join(REPO_KI, "cambridge_reverb.kicad_pro")))
+    power_nets = {p["pattern"] for p in pro["net_settings"]["netclass_patterns"]
+                  if p["netclass"] in ("HighCurrent", "Power")} | {"GND"}
+    n = 0
+    for fp in board.GetFootprints():
+        ref = fp.GetReference()
+        if ref.startswith(("TP", "FID", "H")) or fp.GetFPIDAsString().startswith("MountingHole"):
+            continue
+        pads = list(fp.Pads())
+        if len(pads) < 2:
+            continue
+        if all(p.GetNetname() in power_nets for p in pads):
+            continue
+        cy = fp.GetCourtyard(pcbnew.F_CrtYd)
+        bb = cy.BBox() if cy.OutlineCount() else fp.GetBoundingBox(False, False)
+        X0, Y0, X1, Y1 = (pcbnew.ToMM(bb.GetLeft()), pcbnew.ToMM(bb.GetTop()), pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom()))
+        pbs = [p.GetBoundingBox() for p in pads]
+        pinfo = [(pcbnew.ToMM(b.GetLeft()), pcbnew.ToMM(b.GetRight()), pcbnew.ToMM(b.GetTop()), pcbnew.ToMM(b.GetBottom()), p.GetNetname())
+                 for p, b in zip(pads, pbs)]
+        xs = _merged_intervals([(l, r) for l, r, _, _, _ in pinfo])
+        ys = _merged_intervals([(t, b) for _, _, t, b, _ in pinfo])
+        multirow = len(ys) > 1                       # DIP / two-row parts: the body rect below covers the middle
+        rects = []
+        for (a0, a1), (b0, b1) in zip(xs, xs[1:]):
+            if b0 - a1 < min_gap:
+                continue
+            left = [q for q in pinfo if q[1] <= a1 + 1e-6 and q[1] > a0 - 1e-6]
+            right = [q for q in pinfo if q[0] >= b0 - 1e-6 and q[0] < b1 + 1e-6]
+            # adjacent pins that share a net (a unity buffer's out/-in, a pot's wiper tied to
+            # its end) need the tiny link between them: no strip there, per row
+            rows = {}
+            for q in left + right:
+                rows.setdefault(round((q[2] + q[3]) / 2, 1), set()).add(q[4])
+            if multirow:
+                for yc, nets in rows.items():
+                    if len(nets) > 1:
+                        band = [q for q in left + right if round((q[2] + q[3]) / 2, 1) == yc]
+                        y0 = min(q[2] for q in band) - 0.3; y1 = max(q[3] for q in band) + 0.3
+                        rects.append((a1, max(Y0, y0), b0, min(Y1, y1)))   # pin-row band only
+            else:
+                if any(len(n) > 1 for n in rows.values()) or len(set(q[4] for q in left + right)) > 1:
+                    rects.append((a1, Y0, b0, Y1))                          # full courtyard height
+        for (a0, a1), (b0, b1) in zip(ys, ys[1:]):
+            if b0 - a1 >= min_gap: rects.append((X0, a1, X1, b0))
+        # vias: forbidden under SMD parts (assembly), allowed under through-hole parts -- a via
+        # beneath a resistor body is not a route through it, and the inner-layer runs need a
+        # way up to the pads (without this a third of the links stayed open)
+        smd_part = any(p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD for p in pads)
+        for x0, y0, x1, y1 in rects:
+            z = pcbnew.ZONE(board)
+            z.SetIsRuleArea(True); z.SetZoneName(f"kp_{ref}")
+            z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(smd_part)
+            z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+            # component side only: a B.Cu trace under a part has the whole board and the In1
+            # GND plane between itself and the part (and In2 is under the plane too). With
+            # the keepouts on both outer layers the router left a third of the links open.
+            ls = pcbnew.LSET(); ls.addLayer(pcbnew.F_Cu)
+            z.SetLayerSet(ls)
+            sps = z.Outline(); sps.NewOutline()
+            for px, py in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]:
+                sps.Append(mm(px), mm(py))
+            board.Add(z); n += 1
+    return n
 
 def escape_stubs(board, fps):
     """Pre-routed, LOCKED escape stubs from the LM1875's inner pins.
@@ -321,6 +476,7 @@ def main():
     g.build()
     comps = [c for c in g.COMPONENTS if c["fp"]]
     board = pcbnew.NewBoard(OUT)
+    board.GetDesignSettings().SetCopperLayerCount(LAYERS)
     netmap = make_nets(board, comps)
 
     # load everything first (at the origin) so we can measure real bounding boxes
@@ -468,14 +624,20 @@ def main():
     outline(board, BW, BH)
     mounting_holes(board, BW, BH)
     keepouts(board, BW, BH)
-    if TOP_POUR:                              # the assembled (SMD) board: JLCPCB fiducials
+    nkp = footprint_keepouts(board)
+    if PROFILE == "smd":                      # the assembled board: JLCPCB fiducials
         fiducials(board, BW, BH)
     stubs = escape_stubs(board, fps)
-    gnd_pour(board, netmap, BW, BH)
+    gnd_pour(board, netmap, BW, BH)           # B.Cu: GND pour around the bottom traces (shield + return)
     if TOP_POUR:
         gnd_pour(board, netmap, BW, BH, layer=pcbnew.F_Cu)
+    nst = 0
+    if LAYERS == 4:
+        planes(board, netmap, BW, BH)
+        nst = stitching_vias(board, netmap, BW, BH)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(OUT, board)
+    print(f"  {LAYERS} copper layers; {nkp} footprint keepout areas; {nst} perimeter GND stitching vias")
 
     # chassis-fit packing-density check (bounding boxes, as before)
     areas_all = [bbox_mm(fp)[0] * bbox_mm(fp)[1] for _, fp in fps.values()]

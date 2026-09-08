@@ -67,6 +67,7 @@ C_cpl12,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_cpl_out,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_in_pre,Capacitor (film/ceramic),47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_pres,Capacitor (film/ceramic),100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_rf1,"RF stopper, guitar input (C0G)",100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_s1,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_s2,Capacitor (electrolytic),10uF/25V,CP_Radial_D5.0mm_P2.00mm,,,1,
 Q1,Preamp JFET,MMBF5457,TO-92_Inline_Wide,MMBF5457CT-ND,863-MMBF5457,1,AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. THT board: SOT-23 on a TO-92 adapter or J113 -- pads 1/2/3 = D/S/G (errata #18); SMD variant fits it directly
@@ -75,6 +76,7 @@ R_d1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_d2,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_g1,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_g2,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_rf1,"RF stopper, guitar input (with C_rf1: 1.6 MHz)",1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_s1,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,"2K2 biases Vd~12V; ~1-1.2k -> 8-9V target (errata #15), trim per device"
 R_s2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,see R_s1 (errata #15)
 TP_GND_PRE,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
@@ -87,6 +89,7 @@ C_rec_byp,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_rev1,Capacitor (electrolytic),1uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_rev2,Capacitor (film/ceramic),10nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_rev4,Capacitor (film/ceramic),100nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
+C_rf2,"RF stopper, tank return (C0G)",100pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_wetmix,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 IC1,Dual op-amp: reverb tank driver + wet/dry summer,TL072CP,DIP-8_W7.62mm,296-1775-5-ND,595-TL072CP,1,DIP-8; use a machined-pin SOCKET_IC
 POT_REV,Reverb level (reused/off-board),reuse,WirePad_1x03_P2.54mm_D1.2mm,,,1,
@@ -102,6 +105,7 @@ R_mixfb,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec_bias,Resistor,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
+R_rf2,"RF stopper, reverb tank return (with C_rf2)",1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_wetmix,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 TP_BLEND,Test point (header pin or wire loop),BLEND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_GND_REV,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net

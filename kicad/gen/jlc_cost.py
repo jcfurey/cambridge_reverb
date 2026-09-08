@@ -16,7 +16,8 @@ JOINTS = {"R_0805": 2, "R_1206": 2, "C_1206": 2, "C_1210": 2, "D_SMA": 2, "D_SOD
 # footprints whose typical JLC library part is BASIC (no $3 loading fee): 0805 1 % resistors
 # of E24 values, 1206 X7R/C0G caps of common values, SOD-123 1N4148W, SMA S1M. Everything
 # else (1210 caps, E96 resistor values, SOT-23 JFETs, odd cap values) is EXTENDED.
-BASIC_R_E24 = {"10R","100R","1k","1.5k","2.2k","3.3k","4.7k","5.1k","6.8k","10k","15k","22k","33k","47k","68k","100k","150k","220k","330k","470k","1M","240R"}
+BASIC_R_E24 = {"10R","100R","180R","240R","470R","1k","1.5k","2.2k","3.3k","4.7k","5.1k","6.8k","10k","15k","22k","33k","47k","68k",
+               "100k","150k","180k","220k","330k","470k","1M"}
 BASIC_C = {"100pF","470pF","1nF","2.2nF","4.7nF","10nF","22nF","47nF","100nF","1uF"}
 def joints_for(fp):
     for k, n in JOINTS.items():
@@ -27,6 +28,7 @@ def is_basic(comment, fp):
     if fp.startswith("C_1206"): return comment.split("/")[0].split(" ")[0] in BASIC_C
     if fp.startswith("D_SOD-123") and "4148" in comment: return True
     if fp.startswith("D_SMA") and ("4007" in comment or "S1M" in comment): return True
+    if fp.startswith("SOT-23") and "3904" in comment: return True      # MMBT3904: basic
     return False
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--boards", type=int, default=5); a = ap.parse_args()
@@ -45,7 +47,8 @@ def main():
     print(f"  assembly estimate: setup ${setup:.2f} + stencil ${stencil:.2f} + joints {joints}x{n}x${per_joint} = ${per_joint*joints*n:.2f}"
           f" + extended {len(ext)}x${ext_fee:.0f} = ${ext_fee*len(ext):.2f}  ->  ${asm:.2f} for {n} boards (${asm/n:.2f} each)")
     print(f"  per-board sensitivity: one more part TYPE (extended) = ${ext_fee/n:.2f}/board; one more 2-pad part = ${2*per_joint:.4f}/board")
-    print("  PCB (2-layer, 1 oz, HASL LF, green, 1.6 mm): 155x90 mm x5 is in the area-priced tier; 190x115 THT board likewise."
-          " Both boards use >= 0.3/0.45 mm vias and >= 0.25 mm tracks -> no via/track surcharges.")
+    print("  PCB (4-layer JLC04161H-7628, 1 oz outer / 0.5 oz inner, HASL LF, green, 1.6 mm): the 100x100 mm 4-layer tier is ~$7/5 pcs;"
+          " 155x90 and 190x115 are area-priced above it (expect roughly $30-60 per five, get a live quote)."
+          " Both boards use >= 0.3/0.45 mm vias and >= 0.25 mm tracks -> no via/track surcharges; inner-layer clearances are >= 0.2 mm.")
 if __name__ == "__main__":
     main()

@@ -33,7 +33,9 @@ Vin  gsrc 0 AC 1
 R_pu gsrc pu1 6k
 L_pu pu1 GUITAR_IN 2.5
 C_cab GUITAR_IN 0 470p
-C_in_pre GUITAR_IN Q1G 47n
+C_in_pre GUITAR_IN RF1 47n
+R_rf1 RF1 Q1G 1k                  ; RF stopper (errata #24): 1k + 100 pF, 1.6 MHz
+C_rf1 Q1G 0 100p
 R_g1 Q1G 0 1meg
 J1 Q1D Q1G Q1S 2N5457
 R_d1 VPRE Q1D 10k

@@ -50,6 +50,7 @@
 | C_cpl_out | Q2 drain → tone coupling | 1µF film | errata #20: the recovered 470 pF-only coupling was a 1.3 kHz high-pass |
 | C_treble | Vox "chime" cap — bright cap across the top of the volume pot | 470pF | |
 | R_pre, C_pre | `+17V_PRE` rail decoupling for Q1/Q2/Q_rec | 100R, 220µF/25V | errata #21: the JFET stages have ~0 dB PSRR; 7 Hz corner keeps the LM317's noise and ripple out |
+| R_rf1, C_rf1 | RF stopper at Q1's gate (guitar cable = antenna) | 1K, 100pF C0G | errata #24: 1.6 MHz corner; also R_rf2/C_rf2 at the recovery JFET (tank cable) |
 
 ### Tone stack — Bass / Treble + MID CUT `[DESIGNED — errata #20]`
 

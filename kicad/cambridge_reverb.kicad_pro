@@ -543,10 +543,27 @@
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
+        "name": "HiZ",
+        "pcb_color": "rgb(120, 60, 200)",
+        "schematic_color": "rgb(120, 60, 200)",
+        "track_width": 0.3,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.3,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
         "name": "HighCurrent",
         "pcb_color": "rgb(194, 0, 0)",
         "schematic_color": "rgb(194, 0, 0)",
-        "track_width": 2.5,
+        "track_width": 1.5,
         "via_diameter": 1.6,
         "via_drill": 1.0,
         "wire_width": 6
@@ -563,7 +580,7 @@
         "name": "Power",
         "pcb_color": "rgb(255, 132, 0)",
         "schematic_color": "rgb(255, 132, 0)",
-        "track_width": 1.5,
+        "track_width": 1.0,
         "via_diameter": 1.4,
         "via_drill": 0.8,
         "wire_width": 6
@@ -643,6 +660,106 @@
       {
         "netclass": "TankDrive",
         "pattern": "TANK_IN"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "GUITAR_IN"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "RF1"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "Q1G"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "Q2G"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "RF2"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "QRG"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "TANK_OUT"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JA"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JB"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JWB"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JTA"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JTB"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JWT"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "JOUT"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "TONE_OUT"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "DRVP"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "OBUF_IN"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "WN1"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "LFO_P"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "MRB_T"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "PA_BIAS"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "REVWCW"
+      },
+      {
+        "netclass": "HiZ",
+        "pattern": "WET"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "+17V_PRE"
+      },
+      {
+        "netclass": "HighCurrent",
+        "pattern": "ZOB"
       }
     ]
   },

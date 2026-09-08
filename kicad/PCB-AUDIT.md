@@ -72,8 +72,9 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
   honour it; check the tremolo area by eye.
 
 ## 2b. The SMD variant's placement
-Same generator, `--profile smd`: 155 × 90 mm, 6 mm margin, 0.4 mm part gap (0.6
-before the errata #20 tone parts), 3 mm channels, pad row kept clear of the corner
+Same generator, `--profile smd`: **170 × 100 mm, 1.0 mm part gap** since errata #24
+(155 × 90 / 0.4–0.5 mm before: on four layers with the footprint keepouts no ground via
+fitted beside the SMD pads), 6 mm margin, 3 mm channels, pad row kept clear of the corner
 holes; the three input-jack pad groups run down the left edge because the bottom
 edge is ~9 mm short for 13 connector groups (PCB-NOTES). All four columns fit under
 the wiring-edge limit; pre-route DRC 0 errors / 0 warnings beyond the stub warnings.
@@ -105,7 +106,7 @@ the wiring-edge limit; pre-route DRC 0 errors / 0 warnings beyond the stub warni
   LM1875 annular ring, §1) is resolved.
 
 ## 5. Copper, GND pour, layers
-- 2-layer. **Bottom = GND pour** connecting all GND pads; refilled after routing.
+- **4-layer since 2026-09-08 (errata #24):** In1 solid GND plane, In2 inner signal layer, B.Cu GND pour + perimeter stitching vias; signals on F.Cu / In2 / B.Cu. (Was: 2-layer, bottom = GND pour.)
 - Mounting holes keep 0.5 mm of pour clearance; no isolated-copper items.
 - Star-ground / stitching (Part 3/4) remain hand decisions on top of the pour.
 
