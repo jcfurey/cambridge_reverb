@@ -20,6 +20,8 @@ Rdry  dm sumj 100k
 Cwet  w  wm   1u
 Rwet  wm sumj 100k
 Rfb   sumj out 100k                   ; unity inverting summer
+* (C_mixfb 33 pF across Rfb, errata #31, is left out here: it sets a 48 kHz corner and does
+*  nothing to bias, gain at 1 kHz or headroom -- spice/ac_summer_stability.cir is its sim)
 X1    vb sumj out vcc 0 OPAMP_RAIL
 Rload out 0 47k
 

@@ -1,0 +1,67 @@
+REVERB SUMMER (IC1-B) -- stray capacitance on the summing node and the feedback capacitor that answers it
+* The inverting wet/dry summer has three 100 k resistors meeting at SUMJ (dry in, wet in,
+* feedback). Any capacitance from SUMJ to ground -- the TL072's own input (about 5 pF),
+* its DIP socket pin, the pads and the trace over the ground plane (kicad/gen/rf_audit.py
+* measures 5-6 pF of copper on the routed boards) -- puts a pole INSIDE the feedback loop at
+* 1 / (2 pi 33k C): 480 kHz for 10 pF, below the 1 MHz at which the loop gain crosses unity
+* (3 MHz GBW / noise gain 3). The result is not a loss in the audio band; it is a
+* resonant peak in the closed-loop response around 500-600 kHz: a stage that rings, and
+* that hands any RF arriving on the tank or pedal cables a gain it should not have.
+* This is the one node on the board where a few pF of layout capacitance matter.
+*   cfb = 0     as drawn until errata #31
+*   cfb = 33p   C_mixfb across R_mixfb (C0G): the feedback divider is then capacitive
+*               at high frequency (33 pF against 5-25 pF), the pole is cancelled and the
+*               stage rolls off at 48 kHz -- 0.09 dB down at 7 kHz, 0.7 dB at 20 kHz.
+* Op-amp: TL072 small-signal, 3 MHz GBW with a second pole at 6 MHz (about 63 degrees of
+* phase margin as a follower), 150 ohm open-loop output resistance.
+
+.param cs=10p
+.param cfb=0
+.subckt TL072SS inp inn out
+Gm 0 p inp inn 1m
+Rp p 0 200meg
+Cp p 0 53.05p
+E2 q 0 p 0 1
+R2 q r 1k
+C2 r 0 26.5p
+E3 o 0 r 0 1
+Ro o out 150
+.ends
+V_dry DRY 0 AC 1
+C_drymix DRY DRMX 1u
+R_drymix DRMX SUMJ 100k
+R_wetmix WMX SUMJ 100k
+V_wet WMX 0 0
+R_mixfb SUMJ BLEND 100k
+C_mixfb SUMJ BLEND {cfb + 1f}
+C_stray SUMJ 0 {cs}
+X1 0 SUMJ BLEND TL072SS
+* load: R_trem1 10k into the tremolo node, plus the BLEND copper
+R_trem1 BLEND 0 10k
+C_load BLEND 0 30p
+
+.control
+foreach f 0 33p
+  foreach c 5p 10p 15p 25p
+    alterparam cfb = $f
+    alterparam cs = $c
+    reset
+    ac dec 200 100 10meg
+    meas ac g1k FIND vdb(blend) AT=1000
+    meas ac gpk MAX vdb(blend)
+    meas ac fpk MAX_AT vdb(blend)
+    meas ac g20k FIND vdb(blend) AT=20000
+    meas ac g7k FIND vdb(blend) AT=7000
+    let peak = gpk - g1k
+    let d7 = g7k - g1k
+    let d20 = g20k - g1k
+    set sp="$&peak"
+    set sf="$&fpk"
+    set s7="$&d7"
+    set s20="$&d20"
+    echo cfb=$f cs=$c | peaking=$sp dB at $sf Hz | 7 kHz=$s7 dB | 20 kHz=$s20 dB
+    destroy all
+  end
+end
+.endc
+.end

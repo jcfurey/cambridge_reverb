@@ -22,6 +22,11 @@ kicad/reports/verify-<profile>.txt (committed evidence).
                 topology, electrolytic polarity against the DC operating point, supply
                 pins, pot directions, footswitch lines, vactrol LED polarity
   silkscreen    every part has a visible reference of legal size on the front silk
+  JLCPCB limits the project's DRC constraints are at or above JLCPCB's published ones
+  RF rules      kicad/gen/rf_audit.py on the finished copper: signal / GND / signal / GND
+                with nothing routed on a plane, no slot in a plane beyond the unavoidable
+                ones, edge pull-back, pour gaps, the ground fence and stitching density,
+                a via for every SMD ground pad, and no stray capacitance in the audio band
   order package BOM == CPL == placed SMD footprints, LCSC number on every line, CPL
                 coordinates and rotations follow the board, Gerber / drill set complete
   SPICE         spice/run_all.sh exits 0, the key results are inside their limits, and
@@ -295,6 +300,61 @@ def check_package(rep, pcbnew, b):
         s = json.load(open(summ))
         rep.add("order package", s["unconnected"] == 0 and s["drc_errors"] == 0, "package was exported from a fully routed, DRC-clean board")
 
+# JLCPCB's published limits (jlcpcb.com/capabilities/pcb-capabilities, multilayer, 1 oz, read
+# 2026-11-11) against the constraint the project enforces in DRC: (project key, JLCPCB, note)
+JLC_LIMITS = [
+    ("min_track_width", 0.09, "track width / spacing 0.09 mm"), ("min_clearance", 0.09, "spacing"),
+    ("min_via_diameter", 0.45, "vias under 0.45 mm cost extra (absolute minimum 0.25)"),
+    ("min_through_hole_diameter", 0.3, "holes under 0.3 mm cost extra (absolute minimum 0.15)"),
+    ("min_via_annular_width", 0.20, "annular ring: 0.20 recommended, 0.15 absolute"),
+    ("min_hole_to_hole", 0.45, "pad hole to hole 0.45 (via to via 0.2)"),
+    ("min_hole_clearance", 0.35, "PTH to track 0.35 recommended (0.28 min); inner-layer PTH hole to copper 0.3"),
+    ("min_copper_edge_clearance", 0.40, "copper to a routed edge 0.2 + the 0.2 edge tolerance (V-cut 0.4)"),
+    ("solder_mask_min_width", 0.10, "mask dam 0.10 (green)"),
+    ("min_text_height", 1.0, "legend height 1.0"), ("min_text_thickness", 0.15, "legend stroke 0.15"),
+]
+def check_jlc(rep, pcb):
+    pro = json.load(open(os.path.splitext(pcb)[0] + ".kicad_pro")); r = pro["board"]["design_settings"]["rules"]
+    low = [f"{k} = {r.get(k)} (JLCPCB: {v}, {note})" for k, v, note in JLC_LIMITS if r.get(k, 0) < v - 1e-9]
+    rep.add("JLCPCB limits", not low, f"all {len(JLC_LIMITS)} board constraints at or above JLCPCB's published limits (DRC enforces them)" if not low else "; ".join(low))
+    dru = open(os.path.splitext(pcb)[0] + ".kicad_dru").read()
+    rep.add("JLCPCB limits", "silk_to_pad" in dru and "0.15mm" in dru, "silkscreen text 0.15 mm off every pad (rule silk_to_pad)")
+
+def check_rf(rep, pcbnew, b, pcb, profile):
+    import rf_audit
+    R = rf_audit.audit(pcb); A = lambda ok, text: rep.add("RF rules", ok, text)
+    roles = [(l, role) for l, role, _ in R["stack"]]
+    A(roles == [("F.Cu", "signal"), ("In1.Cu", "GND plane"), ("In2.Cu", "signal"), ("B.Cu", "GND plane")] and R["tracks_on_planes"] == 0,
+      "stack is signal / GND / signal / GND and nothing is routed on a plane: " + ", ".join(f"{l} {r}" for l, r in roles))
+    lim = {"In1.Cu": (12.0, 6), "B.Cu": (16.0, 16)}
+    for name, d in R["planes"].items():
+        longest = d["longest"][0] if d["longest"] else (0, 0, "-")
+        mx, cnt = lim.get(name, (16.0, 16))
+        A(d["pieces"] == 1 and longest[0] <= mx and d["over5"] <= cnt,
+          f"{name} plane: one piece, {d['coverage']} % copper, {d['over5']} openings over 5 mm, longest {longest[0]:g} mm at {longest[2]} (limit {mx:g} mm, {cnt})")
+    e = min(R["edge"].values())
+    A(e >= 0.45, f"copper to board edge >= 0.5 mm on every layer (measured " + ", ".join(f"{l} {v:g}" for l, v in R["edge"].items()) + ")")
+    g = R.get("pour_gap", {})
+    A(bool(g) and g["any"] >= 0.38 and (g["hiz"] is None or g["hiz"] >= 0.85),
+      f"top pour keeps {g.get('any')} mm from the nearest trace and {g.get('hiz')} mm from HiZ traces (rules 0.5 / 1.0 mm; DRC is the exact check)")
+    f = R["fence"]
+    A(f["vias"] >= 60 and f["median"] <= 5.5 and f["largest"] <= 30, f"perimeter fence: {f['vias']} ground vias, median pitch {f['median']:g} mm, largest gap {f['largest']:g} mm")
+    st = R["stitch"]
+    A(st["furthest"] <= 16.0 and st["mean"] <= 5.0, f"stitching: {st['gnd_vias']} ground vias, no point further than {st['furthest']:g} mm from one (mean {st['mean']:g} mm)")
+    sg = R["smd_gnd"]
+    A(not sg["lonely"], f"{sg['pads']} SMD ground pads, each with a via to the planes" if not sg["lonely"] else f"SMD ground pads without a via: {sg['lonely']}")
+    par = [r for r in R["parasitics"] if r[1] != "SUMJ"]
+    low = [f"{r[1]} {r[0] / 1e3:.0f} kHz" for r in par if r[0] < 80e3]
+    A(not low, f"stray capacitance: lowest corner {par[0][1]} {par[0][2]:.0f} pF -> {par[0][0] / 1e3:.0f} kHz; all {len(par)} sensitive nets above 80 kHz (< 0.3 dB at 20 kHz)" if not low else "corners in the audio band: " + ", ".join(low))
+    net = {(fp.GetReference(), p.GetNumber()): p.GetNetname() for fp in b.GetFootprints() for p in fp.Pads()}
+    A({net.get(("C_mixfb", "1")), net.get(("C_mixfb", "2"))} == {"SUMJ", "BLEND"},
+      f"summing node SUMJ ({R['c_sumj']:.0f} pF of copper) is compensated: C_mixfb across R_mixfb")
+    vias = [t for t in b.GetTracks() if t.GetClass() == "PCB_VIA"]
+    blind = sum(1 for v in vias if v.GetViaType() != pcbnew.VIATYPE_THROUGH or v.TopLayer() != pcbnew.F_Cu or v.BottomLayer() != pcbnew.B_Cu)
+    A(blind == 0, f"all {len(vias)} vias are through vias (no blind or buried vias: the standard 4-layer process)" if blind == 0 else f"{blind} blind / buried vias")
+    nfp_ = sum(1 for fp in b.GetFootprints() for p in fp.Pads() if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH and not p.GetRemoveUnconnected())
+    A(nfp_ == 0, "unused inner-layer pad copper removed on every through-hole pad (plane openings follow the holes)" if nfp_ == 0 else f"{nfp_} PTH pads still carry unused inner copper")
+
 def spice_value(s):
     m = re.match(r"^(\d+(?:\.\d+)?)(meg|[kmunpf]?)", s.lower())
     return None if not m else float(m.group(1)) * {"": 1, "k": 1e3, "meg": 1e6, "m": 1e-3, "u": 1e-6, "n": 1e-9, "p": 1e-12, "f": 1e-15}[m.group(2)]
@@ -343,6 +403,10 @@ def check_spice(rep, vals, run):
     for m in re.finditer(r"ROW opt=(\d) vin_pk=([\d.]+)[^\n]*\n(?:[^\n]*\n)?[^\n]*THD: ([\d.]+) %", t): thd[(m.group(1), m.group(2))] = float(m.group(3))
     lim.append((thd.get(("2", "0.1"), 99) < 1.0 and thd.get(("2", "0.2"), 99) < 2.0, f"preamp as built (no source bypass): {thd.get(('2', '0.1'))} % THD at 0.1 V pk, {thd.get(('2', '0.2'))} % at 0.2 V"))
     lim.append((thd.get(("0", "0.1"), 0) > 20, f"...and the reason the bypass caps are optional: {thd.get(('0', '0.1'))} % at 0.1 V with both fitted"))
+    t = res("ac_summer_stability.txt")
+    pk0 = num(t, r"cfb=0 cs=10p \| peaking=([-\d.eE+]+)"); pk1 = max(num(t, rf"cfb=33p cs={c} \| peaking=([-\d.eE+]+)") for c in ("5p", "10p", "15p", "25p"))
+    d20 = num(t, r"cfb=33p cs=10p .*20 kHz=([-\d.eE+]+)")
+    lim.append((pk1 <= 0.1 and d20 >= -1.0, f"reverb summer with C_mixfb: {pk1:.2f} dB of peaking for 5-25 pF on the summing node, {d20:.1f} dB at 20 kHz (without it: {pk0:.1f} dB at 10 pF)"))
     t = res("dc_preamp_jfet.txt"); vd = num(t, r"v\(d\) = ([\d.eE+-]+)")
     lim.append((6 <= vd <= 14, f"JFET drain bias {vd:.1f} V (6 .. 14; trim R_s for 8-9)"))
     t = res("sweep_pa_headroom.txt"); m = re.search(r"^33\.5 (\S+) (\S+) (\S+) (\S+) (\S+)", t, re.M)
@@ -368,6 +432,8 @@ def main():
     check_pinmap(rep, pins, fps, pinname, pcbnew, b)
     check_electrical(rep, pcbnew, b)
     check_silk(rep, pcbnew, b)
+    check_jlc(rep, pcb)
+    check_rf(rep, pcbnew, b, pcb, a.profile)
     if a.profile == "smd":
         check_package(rep, pcbnew, b)
     check_spice(rep, vals, not a.no_spice)

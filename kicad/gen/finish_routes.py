@@ -29,14 +29,25 @@ import pcbnew
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from route_board import CLASS_CLEARANCE_UM, prune_zero_length
+from route_board import CLASS_CLEARANCE_UM, prune_zero_length, refill, through_vias
 
 RES = 0.1                     # grid pitch, mm
 SAFETY = 0.08                 # added to every clearance: grid quantisation + 45-degree corners
 PAINT = RES / 2               # shapes are painted this much fat, so a cell centre just outside one still counts
 VIA_EXTRA = 0.1               # vias keep this much more than tracks
-ROUTE_LAYERS = ["F.Cu", "In2.Cu", "B.Cu"]          # In1 is the GND plane
-LAYER_COST = {"F.Cu": 1.0, "In2.Cu": 1.0, "B.Cu": 1.15}
+ROUTE_LAYERS = ["F.Cu", "In2.Cu"]                  # set from the board in configure(): every copper layer
+                                                   # that is not a plane (a zone named "plane_...")
+LAYER_COST = {"B.Cu": 1.15}                        # (only on a board that still routes on B.Cu)
+
+def plane_layers(board):
+    return {z.GetLayer() for z in board.Zones() if not z.GetIsRuleArea() and z.GetZoneName().startswith("plane_")}
+
+def configure(board):
+    """Signal layers = the copper layers without a full-board plane."""
+    global ROUTE_LAYERS
+    planes = plane_layers(board)
+    ROUTE_LAYERS = [board.GetLayerName(l) for l in board.GetEnabledLayers().CuStack() if l not in planes]
+    return ROUTE_LAYERS
 VIA_COST = 400                # in units of 0.01 mm of track (a via ~ 4 mm of detour)
 EDGE_CLEAR = 1.0              # copper stays this far inside the board outline, all layers
 TANK_RETURN = {"TANK_OUT", "RF2", "QRG", "WET", "DRVP"}
@@ -48,6 +59,7 @@ def light_ref(ref):
 HEAVY = {"IC_PA", "C_out", "D1", "D2", "C_byp1", "C_byp2", "C_main", "F1", "BR1", "T1", "LS1", "R_spk_rtn",
          "R_zobel", "C_zobel", "JP_BR", "C_filt1", "C_filt2"}
 NECK_W = 0.5                  # mm, the necked-down width for a signal-level branch (1 oz copper: > 1 A)
+LAST_W = 0.3                  # mm, last resort for a signal net that finds no way at its class width (the HiZ width)
 RELIEF_W = 0.8                # mm, second try for a rail link that cannot get through at the class width
                               # (narrower than an 0805 pad, so its end cap stays out of the keepout between the pads)
 
@@ -145,8 +157,15 @@ class Grid:
                 elif net == "GND":
                     self.gnd_tht.append(p)
                 for l in ROUTE_LAYERS:
-                    if p.IsOnLayer(lid[l]):
+                    if not p.IsOnLayer(lid[l]):
+                        continue
+                    if p.FlashLayer(lid[l]):
                         self.items[l].append(("pad", net, False, lambda g, grow, p=p: self.pad_shape(g, p, grow)))
+                    else:
+                        # a through-hole pad with nothing connected on this inner layer has no copper
+                        # here (errata #31): what a track has to clear is the HOLE, for every net --
+                        # touching it would connect, and bring the pad's copper back
+                        self.items[l].append(("hole", net, False, lambda g, grow, c=c, ds=ds: self.seg(g, to_mm(c.x), to_mm(c.y), to_mm(c.x), to_mm(c.y), to_mm(max(ds.x, ds.y)) / 2 + grow)))
         for t in b.GetTracks():
             net = t.GetNetname()
             if t.GetClass() == "PCB_VIA":
@@ -177,8 +196,8 @@ class Grid:
         for l in ROUTE_LAYERS:
             groups = {}
             for kind, onet, is_track, paint in self.items[l]:
-                if onet == net and kind != "npth": continue
-                c = 0.2 if kind == "npth" else self.r.clearance(net, onet, is_track)
+                if onet == net and kind not in ("npth", "hole"): continue
+                c = 0.2 if kind == "npth" else self.r.hole_clear if kind == "hole" else self.r.clearance(net, onet, is_track)
                 groups.setdefault(round(c, 3), []).append(paint)
             blk = edge.copy()
             for c, painters in groups.items():
@@ -233,7 +252,7 @@ def astar(grid, blk, vb, src, src_layers, dst, dst_layers, max_nodes=3_000_000):
             return [(L[a], b, c) for a, b, c in reversed(path)]
         n += 1
         if n > max_nodes: return None
-        li, iy, ix = s; lc = LAYER_COST[L[li]]
+        li, iy, ix = s; lc = LAYER_COST.get(L[li], 1.0)
         for dy, dx, c in ((1, 0, 10), (-1, 0, 10), (0, 1, 10), (0, -1, 10), (1, 1, 14), (1, -1, 14), (-1, 1, 14), (-1, -1, 14)):
             y, x = iy + dy, ix + dx
             if not (0 <= y < H and 0 <= x < W) or not free(li, y, x): continue
@@ -275,6 +294,14 @@ def endpoint(board, grid, net, desc, pos):
             # join at the grid cell itself: it is within 0.07 mm of the centre line, i.e. inside
             # the track, and no 0.1 mm stub is needed to reach an "exact" point
             return cells, layers, lambda iy, ix: grid.pos(iy, ix)
+    m = re.match(r"PTH pad (\S+) \[[^\]]*\] of (\S+)", desc)
+    if m:                                       # a through-hole pad: only on a layer where it has copper now
+        for fp in board.GetFootprints():
+            if fp.GetReference() != m.group(2): continue
+            for p in fp.Pads():
+                if p.GetNumber() == m.group(1):
+                    flashed = [l for l in ROUTE_LAYERS if p.FlashLayer(board.GetLayerID(l))]
+                    layers = flashed or layers
     return {grid.cell(*pos)}, layers, lambda iy, ix: pos        # a pad / via: end exactly on its centre
 
 def unconnected(pcb):
@@ -305,7 +332,7 @@ def clean_stubs(pcb):
         if not hit:
             continue
         keep = open(pcb, "rb").read()
-        board.Delete(hit[0]); pcbnew.ZONE_FILLER(board).Fill(board.Zones()); pcbnew.SaveBoard(pcb, board)
+        board.Delete(hit[0]); refill(board); pcbnew.SaveBoard(pcb, board)
         after, errs = unconnected(pcb)
         if len(after) > len(todo) or errs:
             open(pcb, "wb").write(keep)                 # it mattered after all: put it back
@@ -336,50 +363,79 @@ def add_path(board, grid, rules, net, width, path, a_xy, b_xy):
         i = j
     return nseg, nvia
 
+def route_link(board, rules, u):
+    """Route one open link on `board`. Returns a description line, or None if no path."""
+    net = u["net"]
+    if net == "GND":                               # ground is the planes' business: give the pad a via to them
+        import stitch
+        n = stitch.fanout(board, u["pcb"], only={u["ra"], u["rb"]} - {""})
+        return f"  GND        {u['ra'] or 'track':10s} <-> {u['rb'] or 'track':10s} {n} via(s) to the planes" if n else None
+    widths = [rules.width(net)]
+    if widths[0] > RELIEF_W:
+        widths.append(RELIEF_W)
+    if (light_ref(u["ra"]) or light_ref(u["rb"])) and not ({u["ra"], u["rb"]} & HEAVY) and widths[0] > NECK_W:
+        widths.append(NECK_W)
+    if rules.klass(net) in ("Default", "TankDrive", "HiZ") and widths[-1] > LAST_W:
+        widths.append(LAST_W)
+    for w in widths:
+        grid = Grid(board, rules)                    # re-read the board: earlier links are obstacles now
+        blk = grid.blocked(net, w); vb = grid.via_blocked(net, blk)
+        ca, la, xa = endpoint(board, grid, net, u["da"], u["a"])
+        cb, lb, xb = endpoint(board, grid, net, u["db"], u["b"])
+        path = astar(grid, blk, vb, ca, la, cb, lb)
+        if path:
+            ns, nv = add_path(board, grid, rules, net, w, path, xa(*path[0][1:]), xb(*path[-1][1:]))
+            length = sum(math.dist(grid.pos(p[1], p[2]), grid.pos(q[1], q[2])) for p, q in zip(path, path[1:]))
+            note = "" if w == widths[0] else (f"  (necked down from {widths[0]} mm: signal-level branch)" if w == NECK_W and widths[0] > 0.5
+                                              else f"  (reduced from {widths[0]} mm: no room at the class width)")
+            return f"  {net:10s} {u['ra'] or 'track':10s} <-> {u['rb'] or 'track':10s} {length:5.1f} mm, {w} mm wide, {ns} segments, {nv} via(s){note}"
+    return None
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--in", dest="src", required=True)
-    ap.add_argument("--rounds", type=int, default=4)
+    ap.add_argument("--attempts", type=int, default=8, help="rip-up-and-reorder attempts")
     a = ap.parse_args()
     rules = Rules(a.src)
-    for rnd in range(a.rounds):
-        todo, errors = unconnected(a.src)
-        print(f"round {rnd + 1}: {len(todo)} open connection(s), {len(errors)} DRC error(s)")
-        if not todo:
-            break
-        board = pcbnew.LoadBoard(a.src)
-        done = 0
-        for u in todo:
-            net = u["net"]
-            if net == "GND":
-                print(f"  GND {u['da'][:40]} <-> {u['db'][:40]}: not handled here (the plane connects ground)"); continue
-            widths = [rules.width(net)]
-            if widths[0] > RELIEF_W:
-                widths.append(RELIEF_W)
-            if (light_ref(u["ra"]) or light_ref(u["rb"])) and not ({u["ra"], u["rb"]} & HEAVY) and widths[0] > NECK_W:
-                widths.append(NECK_W)
-            routed = False
-            for w in widths:
-                grid = Grid(board, rules)                    # re-read the board: earlier links are obstacles now
-                blk = grid.blocked(net, w); vb = grid.via_blocked(net, blk)
-                ca, la, xa = endpoint(board, grid, net, u["da"], u["a"])
-                cb, lb, xb = endpoint(board, grid, net, u["db"], u["b"])
-                path = astar(grid, blk, vb, ca, la, cb, lb)
-                if path:
-                    ns, nv = add_path(board, grid, rules, net, w, path, xa(*path[0][1:]), xb(*path[-1][1:]))
-                    length = sum(math.dist(grid.pos(p[1], p[2]), grid.pos(q[1], q[2])) for p, q in zip(path, path[1:]))
-                    note = "" if w == widths[0] else (f"  (necked down from {widths[0]} mm: signal-level branch)" if w == NECK_W
-                                                      else f"  (reduced from {widths[0]} mm: no room at the class width)")
-                    print(f"  {net:10s} {u['ra'] or 'track':10s} <-> {u['rb'] or 'track':10s} {length:5.1f} mm, {w} mm wide, {ns} segments, {nv} via(s){note}")
-                    routed = True; done += 1
-                    break
-            if not routed:
-                print(f"  {net:10s} {u['ra'] or 'track':10s} <-> {u['rb'] or 'track':10s} NO PATH at {widths} mm")
-        if not done:
-            break
-        prune_zero_length(board)
-        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-        pcbnew.SaveBoard(a.src, board)
+    todo, errors = unconnected(a.src)
+    print(f"{len(todo)} open connection(s), {len(errors)} DRC error(s)")
+    if todo:
+        for u in todo: u["pcb"] = a.src
+        base = open(a.src, "rb").read()                # the autorouted state: every attempt starts from it
+        # No rip-up inside an attempt, so ORDER decides: short local links first (they need the space
+        # next to their pads; a long link can go round). If some links find no path, start again from
+        # the autorouted board with those links FIRST.
+        order = sorted(todo, key=lambda u: math.dist(u["a"], u["b"]))
+        best = None
+        for attempt in range(1, a.attempts + 1):
+            open(a.src, "wb").write(base)
+            board = pcbnew.LoadBoard(a.src); configure(board)
+            lines, failed = [], []
+            for u in order:
+                line = route_link(board, rules, u)
+                if line: lines.append(line)
+                else: failed.append(u)
+            if best is None or len(failed) < best[0]:
+                prune_zero_length(board); refill(board); pcbnew.SaveBoard(a.src, board)
+                best = (len(failed), open(a.src, "rb").read(), lines, failed, attempt)
+            if not failed:
+                break
+            print(f"  attempt {attempt}: {len(failed)} link(s) without a path ({', '.join(sorted({u['net'] for u in failed}))}) -- starting over with them first")
+            order = failed + [u for u in order if u not in failed]
+        nfail, data, lines, failed, attempt = best
+        open(a.src, "wb").write(data)
+        print(f"attempt {attempt}: {len(lines)} link(s) routed")
+        for line in lines: print(line)
+        for u in failed:
+            print(f"  {u['net']:10s} {u['ra'] or 'track':10s} <-> {u['rb'] or 'track':10s} NO PATH")
+        # anything KiCad still reports open (a ratsnest edge that moved): one plain pass
+        todo2, _ = unconnected(a.src)
+        if todo2 and not failed:
+            board = pcbnew.LoadBoard(a.src); configure(board)
+            for u in todo2:
+                u["pcb"] = a.src; line = route_link(board, rules, u)
+                print(line or f"  {u['net']:10s} NO PATH")
+            prune_zero_length(board); refill(board); pcbnew.SaveBoard(a.src, board)
     n = clean_stubs(a.src)
     if n:
         print(f"removed {n} redundant stub segment(s) (shorter than their own width, inside the copper they joined)")

@@ -4,10 +4,10 @@ verify [smd]  kicad/smd/cambridge_reverb_smd.kicad_pcb  (kicad/gen/verify.py)
 [ok] DRC           0 errors 
 [ok] DRC           0 silkscreen / text warnings 
 [ok] DRC           0 other warnings 
-[ok] parity        178 schematic parts, 178 board footprints
+[ok] parity        179 schematic parts, 179 board footprints
 [ok] parity        0 footprint mismatches 
 [ok] parity        85 schematic nets, 85 board nets, 0 differ
-[ok] parity        378 connected pins in the schematic, 378 netted pads on the board
+[ok] parity        380 connected pins in the schematic, 380 netted pads on the board
 [ok] pin map       86 pads checked against their datasheet function
 [ok] pin map       SOT-23 (MMBT3904) and VTL5C1 pad geometry match their package drawings
 [ok] electrical    D1 clamps the output to V+: cathode +33V5, anode PA_OUT
@@ -29,13 +29,27 @@ verify [smd]  kicad/smd/cambridge_reverb_smd.kicad_pcb  (kicad/gen/verify.py)
 [ok] silkscreen    every part labelled on the front silk
 [ok] silkscreen    labels >= 1.0 mm high, >= 0.15 mm stroke (JLCPCB legend minimum)
 [ok] silkscreen    board identity and JLCPCB order-number spot present
-[ok] order package BOM lists exactly the 94 placed SMD parts (30 lines)
-[ok] order package CPL lists the same 94 parts
+[ok] JLCPCB limits all 11 board constraints at or above JLCPCB's published limits (DRC enforces them)
+[ok] JLCPCB limits silkscreen text 0.15 mm off every pad (rule silk_to_pad)
+[ok] RF rules      stack is signal / GND / signal / GND and nothing is routed on a plane: F.Cu signal, In1.Cu GND plane, In2.Cu signal, B.Cu GND plane
+[ok] RF rules      In1.Cu plane: one piece, 94.6 % copper, 3 openings over 5 mm, longest 10.05 mm at FS1 (limit 12 mm, 6)
+[ok] RF rules      B.Cu plane: one piece, 92.2 % copper, 11 openings over 5 mm, longest 15.1 mm at FS1 (limit 16 mm, 16)
+[ok] RF rules      copper to board edge >= 0.5 mm on every layer (measured F.Cu 0.55, In1.Cu 0.55, In2.Cu 1.39, B.Cu 0.55)
+[ok] RF rules      top pour keeps 0.41 mm from the nearest trace and 0.91 mm from HiZ traces (rules 0.5 / 1.0 mm; DRC is the exact check)
+[ok] RF rules      perimeter fence: 95 ground vias, median pitch 5 mm, largest gap 21.8 mm
+[ok] RF rules      stitching: 326 ground vias, no point further than 14.3 mm from one (mean 3.3 mm)
+[ok] RF rules      21 SMD ground pads, each with a via to the planes
+[ok] RF rules      stray capacitance: lowest corner TONE_OUT 21 pF -> 121 kHz; all 29 sensitive nets above 80 kHz (< 0.3 dB at 20 kHz)
+[ok] RF rules      summing node SUMJ (6 pF of copper) is compensated: C_mixfb across R_mixfb
+[ok] RF rules      all 424 vias are through vias (no blind or buried vias: the standard 4-layer process)
+[ok] RF rules      unused inner-layer pad copper removed on every through-hole pad (plane openings follow the holes)
+[ok] order package BOM lists exactly the 95 placed SMD parts (31 lines)
+[ok] order package CPL lists the same 95 parts
 [ok] order package every BOM line carries an LCSC number from the verified parts table
 [ok] order package CPL positions lie on their footprints, rotations = board angle + JLCPCB package offset
 [ok] order package BOM footprint column agrees with each part's package
 [ok] order package Gerber zip has the 4 copper layers, mask, paste, silk, outline and both drill files (13 files)
-[ok] order package plated drill file: 298 holes = 184 pads + 114 vias on the board (the zip was made from THIS board)
+[ok] order package plated drill file: 608 holes = 184 pads + 424 vias on the board (the zip was made from THIS board)
 [ok] order package 3 fiducials on the assembled side
 [ok] order package package was exported from a fully routed, DRC-clean board
 [ok] SPICE         79 schematic parts appear by name in the netlists with the schematic's value (8 documented exceptions)
@@ -46,6 +60,7 @@ verify [smd]  kicad/smd/cambridge_reverb_smd.kicad_pcb  (kicad/gen/verify.py)
 [ok] SPICE         MRB bypassed: -1.4 .. -1.0 dB, 100 Hz - 5 kHz (flat within 1.5)
 [ok] SPICE         preamp as built (no source bypass): 0.501125 % THD at 0.1 V pk, 1.06142 % at 0.2 V
 [ok] SPICE         ...and the reason the bypass caps are optional: 34.7362 % at 0.1 V with both fitted
+[ok] SPICE         reverb summer with C_mixfb: 0.00 dB of peaking for 5-25 pF on the summing node, -0.7 dB at 20 kHz (without it: 5.3 dB at 10 pF)
 [ok] SPICE         JFET drain bias 12.1 V (6 .. 14; trim R_s for 8-9)
 [ok] SPICE         power amp at the nominal rail: 11.7 W into 8 ohm (>= 11)
-49 of 49 checks passed
+64 of 64 checks passed

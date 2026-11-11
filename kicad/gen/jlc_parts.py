@@ -32,7 +32,7 @@ MIN_STOCK = 100            # --check warns below this (five boards need at most 
 C0G_REFS = {
     "C_in_pre", "C_rf1", "C_pres", "C_cpl12",                       # preamp
     "C_j1", "C_j2", "C_j3", "C_j4", "C_res", "C_gg", "C_treble",    # tone stack
-    "C_drvin", "C_rev2", "C_rf2", "C_rev4",                         # reverb
+    "C_drvin", "C_rev2", "C_rf2", "C_rev4", "C_mixfb",              # reverb
     "C_mrb_in", "C_mrb_600", "C_mrb_out",                           # MRB
     "C_fb_hf",                                                      # power-amp HF roll-off
 }
@@ -63,6 +63,7 @@ PARTS = {
     # --- LM317 set resistor, E96, 85 mW -> 1206 (250 mW)
     ("R1206", "3.09k"): P("C2091788", "CRCW12063K09FKEA", "Vishay",  "extended",  "3.09k 1% 1206", 4950),
     # --- C0G / NP0, 1206
+    ("C0G", "33pF"):    P("C85570",   "CC1206JKNPOCBN330", "YAGEO",  "extended",  "33pF 1kV C0G 5% 1206",   16339),
     ("C0G", "100pF"):   P("C107179",  "CC1206JRNPO9BN101", "YAGEO",  "extended",  "100pF 50V C0G 5% 1206",  34304),
     ("C0G", "470pF"):   P("C113880",  "CC1206JRNPO0BN471", "YAGEO",  "extended",  "470pF 100V C0G 5% 1206",  5650),
     ("C0G", "1nF"):     P("C113881",  "CC1206JRNPO9BN102", "YAGEO",  "extended",  "1nF 50V C0G 5% 1206",    13320),

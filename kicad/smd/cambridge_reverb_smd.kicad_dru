@@ -19,3 +19,21 @@
 (rule tank_drive_to_return
   (condition "(A.Type == 'Track' || A.Type == 'Via') && A.NetClass == 'TankDrive' && (B.NetName == 'TANK_OUT' || B.NetName == 'RF2' || B.NetName == 'QRG' || B.NetName == 'WET' || B.NetName == 'DRVP')")
   (constraint clearance (min 0.6mm)))
+# 3. (errata #31) The component-side ground POUR keeps 1.0 mm from high-impedance copper
+#    (class HiZ: gates, the RF nodes ahead of them, tone ladder and wipers, tank return,
+#    LFO timing, MRB tank, the PA + input) -- twice the 0.5 mm it keeps from everything
+#    else. Those nodes' capacitance to ground is then the trace over the plane (about
+#    1 pF per cm) and nothing the pour adds; kicad/gen/rf_audit.py reports it per net.
+#    Top layer only: on the planes a wider opening would merge the openings of
+#    neighbouring pins into a slot.
+(rule pour_to_hiz
+  (layer "F.Cu")
+  (condition "A.Type == 'Zone' && B.NetClass == 'HiZ'")
+  (constraint clearance (min 1.0mm)))
+# 4. JLCPCB: silkscreen text stays 0.15 mm off every pad (their capability table, "Pad
+#    To Silkscreen"). Text only: a label that touches a pad loses strokes to the mask
+#    opening; a footprint outline that grazes its own pad (the stock 3 mm LED does) is
+#    simply clipped by the mask, which the Gerber export subtracts from the silk.
+(rule silk_to_pad
+  (condition "A.Type == '*Text' && B.Type == 'Pad'")
+  (constraint silk_clearance (min 0.15mm)))

@@ -6,8 +6,10 @@ could close a feedback loop.
     python3 kicad/gen/crosstalk_audit.py [--board kicad/cambridge_reverb.kicad_pcb] [--md out.md]
 
 Model (first order, deliberately conservative -- this is a screen, not a field solver):
-  * same-layer parallel runs: two microstrips of width w at centre spacing d over the
-    ground pour at h = 1.5 mm (1.6 mm FR4, 2 layers). Self capacitance per length from
+  * same-layer parallel runs: two microstrips of width w at centre spacing d over their
+    ground plane -- h = 0.21 mm on the 4-layer boards (F.Cu over In1, In2 over B.Cu; since
+    errata #31 both planes are solid and no trace has another signal layer next to it
+    without a plane between), 1.5 mm on a 2-layer board. Self capacitance per length from
     the Hammerstad microstrip formula (eps_r 4.5); the coupled fraction
     k = 1 / (1 + (d/h)^2)  (Howard Johnson's near-field estimate). C_m = k * C_self * L.
   * different-layer parallel runs (one on top of the other): broadside plates,
@@ -34,7 +36,9 @@ AGGR = {"PA_OUT": (9.8, 5e3, "LM1875 output, 12 W"), "SPK_P": (9.8, 5e3, "speake
         "ZOB": (9.8, 5e3, "Zobel node = output"),
         "AC1": (24.0, 150, "transformer secondary"), "AC2": (24.0, 150, "transformer secondary"),
         "VRAW": (1.0, 150, "rectifier output, pulsating"), "+33V5": (0.25, 150, "main rail ripple"),
-        "TANK_IN": (3.0, 5e3, "reverb tank drive")}
+        "TANK_IN": (3.0, 5e3, "reverb tank drive"),
+        "R_DRVO": (3.0, 5e3, "tank driver output (same signal as TANK_IN, ahead of C_rev1)"),
+        "TKDRV": (3.0, 5e3, "tank drive after C_rev1")}
 # victims: net -> (|Z_node| ohms at the estimate frequency, signal Vrms, note)
 VICT = {"GUITAR_IN": (50e3, 0.1, "jack -> C_in; pickup + 1 M"), "RF1": (50e3, 0.1, "RF stopper node"), "Q1G": (50e3, 0.1, "Q1 gate"),
         "RF2": (10e3, 0.02, "tank return after C_rev2"),

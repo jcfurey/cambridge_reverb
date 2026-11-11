@@ -86,6 +86,7 @@ TP_Q1D,Test point (header pin or wire loop),Q1D,TestPoint_THT_D2.0mm_Label,,,1,b
 TP_Q2D,Test point (header pin or wire loop),Q2D,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 C_drvin,Capacitor (film/ceramic),100nF,C_1206_3216Metric,,,1,JLCPCB C170182 (extended): Walsin 1206N104J500CT -- 100nF 50V C0G 5% 1206
 C_drymix,Capacitor (film/ceramic),1uF,C_1206_3216Metric,,,1,JLCPCB C1848 (basic): Samsung CL31B105KBHNNNE -- 1uF 50V X7R 10% 1206
+C_mixfb,Reverb summer feedback capacitor: cancels the summing node's stray capacitance (errata #31),33pF,C_1206_3216Metric,,,1,JLCPCB C85570 (extended): YAGEO CC1206JKNPOCBN330 -- 33pF 1kV C0G 5% 1206
 C_rec_byp,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_rev1,Capacitor (electrolytic),1uF,CP_Radial_D5.0mm_P2.00mm,,,1,
 C_rev2,Capacitor (film/ceramic),10nF,C_1206_3216Metric,,,1,JLCPCB C326648 (extended): YAGEO CC1206JKNPO9BN103 -- 10nF 50V C0G 5% 1206

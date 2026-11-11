@@ -25,6 +25,7 @@ run ac_mrb.cir                   "^fs="
 run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
 run tran_reverb_mixer.cir
+run ac_summer_stability.cir      "^cfb="
 run ac_tonestack.cir "= |^DC:"
 run tran_classa_output.cir "= |THD"
 # --- noise, hum, tremolo depth, thermal (2026-09-07) ---

@@ -139,6 +139,9 @@ def main():
     have = {f[len(NAME):] for f in files}
     if need - have:
         problems.append(f"package is missing {sorted(need - have)} (has {sorted(have)})")
+    extra = sorted(f for f in files if f.endswith(".drl") and not f.endswith(("-PTH.drl", "-NPTH.drl")))
+    if extra:
+        problems.append(f"blind / buried vias on the board: extra drill file(s) {extra} -- the standard process drills through holes only")
     print(f"board {facts['w']:.0f} x {facts['h']:.0f} mm, {facts['layers']} copper layers; smallest track {facts['min_track']:.2f} mm, "
           f"via {facts['min_via_dia']:.2f}/{facts['min_via_drill']:.2f} mm, hole {facts['min_hole']:.2f} mm")
     print(f"gerber zip: {len(files)} files; drill: {pth} plated ({facts['pth']} pads + {facts['vias']} vias), {npth} unplated")

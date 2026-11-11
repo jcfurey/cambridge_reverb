@@ -50,6 +50,7 @@ DESC = {
  "R_qb":"Tremolo driver base series resistor (isolates the LFO from the footswitch short)",
  "R_fs_mrb":"DC return for the footswitched MRB tank",
  "C_s1":"Q1 source bypass (voicing option)","C_s2":"Q2 source bypass (voicing option)",
+ "C_mixfb":"Reverb summer feedback capacitor: cancels the summing node's stray capacitance (errata #31)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference

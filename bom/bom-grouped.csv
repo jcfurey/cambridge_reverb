@@ -23,6 +23,7 @@ qty,value,footprint,refs
 8,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_cpl_out C_drymix C_in_pa C_lfo1 C_lfo2 C_obuf_in C_tout C_wetmix
 3,2.2nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_gg C_j3 C_j4
 3,22nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_j1 C_j2 C_res
+1,33pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mixfb
 1,470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_treble
 1,47nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_in_pre
 1,47nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_750

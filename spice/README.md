@@ -1,6 +1,6 @@
 # spice/
 
-ngspice simulations for the design blocks: **13 fixed-point block checks** and
+ngspice simulations for the design blocks: **14 fixed-point block checks** and
 **6 parameter sweeps**. `./run_all.sh` runs everything and writes each result
 table to **`results/<name>.txt`** — those files are committed as the evidence for
 the numbers below (re-run and diff after any value change). The original set was
@@ -19,6 +19,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | `tran_tremolo_lfo.cir` | Tremolo LFO | Oscillation + rate at the fast end of the **errata #19** network |
 | `ac_power_amp_lm1875.cir` | Power amp | Gain + LF/HF −3 dB with `C_fb_hf` + a 10″ speaker model |
 | `tran_reverb_mixer.cir` | Reverb summer | **Rail-aware**: mid-rail bias, unity sum, headroom / clipping |
+| **`ac_summer_stability.cir`** | Reverb summer | Closed-loop peaking vs stray capacitance on the summing node, without / with `C_mixfb` (errata #31) |
 | `ac_tonestack.cir` | Tone | **Rail-aware**: IC3 bias, noon response, MID CUT on/off (errata #20) |
 | `tran_classa_output.cir` | Class-A stage | AB vs A: idle current and crossover THD |
 | **`noise_frontend.cir`** | whole front end | `.noise` 20 Hz–20 kHz incl. the LM317's rail noise; EIN, SNR at 12 W, per supply fix (Part 6c) |
@@ -51,6 +52,8 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Tremolo LFO, pot at min | **10.59 Hz**, 0.48 V amplitude | 10.6 Hz = 1/(2π·15 k·1 µF) | ✅ (errata #19 network) |
 | Preamp drain Vd (R_s = 2.2 k, nominal JFET) | **12.1 V** | 8–9 V target | ⚠️ see the sweep below |
 | Reverb summer bias / gain / clip | **8.50 V**, **0.0 dB**, clips 15.5 / 1.5 V | mid-rail, unity, ±7 V | ✅ |
+| Reverb summer, 10 pF on the summing node, no feedback capacitor | **5.3 dB peak at 624 kHz** (2.7 dB at 5 pF, 9.1 dB at 25 pF) | flat | ⚠️ as drawn until errata #31 |
+| … with `C_mixfb` 33 pF | **no peaking** for 5–25 pF; −0.09 dB at 7 kHz, −0.72 dB at 20 kHz | flat in the audio band | ✅ |
 | Tone stack, pots at noon / MID CUT on | **−0.21 dB** flat 100 Hz–10 kHz / **−9.6 dB @ 796 Hz**; all IC3 nodes 8.50 V | flat / ~−10 dB @ ~800 Hz, mid-rail | ✅ (errata #20) |
 | Class-A stage AB → A | THD 1.05 % → 0.0025 %, idle 0.11 → 0.49 A | crossover removed | ✅ |
 | Front-end noise, as drawn → errata #21 | EIN **37 µV → 2.7 µV** rms; SNR at 12 W **34 → 57 dB** | LM317 noise was 23 dB above the JFET floor | ✅ fixed |

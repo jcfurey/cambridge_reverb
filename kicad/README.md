@@ -28,7 +28,7 @@ KiCad project files.
 - `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
   `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
   They open in KiCad 7/8, **pass ERC with 0 violations** (KiCad 8.0.9), and
-  netlist cleanly (150 components + 28 test points, 85 nets, 0 unconnected pins).
+  netlist cleanly (151 components + 28 test points, 85 nets, 0 unconnected pins).
 - `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
   the generated sheets.
 - `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).
@@ -40,10 +40,11 @@ KiCad project files.
   placed into the **Part 5 floor-plan zones** (Input/Preamp | Tone | Reverb/Trem |
   Power Amp | PSU, left→right), off-board connectors on the bottom wiring edge,
   LM1875/LM317 on the top edge with the 10 mm keep-out, 4× M3 mounting holes,
-  190×115 mm outline, **4 copper layers** (In1 GND plane, In2 inner signal, B.Cu GND
-  pour, perimeter stitching vias), keepout areas between every part's pins, JLCPCB
+  190×115 mm outline, **4 copper layers** (F.Cu signal + ground pour, In1 ground plane,
+  In2 signal, B.Cu ground plane — nothing routed on a plane; ground via fence every
+  5 mm), keepout areas between every part's pins, JLCPCB
   design rules + `cambridge_reverb.kicad_dru` impedance-class rules, every part labelled
-  on the silkscreen. **Fully routed: 232 / 232 connections, 0 DRC errors, 0 warnings.**
+  on the silkscreen. **Fully routed: 234 / 234 connections, 0 DRC errors, 0 warnings.**
 - `gen/route_board.py` — **headless autoroute** via Freerouting (DSN → SES →
   import, GND pour refilled). Needs Java + the Freerouting jar (git-ignored; see
   the script docstring). It also injects the per-class *routing* clearances
@@ -56,6 +57,11 @@ KiCad project files.
   the gate (parity, pin-function audit, electrical assertions, order package, SPICE).
 - `gen/fab_jlcpcb.py`, `gen/jlc_parts.py` — the **JLCPCB order package** in
   `production/smd/` and the looked-up LCSC part for every assembly line.
+- `gen/stitch.py` — **ground vias**: a via beside every SMD ground pad before routing,
+  a 7.5 mm stitching grid after it, unused inner-layer pad copper removed (errata #31).
+- `gen/rf_audit.py` — **ground and parasitics audit** of the finished copper: plane
+  openings, edge pull-back, pour gaps, fence and stitching density, and the stray
+  capacitance of every sensitive net with the corner it makes (`reports/rf-*.md`).
 - `gen/crosstalk_audit.py` — geometric **crosstalk screen** of a routed board:
   mutual capacitance of parallel runs between power/AC/tank-drive nets and the
   sensitive nodes, coupled level vs signal, loop gain (Part 6c §4).

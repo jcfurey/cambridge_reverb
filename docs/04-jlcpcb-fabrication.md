@@ -20,7 +20,7 @@
 
 | Parameter | Setting | Notes |
 |-----------|---------|-------|
-| Layers | **4** *(2026-09-08, errata #24; was 2)* | F.Cu signal / In1 GND plane / In2 signal / B.Cu signal + GND pour — stackup **JLC04161H-7628** (0.035 mm outer copper, 0.2104 mm 7628 prepreg, 1.065 mm core, 0.0152 mm inner copper) |
+| Layers | **4** *(2026-09-08, errata #24; was 2)* | F.Cu signal + GND pour / In1 GND plane / In2 signal / **B.Cu GND plane** *(errata #31; B.Cu used to carry tracks)* — stackup **JLC04161H-7628** (0.035 mm outer copper, 0.2104 mm 7628 prepreg, 1.065 mm core, 0.0152 mm inner copper): each signal layer is 0.21 mm from its own plane |
 | Dimensions | 190 × 115 mm (THT board) · **170 × 105 mm (SMD / THT board, the assembled one)** | 190 × 115 matches the original 25-5274-2 board |
 | PCB Qty | 5 | Minimum order |
 | PCB Thickness | 1.6 mm | Matches original board thickness |
@@ -51,10 +51,10 @@ assembly BOM and shows which knob moves the number:
 
 | | Before | Errata #23 (assumed classes) | **2026-11, classes looked up (errata #30)** |
 |---|---:|---:|---:|
-| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 | **94 / 30** |
-| Extended part types (× $3) | 7 ($21) | 3 ($9) | **13 ($39)** + 2 "preferred" (no fee) |
-| Joints per board | 183 | 194 | 192 |
-| Assembly fees for 5 boards | ~$32 | ~$20 | **~$50**, parts extra |
+| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 | **95 / 31** |
+| Extended part types (× $3) | 7 ($21) | 3 ($9) | **14 ($42)** + 2 "preferred" (no fee) |
+| Joints per board | 183 | 194 | 194 |
+| Assembly fees for 5 boards | ~$32 | ~$20 | **~$53**, parts extra |
 
 The middle column rested on an assumption — that common 1206 capacitor values are
 basic-library parts whatever the dielectric. `kicad/gen/jlc_parts.py` now holds a part
@@ -62,8 +62,9 @@ that was actually looked up for every line: in 1206 only the 100 nF and 1 µF X7
 parts are basic, and none of the C0G values this board needs above 100 pF is basic in
 0603, 0805 or 1206. The board keeps C0G on the high-impedance and frequency-setting
 nodes (DC-biased X7R on a 1 MΩ node in a combo cabinet is a microphone) and uses 100 V
-X7R on the 33.5 V rail and across the bridge: nine C0G lines, two 100 V X7R lines, the
-JFET and the E96 set resistor are the thirteen.
+X7R on the 33.5 V rail and across the bridge: ten C0G lines (the tenth is the 33 pF
+summer feedback capacitor of errata #31), two 100 V X7R lines, the JFET and the E96 set
+resistor are the fourteen.
 
 What changed: every SMD capacitor is **1206** (the 1210 line — 1 µF X7R 50 V and the
 Zobel 100 nF — was an extended part for no electrical gain; 1206 1 µF/50 V X7R is a
@@ -76,27 +77,42 @@ pick-and-place file in JLCPCB's columns with the usual +180° on the SOT-23 part
 orientation of D1 / D2 and the four SOT-23s in JLCPCB's placement preview must still be
 checked by eye before paying.
 
-## KiCad design rules for JLCPCB — recovered, re-checked 2026-09-07
+## KiCad design rules for JLCPCB — recovered, re-read 2026-11-11 (errata #31)
 
-The "JLCPCB min" column is from jlcpcb.com/capabilities (2-layer, 1 oz, checked
-2026-09-07); the "Value" column is what both `.kicad_pro` files now enforce in DRC, so
-`kicad/gen/check.sh` catches a fab violation before the Gerbers do. Where our own margin
-was already stricter than JLC it stays.
+The "JLCPCB" column is their capability table as published on 2026-11-11
+(jlcpcb.com/capabilities/pcb-capabilities; multilayer, 1 oz outer copper). The "Project"
+column is what both `.kicad_pro` files and the `.kicad_dru` rules enforce in DRC —
+`kicad/gen/verify.py` fails if a project value drops below JLCPCB's.
 
-| Rule | Value (DRC) | JLCPCB min | Notes |
+| Rule | Project (DRC) | JLCPCB | Notes |
 |------|-------|------------|-------|
-| Min track width | 0.25 mm (10 mil) | 0.10 mm (1 oz) / 0.16 mm (2 oz) | Comfort; audio doesn't need tighter |
-| Min clearance | 0.20 mm (8 mil) | 0.10 mm | Safe, avoids extra fees |
-| Min via drill / diameter | 0.3 / 0.6 mm | 0.3 / 0.45 mm (0.15 mm holes or < 0.45 mm vias cost extra) | No surcharge; classes use 0.4/0.8, 0.8/1.4, 1.0/1.6 |
-| Min through-hole drill | 0.3 mm | 0.15 mm | Smallest used: 0.75 mm (TO-92) |
-| **Min annular ring (PTH + via)** | **0.18 mm** | **0.18 mm absolute, 0.25 mm recommended** | Errata #23: stock TO-92 (0.15) and the LM1875 footprint (0.175) failed this — fixed (0.35 / 0.20) |
-| **Hole-to-hole (different nets)** | **0.5 mm** | 0.45 mm (PTH), 0.2 mm (vias) | was 0.25 |
-| **Hole-to-copper** | **0.3 mm** | 0.254 mm | was 0.25 |
-| Pad-to-pad (SMD, different nets) | 0.20 mm (class clearance) | 0.15 mm | |
-| Board edge clearance | 0.5 mm | 0.2 mm | plus a 2 mm routing keepout frame (`gen_pcb.py`) |
-| **Solder-mask dam** | **0.10 mm** | 0.10 mm (green) | |
-| Min silkscreen width / text height | 0.15 mm / 1.0 mm | 0.15 mm / 1.0 mm | |
-| Copper weight | **1 oz** | — | 2 oz was in the recovered order spec; 1 oz is enough (Part 6c: 2.5 mm / 2.0 mm traces at 1.7 A peak) and cheaper |
+| Track width / spacing | 0.25 / 0.20 mm (smallest used: 0.30 / 0.20) | 0.09 / 0.09 mm multilayer | audio does not need tighter |
+| Via drill / diameter | 0.3 / 0.6 mm minimum; every via on the boards is 0.4 / 0.8 or larger | 0.15 / 0.25 mm; **0.2–0.25 mm holes with a via under 0.45 mm cost extra** | no surcharge |
+| Through-hole drill | 0.3 mm (smallest used 0.75 mm) | 0.15 mm; hole tolerance +0.13 / −0.08 mm, position ±0.075 mm | |
+| Annular ring (PTH + via) | **0.20 mm** *(was 0.18)* | multilayer 1 oz: 0.20 recommended, 0.15 absolute | the LM1875 pads sit exactly on 0.20 (errata #23) |
+| Hole-to-hole | 0.5 mm | pad holes 0.45 mm, via holes 0.2 mm | |
+| **Hole-to-copper** | **0.35 mm** *(was 0.30)* | PTH to track 0.35 recommended / 0.28 minimum; **inner-layer PTH hole to copper 0.3 mm**; inner-layer via hole to copper 0.2 mm | this is the number that sizes every opening in the two ground planes |
+| Pad-to-track / SMD pad-to-pad | 0.20 mm (class clearance) | 0.10 / 0.15 mm | |
+| **Copper to board edge** | **0.5 mm, all four layers** | **0.2 mm from a routed edge or a routed slot; the edge itself is ±0.2 mm** (±0.1 mm "high precision"); 0.4 mm from a V-cut | 0.2 + 0.2 of tolerance + 0.1: copper never reaches the edge, and the board stays legal if JLCPCB adds V-cut rails for assembly. Traces stay 2 mm in (keepout frame) |
+| Cut-outs / slots | none on this board | non-plated slot ≥ 1.0 mm wide, plated ≥ 0.35 mm (multilayer); no square inside corners | only the outline and four 3.2 mm NPTH holes |
+| Unplated holes | 3.2 mm, copper 0.5 mm away + a keepout square | NPTH ≥ 0.5 mm; NPTH to track 0.2 mm | |
+| Solder-mask dam | 0.10 mm | 0.10 mm (green) | mask expansion can be 1 : 1 since their 2025 LDI upgrade |
+| Silkscreen | 0.15 mm stroke, 1.0 mm high; **text 0.15 mm off every pad** (`silk_to_pad` rule) | 0.15 mm / 1.0 mm; pad to silkscreen 0.15 mm | |
+| Fiducials (assembly) | 1 mm copper, 4.0 mm from the edge | "1 mm fiducials centered at 3.85 mm from the panel edges" | |
+| Copper weight | 1 oz outer, 0.5 oz inner | inner 0.5 oz by default (1 or 2 oz optional) | nothing but the short high-current runs is on the inner signal layer; see PCB-NOTES |
+
+**Ground-system rules** (ours, not JLCPCB's — what makes the copper behave at radio
+frequency; measured on the finished board by `kicad/gen/rf_audit.py`, enforced by
+`verify.py`, reasons in errata #31 and PCB-NOTES):
+
+| Rule | Value |
+|---|---|
+| Stack | `F.Cu` signal + ground pour · `In1` solid ground · `In2` signal · `B.Cu` solid ground — nothing routed on a plane |
+| Plane clearance | 0.2 mm to copper, 0.35 mm to a hole; unused inner-layer pad copper removed, so a plane's opening round a foreign pin is hole + 0.7 mm and the web between 2.54 mm pins survives |
+| Top pour to traces | 0.5 mm; **1.0 mm from high-impedance (HiZ) nets**; no sliver under 0.4 mm |
+| Edge fence | ground vias every 5 mm, 2.5 mm in from the edge |
+| Stitching | ground vias on a 7.5 mm grid wherever a via fits on every layer, 1 mm clear of every pad |
+| SMD ground pads | each has its own via to the planes, beside the pad, never in it or under the part |
 
 ### Net classes — recovered verbatim
 
@@ -126,11 +142,13 @@ was already stricter than JLC it stays.
 6. Bottom layer is ground plane only.
 7. Use thermal-relief pads (4 spokes) for through-hole ground connections.
 
-> **4-layer (generated):** In1 is the solid, unbroken GND plane (rule 4 now holds by
-> construction — nothing is routed on it), In2 is an inner signal layer, B.Cu keeps a GND pour
-> around the bottom traces, and `gen_pcb.py` places the perimeter stitching vias of rule 3
-> (every 15 mm, locked). Signals route on F.Cu, In2 and B.Cu; every part has keepout
-> areas between its pins on the outer layers so traces cannot run through footprints.
+> **4-layer (generated, errata #31):** In1 and B.Cu are both solid GND planes — rules 4
+> and 6 hold by construction, nothing is routed on either — In2 is the inner signal
+> layer, buried between them, and F.Cu carries the component-side traces with a GND
+> pour around them. `gen_pcb.py` places a ground via fence along the perimeter every
+> 5 mm (rule 3 asked 15) and gives every SMD ground pad its own via; `stitch.py` adds
+> ground vias on a 7.5 mm grid after routing. Every part has keepout areas between its
+> pins on the component side so traces cannot run through footprints.
 
 In KiCad: Edit → Fill Zones → B.Cu → Net GND; clearance 0.3 mm, min width
 0.25 mm, thermal relief gap 0.5 mm, spoke width 0.5 mm.

@@ -3,6 +3,39 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Ground system to RF practice; JLCPCB limits re-read (2026-11-11)
+- **Errata #31.** Asked whether the traces sit too close to the pours: measured, they do
+  not (0.5 mm everywhere; largest stray capacitance 26 pF, lowest corner 100 kHz) — but
+  the measurement (`kicad/gen/rf_audit.py`, new) found a ground plane slotted along
+  every row of pins (31 openings over 5 mm, the longest 17.8 mm), an inner signal layer
+  whose nearest copper was the chopped-up bottom pour, 48 ground vias on the whole
+  board, and scripted zone fills that ignored the project's rules.
+- **Stack** is now `F.Cu` signal + pour / `In1` ground / `In2` signal / **`B.Cu` ground**:
+  nothing routed on a plane, each signal layer 0.21 mm from its own plane. Both boards
+  still route completely on two signal layers.
+- **Plane openings follow the holes** (0.2 mm plane clearance, 0.35 mm to a hole, unused
+  inner-layer pad copper removed): In1 openings over 5 mm 31 → 3, B.Cu coverage 80 → 92 %.
+- **Top pour** 0.5 mm from every trace, 1.0 mm from HiZ nets (new `.kicad_dru` rule), no
+  sliver under 0.4 mm. **Edge:** copper 0.5 mm back on every layer, ground via fence
+  every 5 mm (was 15). **Stitching** (`kicad/gen/stitch.py`, new): a via beside every
+  SMD ground pad before routing, ground vias on a 7.5 mm grid after — 326 ground vias
+  (was 48), no point further than 14 mm from one (was 33).
+- **Fills use the rule engine** (`route_board.refill()`); **through vias only** — the
+  two-layer DSN made the autorouter return 75 blind vias, caught by the drill-count
+  check; now converted on import and refused by `fab_jlcpcb.py` and `verify.py`.
+- **`C_mixfb` 33 pF** across the reverb summer's feedback resistor: 10 pF on the summing
+  node gave 5.3 dB of peaking at 620 kHz (`spice/ac_summer_stability.cir`, new); with
+  it none, −0.1 dB at 7 kHz. One more C0G line (`C85570`): 31 lines, 14 extended.
+- **JLCPCB's capability page re-read** and applied: hole-to-copper 0.35 mm, annular ring
+  0.20 mm, silkscreen text 0.15 mm off pads; stack-up dimensions confirmed from their
+  impedance page. Part 4 carries the table.
+- **`finish_routes.py`:** shortest links first, rip-up-and-reorder when a link finds no
+  path, unconnected inner-layer pads treated as holes, 0.3 mm last-resort width for
+  signal nets.
+- **`verify.py`:** new "RF rules" and "JLCPCB limits" groups — 64 / 64 (SMD), 55 / 55 (THT).
+  Crosstalk audit now counts the tank driver's own output as an aggressor: worst pair
+  −61 dB (SMD), −75 dB (THT).
+
 ### Order-ready: pinout and wiring audit, footswitch, full routing, JLCPCB package (2026-11-11)
 - **Errata #25 (critical).** Diode and LED symbols were numbered 1 = A / 2 = K against
   footprints whose pad 1 is the cathode: built to the silkscreen, or placed by JLCPCB, the

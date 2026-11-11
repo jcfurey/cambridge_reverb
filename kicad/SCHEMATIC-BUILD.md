@@ -6,7 +6,7 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  178 components (150 + 28 test points) · 85 nets · 0 unconnected pins
+kicad-cli sch export netlist ->  179 components (151 + 28 test points) · 85 nets · 0 unconnected pins
 GND spans 65 nodes · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 

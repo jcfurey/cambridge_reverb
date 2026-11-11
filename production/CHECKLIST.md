@@ -5,7 +5,7 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 
 ## Checked by the tools (run `kicad/gen/build.sh smd`, or `kicad/gen/verify.py smd` on an existing build)
 
-`kicad/reports/verify-smd.txt` is the last result — 49 of 49 on the committed board.
+`kicad/reports/verify-smd.txt` is the last result — 64 of 64 on the committed board.
 
 - [x] ERC: 0 violations
 - [x] DRC with JLCPCB's limits and the project rules: 0 errors, 0 warnings, **0 open
@@ -16,6 +16,11 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 - [x] Clamp diodes reverse-biased; electrolytics the right way round at the DC
       operating point; rectifier not shorted; supply pins; pot directions; footswitch
 - [x] Every part labelled on the silkscreen at a legal size; wiring pads labelled
+- [x] Project constraints at or above JLCPCB's published limits (re-read 2026-11-11)
+- [x] Ground system: signal / ground / signal / ground with nothing routed on a plane,
+      no slot along a pin row, copper 0.5 mm off the edge, via fence and stitching,
+      a via for every SMD ground pad, through vias only, no stray capacitance in the
+      audio band (`kicad/reports/rf-smd.md`)
 - [x] BOM = pick-and-place file = placed SMD footprints; an LCSC number on every line
 - [x] Gerber zip complete (4 copper layers); drill count = pads + vias
 - [x] SPICE suite runs; schematic values = netlist values

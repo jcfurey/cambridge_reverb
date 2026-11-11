@@ -464,3 +464,89 @@ What the SMD board lacked to be an order, and what each item is now:
   pin, the pin-function audit, the electrical assertions, the order-package consistency
   checks and the SPICE suite with a schematic-to-netlist value cross-check.
 **Severity:** MEDIUM — none of it dangerous, all of it between the design and an order.
+
+## Issue 31 — Ground system: slotted plane, a signal layer over a chopped pour, sparse stitching; scripted fills ignored the rules (2026-11-11) — MEDIUM (design change)
+The question was whether the traces sit too close to the pours and lose signal to
+capacitance. Measured on the board as committed (`kicad/gen/rf_audit.py`, new), the
+answer to that is no — and the measurement found four other things that were wrong.
+
+**What was not wrong.** Every pour was already 0.5 mm from every trace (a render at
+board scale makes the gap look like a hairline). The capacitance that matters is the
+trace over its plane, about 1 pF per cm, not the pour beside it; summed over every
+sensitive net it comes to 3–26 pF, and the lowest corner any of them makes with its
+node impedance is 100 kHz (the volume-pot wiper). Nothing reaches the audio band.
+
+**What was.**
+1. *The ground plane was slotted.* The In1 plane used KiCad's default 0.5 mm zone
+   clearance, so each 1.6 mm pad got a 2.6 mm opening — on a 2.54 mm pitch. Every row
+   of pins had merged into one slot: **31 openings longer than 5 mm, the longest
+   17.8 mm, under the TL074.** Return current has to walk round a slot; that is where
+   a board picks up and radiates.
+2. *The inner signal layer had no plane.* JLC04161H-7628 is 0.21 mm prepreg / 1.07 mm
+   core / 0.21 mm prepreg, so In2 is 0.21 mm from **B.Cu** and five times further from
+   the In1 plane — and B.Cu carried 1.1 m of traces, which left its pour with openings
+   up to 80 mm across. (PCB-NOTES said every In2 trace sat 0.21 mm from the GND plane.
+   It sat 0.21 mm from that.) The crosstalk audit's assumption that no two signal
+   layers face each other without a plane between was also false for In2 and B.Cu.
+3. *Stitching was thin.* 27 perimeter vias on a 15 mm pitch with a 56 mm gap, 48 ground
+   vias on the whole board, and a point 33 mm from the nearest one.
+4. *Scripted zone fills ignored the project's rules.* pcbnew's filler asks the board's
+   rule engine for each clearance; in a script the engine is empty until something
+   initialises it, and the fill then keeps only each zone's own clearance — no net
+   classes, no hole clearance, no `.kicad_dru`. It was invisible while every zone had
+   a blanket 0.5 mm, and it appeared the moment the planes were tightened: 411 clearance
+   errors. `route_board.refill()` now initialises the engine first (one `WriteDRCReport`
+   call), so a scripted fill is what pressing B in the editor gives.
+
+**Fix — the copper rebuilt to RF practice:**
+- **Stack:** `F.Cu` signal + ground pour / `In1` solid ground / `In2` signal / `B.Cu`
+  **solid ground**. Nothing is routed on a plane. Each signal layer is 0.21 mm from its
+  own plane and In2 is buried between the two. Both boards still route completely on two
+  signal layers.
+- **Plane openings follow the holes.** Plane clearance 0.2 mm to copper and 0.35 mm to a
+  hole, and the unused pad copper is removed from the inner layers (pads and vias keep a
+  ring only where something connects), so the opening round a foreign pin is hole +
+  0.7 mm: a 1.0 mm web survives between 2.54 mm pins. In1: **3 openings over 5 mm**
+  (was 31) — the footswitch and tank pad rows, where the ground pads' own thermal
+  reliefs join their neighbours, and the LM1875's 1.7 mm pin row; longest 10 mm.
+  B.Cu, where pads cannot be removed: 11, all under the 2.0 mm wiring pads on the board
+  edge and the LM1875; coverage 80 → 92 %, one piece.
+- **Top pour:** 0.5 mm from every trace, **1.0 mm from high-impedance (HiZ) nets**
+  (`.kicad_dru` rule `pour_to_hiz`, top layer only — on a plane the wider opening would
+  bring the slots back), no sliver narrower than 0.4 mm.
+- **Edge:** copper 0.5 mm back on all four layers, against JLCPCB's 0.2 mm from a routed
+  edge that is itself ±0.2 mm (and 0.4 mm should they add V-cut rails). A **ground via
+  fence every 5 mm** round the perimeter (95 vias on the SMD board; gaps only at the
+  corner holes and the edge wiring pads).
+- **Stitching:** every SMD ground pad gets its own via beside it before routing
+  (`stitch.fanout`), and after routing ground vias go on a 7.5 mm grid wherever one fits
+  on every layer, 1 mm clear of any pad (`stitch.py`): **326 ground vias (was 48), no
+  point further than 14 mm from one (was 33), mean 3.3 mm.**
+- **Through vias only.** Shown two layers, the autorouter returns vias that span just
+  those two — blind vias, which the standard process does not drill. The drill-count
+  check in the order package caught 75 of them; `route_board.py` now makes every via a
+  through via, and `fab_jlcpcb.py` / `verify.py` refuse a board with any other kind.
+- **The one node where a few pF do matter.** The reverb summer's three 100 k resistors
+  meet at `SUMJ`; 10 pF there (op-amp input + socket + 6 pF of copper) puts a pole
+  inside the feedback loop and the stage peaks **5.3 dB at 620 kHz**
+  (`spice/ac_summer_stability.cir`). New **`C_mixfb` 33 pF C0G** across `R_mixfb`: no
+  peaking for 5–25 pF of stray, −0.09 dB at 7 kHz, −0.7 dB at 20 kHz.
+- **JLCPCB's limits re-read** from their capability page and applied where the project
+  was looser: hole-to-copper 0.30 → 0.35 mm, annular ring 0.18 → 0.20 mm, silkscreen
+  text 0.15 mm off every pad (rule `silk_to_pad`). Part 4 has the table.
+- **Completion router:** routes short links first and, if a link finds no path, starts
+  again from the autorouted board with the failed links first (two routing layers leave
+  less room for a fixed order); treats an unconnected through-hole pad on In2 as the
+  hole it now is; signal links fall back to 0.3 mm before giving up.
+
+`verify.py` gained the "RF rules" and "JLCPCB limits" groups (64 checks on the SMD
+board, 55 on the THT board). Crosstalk after re-routing, now with the tank driver's
+own output counted as an aggressor: worst pair `R_DRVO` → `TANK_OUT` −61 dB (SMD),
+`R_DRVO` → `DRVP` −75 dB (THT). **What this is not:** an impedance-controlled board.
+No trace here is long enough to be a transmission line below a gigahertz, and none
+needs to be; the point of the exercise is a ground that stays one ground at radio
+frequency, so that what arrives on the guitar, tank, pedal and speaker cables finds a
+short way home instead of a detour through the audio path.
+**Severity:** MEDIUM — the old copper would have worked as an audio board; it would
+have been needlessly open to hum fields and radio pickup, and three of the four
+defects were invisible to DRC.

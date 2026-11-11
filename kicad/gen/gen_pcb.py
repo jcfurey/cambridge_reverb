@@ -30,6 +30,20 @@ REPO_KI = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SYS_FP  = "/usr/share/kicad/footprints"
 OUT_DEMO = os.path.join(REPO_KI, "power_section_demo.kicad_pcb")
 
+# ---- copper rules (errata #31) -------------------------------------------------
+# Stack: F.Cu signal + GND pour / In1 solid GND plane / In2 signal / B.Cu solid GND plane.
+# Every trace has a solid plane 0.21 mm away (F.Cu over In1, In2 over B.Cu), the inner
+# signal layer is buried between the two planes, and nothing is routed on the bottom.
+PLANE_CLEAR = 0.2     # plane copper to foreign copper on In1 / B.Cu. With the unused inner pads removed the
+                      # opening around a foreign pin is hole + 2 x 0.35 mm, so a 0.8 mm DIP hole leaves a
+                      # 1.0 mm web between 2.54 mm pins. (At KiCad's default 0.5 mm the openings of every pin
+                      # row merged into one slot -- 15 mm long under the TL074.)
+POUR_CLEAR = 0.5      # top pour to any trace or pad (the .kicad_dru asks 1.0 mm from HiZ nets): > 2 x the
+                      # 0.21 mm to the plane, so the plane sets a trace's capacitance, not the pour beside it
+POUR_MIN_W = 0.4      # no pour sliver narrower than this
+FENCE_PITCH = 5.0     # perimeter ground vias (lambda/10 at 2.9 GHz in FR4)
+FENCE_INSET = 2.5     # just inside the 2 mm no-route frame along the board edge
+
 # silkscreen label geometry (see the silkscreen section below)
 LBL_H, LBL_W, LBL_T = 1.0, 0.65, 0.15
 LBL_OFF = 0.95             # label centre above the part's top edge: the baseline clears it by 0.45 mm,
@@ -59,7 +73,7 @@ PROFILES = {
   # silkscreen labels cost no board area there (the SMD board keeps 0.4 mm of clear silk).
   # GAP 1.5 / ZONE_GAP 3.0 / BOT_GAP 4.0 (were 1.6 / 3.5 / 4.5) since the axial VTL5C1 footprint
   # (2026-11): with the old numbers the narrowest fitting columns needed 167 mm of 159.5.
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=3.0, BOT_GAP=4.0, TOP_POUR=False, LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=3.0, BOT_GAP=4.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
   # SMD board 170x100 since the 4-layer / keepout regime (was 155x90, Part 7's "safe bet"):
   # at a 0.5 mm part gap no via fits next to an SMD ground or rail pad, and 30 of 52 open
   # links were exactly those. 170x100 still fits any chassis the 190x115 original did.
@@ -240,6 +254,10 @@ def add_footprint(board, c, x, y, netmap, rot=0, hide_text=True):
         net = c["nets"].get(pad.GetNumber())
         if net and net in netmap:
             pad.SetNet(netmap[net])
+        if pad.GetAttribute() == pcbnew.PAD_ATTRIB_PTH and LAYERS == 4:
+            # no pad copper on an inner layer unless something connects there: the plane's
+            # opening around this pin is then set by the hole (errata #31)
+            pad.SetRemoveUnconnected(True); pad.SetKeepTopBottom(True)
         if TOP_POUR and pad.GetAttribute() == pcbnew.PAD_ATTRIB_SMD and net == "GND":
             # SMD ground pads connect SOLID into the top pour (no thermal spokes to
             # starve; reflow/hot-air does not care) -- THT pads keep thermal reliefs
@@ -256,37 +274,42 @@ def outline(board, w, h):
         board.Add(seg)
 
 def gnd_pour(board, netmap, w, h, layer=None):
+    """layer=None: the bottom layer. On a 4-layer board that is a solid GND PLANE (named
+    plane_GND_B: no tracks are routed on it) -- the reference for the In2 traces 0.21 mm
+    above it and the board's shield towards the chassis. layer=F.Cu: the top GND pour
+    around the component-side traces."""
     if "GND" not in netmap:
         return
     zone = pcbnew.ZONE(board)
     zone.SetLayer(pcbnew.B_Cu if layer is None else layer)
+    zone.SetNetCode(netmap["GND"].GetNetCode())
+    zone.SetAssignedPriority(0)
     if layer == pcbnew.F_Cu:
         # top pour: copper for the SMD ground pads (they carry a SOLID per-pad
         # override) and shielding; it does NOT put thermal spokes on the through-
-        # hole pads -- those ground through the bottom pour, so no starved spokes
+        # hole pads -- those ground through the In1 plane
         zone.SetPadConnection(pcbnew.ZONE_CONNECTION_NONE)
-    zone.SetNetCode(netmap["GND"].GetNetCode())
-    zone.SetAssignedPriority(0)
-    if LAYERS == 4 and layer is None:
-        # 4-layer: the In1 plane grounds every pad (thermal reliefs there); the B.Cu pour
-        # is shield and return copper only, so it makes no pad connections -- no starved
-        # spokes where bottom traces crowd a ground pad
+        zone.SetZoneName("pour_GND_F")
+        zone.SetLocalClearance(mm(POUR_CLEAR)); zone.SetMinThickness(mm(POUR_MIN_W))
+    elif LAYERS == 4:
+        # bottom PLANE: the In1 plane grounds every through-hole pad (thermal reliefs there);
+        # this one makes no pad connections, so the solder side of a ground pin is an
+        # ordinary pad to solder -- the two planes are tied by the stitching vias
         zone.SetPadConnection(pcbnew.ZONE_CONNECTION_NONE)
+        zone.SetZoneName("plane_GND_B")
+        zone.SetLocalClearance(mm(PLANE_CLEAR))
     sps = zone.Outline(); sps.NewOutline()
     for (px, py) in [(0.5, 0.5), (w - 0.5, 0.5), (w - 0.5, h - 0.5), (0.5, h - 0.5)]:
         sps.Append(mm(px), mm(py))
     zone.SetIsFilled(True)
     board.Add(zone)
 
-IN2_PLANE = None    # "+17V" to make In2 a +17 V plane; None = In2 is a routing layer (see below)
+IN2_PLANE = None    # "+17V" to make In2 a +17 V plane; None = In2 is the inner SIGNAL layer
 
 def planes(board, netmap, w, h):
-    """4-layer stack: In1 = solid GND plane (the reference for every F.Cu trace and every
-    In2 trace). In2 was a +17V plane at first; with the footprint keepouts confining the
-    outer layers to the gaps between parts, two routing layers left 33-43 links open, so
-    In2 is a signal layer (long runs go there, under the GND plane, and +17 V is routed
-    as 1.0 mm Power traces). Set IN2_PLANE = "+17V" to get the plane back. Through-hole
-    pads connect with thermal reliefs; SMD pads get vias from the router."""
+    """In1 = solid GND plane, the reference for every F.Cu trace. (In2 is the inner signal
+    layer; its reference is the B.Cu plane, see gnd_pour.) Through-hole ground pads connect
+    with thermal reliefs; SMD ground pads get a via (stitch.fanout)."""
     for layer, net in ((pcbnew.In1_Cu, "GND"), (pcbnew.In2_Cu, IN2_PLANE)):
         if not net or net not in netmap:
             continue
@@ -295,16 +318,18 @@ def planes(board, netmap, w, h):
         zone.SetNetCode(netmap[net].GetNetCode())
         zone.SetAssignedPriority(0)
         zone.SetZoneName(f"plane_{net}")
+        zone.SetLocalClearance(mm(PLANE_CLEAR))
         sps = zone.Outline(); sps.NewOutline()
         for (px, py) in [(0.5, 0.5), (w - 0.5, 0.5), (w - 0.5, h - 0.5), (0.5, h - 0.5)]:
             sps.Append(mm(px), mm(py))
         zone.SetIsFilled(True)
         board.Add(zone)
 
-def stitching_vias(board, netmap, w, h, pitch=15.0, inset=3.2):
-    """GND vias around the perimeter every ~15 mm (Part 4's rule), tying the B.Cu pour to
-    the In1 plane: a low-impedance ground ring / shield edge. Skips the corner holes,
-    the wiring-edge pads and the SMD board's left-edge jack pads."""
+def stitching_vias(board, netmap, w, h, pitch=FENCE_PITCH, inset=FENCE_INSET):
+    """The ground FENCE: GND vias around the perimeter every 5 mm (Part 4 asked 15), tying
+    the top pour and the two planes together along the board edge so the edge of the
+    plane pair is closed. Skips the corner holes, the wiring-edge pads and the SMD
+    board's left-edge jack pads."""
     if "GND" not in netmap:
         return 0
     pads = [(pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y), pcbnew.ToMM(max(p.GetSize().x, p.GetSize().y)) / 2)
@@ -328,6 +353,7 @@ def stitching_vias(board, netmap, w, h, pitch=15.0, inset=3.2):
         v.SetPosition(V(x, y)); v.SetDrill(mm(0.4)); v.SetWidth(mm(0.8))
         v.SetViaType(pcbnew.VIATYPE_THROUGH); v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
         v.SetNetCode(netmap["GND"].GetNetCode()); v.SetLocked(True)
+        v.SetRemoveUnconnected(True); v.SetKeepStartEnd(True)
         board.Add(v); n += 1
     return n
 
@@ -790,16 +816,24 @@ def main():
     if PROFILE == "smd":                      # the assembled board: JLCPCB fiducials
         fiducials(board, BW, BH)
     stubs = escape_stubs(board, fps)
-    gnd_pour(board, netmap, BW, BH)           # B.Cu: GND pour around the bottom traces (shield + return)
+    gnd_pour(board, netmap, BW, BH)           # B.Cu: solid GND plane (4-layer) -- nothing is routed on it
     if TOP_POUR:
         gnd_pour(board, netmap, BW, BH, layer=pcbnew.F_Cu)
-    nst = 0
+    nst = nfo = 0
     if LAYERS == 4:
         planes(board, netmap, BW, BH)
         nst = stitching_vias(board, netmap, BW, BH)
-    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        import stitch
+        nfo = stitch.fanout(board, OUT)       # every SMD ground pad: a locked via to the planes, before the router runs
     pcbnew.SaveBoard(OUT, board)
-    print(f"  {LAYERS} copper layers; {nkp} footprint keepout areas; {nst} perimeter GND stitching vias")
+    # fill with the project's rules: reload (so every net has its class) and let
+    # route_board.refill() initialise the rule engine before the filler runs
+    from route_board import refill
+    board = pcbnew.LoadBoard(OUT)
+    refill(board)
+    pcbnew.SaveBoard(OUT, board)
+    print(f"  {LAYERS} copper layers (F.Cu signal + pour / In1 GND / In2 signal / B.Cu GND); {nkp} footprint keepout areas; "
+          f"{nst} perimeter fence vias; {nfo} SMD ground pads fanned out to the planes")
 
     # chassis-fit packing-density check (bounding boxes, as before)
     areas_all = [raw_bbox_mm(fp)[0] * raw_bbox_mm(fp)[1] for _, fp in fps.values()]
@@ -822,6 +856,8 @@ def power_demo():
     """Clean, fully-routed demo of the +33V5 and +17V rails over a GND pour.
     Each rail's parts sit isolated in their own row so the chain routes without
     crossings -- a DRC-clean illustration of net-class track widths + ground."""
+    global LAYERS
+    saved, LAYERS = LAYERS, 2                 # the demo is a plain two-layer board: its bottom pour IS the ground connection
     g.COMPONENTS.clear(); g.build()
     by = {c["ref"]: c for c in g.COMPONENTS if c["fp"]}
     DW, DH = 160.0, 70.0
@@ -871,8 +907,6 @@ def power_demo():
     # ratsnest here: the point a real layout makes the jump with a via.
 
     outline(board, DW, DH)
-    global LAYERS
-    saved, LAYERS = LAYERS, 2                 # the demo is a two-layer board: its bottom pour IS the ground connection
     gnd_pour(board, netmap, DW, DH)
     LAYERS = saved
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())

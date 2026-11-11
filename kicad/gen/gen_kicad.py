@@ -654,6 +654,10 @@ def build():
     # IC1-B active inverting summer (roast R3): dry always on, wet via POT_REV.
     # Out = -(dry + wet) about VBIAS_R, low-Z. Unity each (all 100k).
     s.comp("R","R_mixfb","100k",90,55,{"1":"SUMJ","2":"BLEND"})        # summer feedback
+    # 33 pF across the feedback resistor: the summing node's stray capacitance (op-amp input,
+    # socket, pads, trace -- about 10 pF) otherwise puts a pole inside the loop and the stage
+    # peaks 5 dB at 620 kHz (spice/ac_summer_stability.cir, errata #31). -0.1 dB at 7 kHz.
+    s.comp("C","C_mixfb","33pF",125,30,{"1":"SUMJ","2":"BLEND"})
     s.comp("C","C_drymix","1uF",20,40,{"1":"TONE_OUT","2":"DRMX"})     # dry in (AC)
     s.comp("R","R_drymix","100k",55,40,{"1":"DRMX","2":"SUMJ"})        # dry -> summer
     s.comp("C","C_wetmix","1uF",230,150,{"1":"WET","2":"WMX"})         # wet in (post POT_REV)

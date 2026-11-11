@@ -8,23 +8,27 @@ Rebuild everything with `kicad/gen/build.sh smd`.
 
 | File | What it is | Where it goes |
 |------|------------|---------------|
-| `cambridge_reverb_smd-gerbers.zip` | 13 files: `F_Cu` / `In1_Cu` (GND plane) / `In2_Cu` / `B_Cu`, mask, paste, silk (top + bottom), `Edge_Cuts`, plated and unplated Excellon drill | "Add gerber file" |
-| `bom-jlcpcb.csv` | Assembly BOM: 30 lines, 94 parts, **an LCSC part number on every line** (Comment, Designator, Footprint, LCSC Part # + manufacturer, MPN and library class for reference) | PCB Assembly → "Add BOM File" |
-| `cambridge_reverb_smd-cpl.csv` | Pick-and-place: Designator, Mid X, Mid Y, Layer, Rotation — top side, 94 placements, DNP parts excluded, SOT-23 rotations already offset for JLCPCB's library | PCB Assembly → "Add CPL File" |
+| `cambridge_reverb_smd-gerbers.zip` | 13 files: `F_Cu` (signal + ground pour) / `In1_Cu` (ground plane) / `In2_Cu` (signal) / `B_Cu` (ground plane), mask, paste, silk (top + bottom), `Edge_Cuts`, plated and unplated Excellon drill | "Add gerber file" |
+| `bom-jlcpcb.csv` | Assembly BOM: 31 lines, 95 parts, **an LCSC part number on every line** (Comment, Designator, Footprint, LCSC Part # + manufacturer, MPN and library class for reference) | PCB Assembly → "Add BOM File" |
+| `cambridge_reverb_smd-cpl.csv` | Pick-and-place: Designator, Mid X, Mid Y, Layer, Rotation — top side, 95 placements, DNP parts excluded, SOT-23 rotations already offset for JLCPCB's library | PCB Assembly → "Add CPL File" |
 | `cambridge_reverb_smd-assembly.pdf` | Assembly drawing (part outlines + references) for hand-soldering the through-hole side | print it |
 | `cambridge_reverb_smd-top.svg` | Top-side preview (copper, mask, silk) | compare with JLCPCB's Gerber viewer |
 | `cambridge_reverb_smd-fab-summary.json` | Sizes, hole / via / track minima, counts at export time | — |
 
 ## Order settings
 
-**PCB:** 4 layers · 170 × 105 mm · 1.6 mm · stackup **JLC04161H-7628** (the default) ·
-outer copper 1 oz, inner 0.5 oz · via covering **tented** · surface finish HASL lead-free
-(or ENIG) · "Remove order number" → **Specify a location** (the text `JLCJLCJLCJLC` is on
-the bottom silk for it). No impedance control, no castellations, no via-in-pad.
+**PCB:** 4 layers · 170 × 105 mm · 1.6 mm · stackup **JLC04161H-7628** (the default; the
+ground rules are built on its 0.21 mm prepreg — do not pick the 3313 stack-up) · layer
+order as named in the files: F_Cu, In1_Cu, In2_Cu, B_Cu · outer copper 1 oz, inner 0.5 oz ·
+via covering **tented** · surface finish HASL lead-free (or ENIG) · "Remove order number"
+→ **Specify a location** (the text `JLCJLCJLCJLC` is on the bottom silk for it). No
+impedance control, no blind or buried vias (all 424 are through vias), no castellations,
+no via-in-pad, no edge plating.
 
 **Assembly:** Economic PCBA · **top side** · tooling holes "added by JLCPCB" · the three
-fiducials `FID1–3` are on the board. Smallest feature: 0.3 mm track, 0.8 / 0.4 mm via —
-nothing that carries a surcharge.
+fiducials `FID1–3` are on the board. Smallest feature: 0.3 mm track, 0.8 / 0.4 mm via,
+0.5 mm of bare board between any copper and the outline — nothing that carries a
+surcharge, and room for JLCPCB's ±0.2 mm on the routed edge.
 
 ## Before you pay — three things only a person can check
 
@@ -35,17 +39,17 @@ nothing that carries a surcharge.
    of the single pad). Their engineers also flag rotation doubts during DFM — answer
    them from this list.
 2. **Stock.** `python3 kicad/gen/jlc_parts.py --check` re-reads stock and class for all
-   30 lines. On 2026-11-11 everything was in stock; the thin ones were the 68 nF C0G
+   31 lines. On 2026-11-11 everything was in stock; the thin ones were the 68 nF C0G
    (`C711038`, 215 pcs) and the 47 nF C0G (`C5451690`, 1 184 pcs).
 3. **The chassis.** 170 × 105 mm is smaller than the 190 × 115 original board, but
    nobody has measured the actual chassis yet (errata #9).
 
 ## What JLCPCB places, and what you solder
 
-- **Placed (94):** every 0805 resistor, 1206 capacitor, the 3.09 k set resistor (1206),
+- **Placed (95):** every 0805 resistor, 1206 capacitor, the 3.09 k set resistor (1206),
   D1 / D2 (M7 = 1N4007 in SMA), Q1 / Q2 / Q_rec (MMBF5457) and Q_trem (MMBT3904).
-  13 of the 30 lines are "extended" parts ($3 loading fee per type per order): the C0G
-  capacitors, the 100 V X7R parts, the JFET and the E96 resistor — fees ≈ $50 for five
+  14 of the 31 lines are "extended" parts ($3 loading fee per type per order): the C0G
+  capacitors, the 100 V X7R parts, the JFET and the E96 resistor — fees ≈ $53 for five
   boards plus parts (`python3 kicad/gen/jlc_cost.py`).
 - **Not placed, on purpose (DNP):** `C_mrb_450`, `C_mrb_750` (alternative MRB tunings).
 - **By hand afterwards — 36 parts:** 18 electrolytics, 7 leaded resistors (`R_s1`,

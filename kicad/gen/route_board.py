@@ -61,6 +61,21 @@ def wrap_display(cmd):
         return ["xvfb-run", "-a"] + cmd
     return cmd
 
+def refill(board):
+    """Fill the zones WITH the project's rules. pcbnew's zone filler asks the board's rule
+    engine for every clearance, and in a script that engine is empty until something
+    initialises it -- the fill then keeps only each zone's own clearance and ignores the
+    net classes, the hole clearance and the .kicad_dru (invisible while every zone had a
+    blanket 0.5 mm). WriteDRCReport initialises the engine from the project, so one call
+    before filling makes a scripted fill the same as pressing B in the editor."""
+    import tempfile
+    tmp = tempfile.mktemp(suffix=".rpt")
+    try:
+        pcbnew.WriteDRCReport(board, tmp, pcbnew.EDA_UNITS_MILLIMETRES, False)
+    finally:
+        if os.path.exists(tmp): os.remove(tmp)
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+
 def freerouting_settings(work, passes, threads, job_timeout):
     """Minimal freerouting.json: headless, no telemetry, bounded job.
     Freerouting 2.1.0 ignores max_passes (CLI -mp and JSON alike) and keeps
@@ -261,14 +276,19 @@ def main():
                  f"(--in kicad/cambridge_reverb.kicad_pcb), not a copy")
     board = pcbnew.LoadBoard(a.src)                 # also loads the .kicad_pro net classes
     inner = [l for l in board.GetEnabledLayers().CuStack() if l not in (pcbnew.F_Cu, pcbnew.B_Cu)]
-    plane_layers = {z.GetLayer() for z in board.Zones() if not z.GetIsRuleArea()}
-    a.inner_layers = [board.GetLayerName(l) for l in inner if l in plane_layers]        # planes: no routing
+    # planes = the layers that carry a zone named "plane_...": In1, and since errata #31 B.Cu
+    # (stack: F.Cu signal + pour / In1 GND / In2 signal / B.Cu GND). They are removed from the
+    # DSN; the router works F.Cu + In2 and the F.Cu pour is its ground "plane".
+    plane_layers = {z.GetLayer() for z in board.Zones() if not z.GetIsRuleArea() and z.GetZoneName().startswith("plane_")}
+    a.inner_layers = [board.GetLayerName(l) for l in board.GetEnabledLayers().CuStack() if l in plane_layers]   # planes: no routing
     a.inner_route = [board.GetLayerName(l) for l in inner if l not in plane_layers]     # inner signal layers
     if inner:
         print(f"  {board.GetCopperLayerCount()} copper layers: planes {a.inner_layers or '-'} (routing off), "
               f"inner signal {a.inner_route or '-'}")
         if "--bottom-cost" not in sys.argv:
-            a.bottom_cost = 1.2                     # B.Cu is a signal layer now (the GND plane is In1)
+            a.bottom_cost = 1.2                     # only matters on a board that still routes on B.Cu
+        if pcbnew.B_Cu in plane_layers:
+            a.drop_planes = "none"                  # the top pour stays visible: it is what tells the router GND is done
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         sys.exit("DSN export failed")
     print(f"exported {dsn} ({os.path.getsize(dsn)//1024} kB)")
@@ -290,19 +310,33 @@ def main():
     board = pcbnew.LoadBoard(a.src)
     if not pcbnew.ImportSpecctraSES(board, ses):
         sys.exit("SES import failed")
+    nb = through_vias(board)
+    if nb:
+        print(f"  {nb} via(s) came back spanning only the routed layers: made through vias (F.Cu - B.Cu)")
     z = prune_zero_length(board)
     if z:
         print(f"  removed {z} zero-length track segment(s) left by the SES import")
     d, t = tidy_stubs(board)
     if d or t:
         print(f"  removed {d} duplicate segment(s), trimmed {t} locked stub(s) at the router's T-junction")
-    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    refill(board)
     pcbnew.SaveBoard(dst, board)
     n, v, top, bot, unrouted = stats(board)
     print(f"routed board -> {dst}")
     print(f"  {n} track segments: F.Cu {top:.0f} mm, B.Cu {bot:.0f} mm; {v} vias; "
           f"unrouted connections: {unrouted}")
     print("  now run: kicad-cli pcb drc --severity-all kicad/cambridge_reverb.kicad_pcb")
+
+def through_vias(board):
+    """Every via a plain through via. The router is shown F.Cu and In2 only (the planes are
+    stripped from the DSN), so the vias it returns span F.Cu - In2: BLIND vias, which the
+    standard 4-layer process does not make. A through via at the same spot is always legal:
+    below In2 there is only the B.Cu ground plane, which opens up around it on refill."""
+    n = 0
+    for t in board.GetTracks():
+        if t.GetClass() == "PCB_VIA" and (t.GetViaType() != pcbnew.VIATYPE_THROUGH or t.TopLayer() != pcbnew.F_Cu or t.BottomLayer() != pcbnew.B_Cu):
+            t.SetViaType(pcbnew.VIATYPE_THROUGH); t.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); n += 1
+    return n
 
 def prune_zero_length(board, eps_mm=0.001):
     """The SES import occasionally leaves a degenerate (< 1 um) track segment where
