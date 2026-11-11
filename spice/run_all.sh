@@ -21,7 +21,7 @@ run() {   # run <netlist> [grep-pattern for the printed summary]
 # --- fixed-point block checks ---
 run dc_preamp_jfet.cir
 run ac_reverb_driver.cir
-run ac_mrb.cir
+run ac_mrb.cir                   "^fs="
 run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
 run tran_reverb_mixer.cir
@@ -32,6 +32,8 @@ run noise_frontend.cir           "^cfg="
 run ac_hum_psrr.cir              "^cfg="
 run tran_tremolo_depth.cir       "^cfg="
 run tran_thermal_lm1875.cir      "^(RthSA|---|t[js]_)"
+# --- gain staging at real pickup levels (2026-11): the source-bypass caps are a build option
+run tran_preamp_headroom.cir     "^ROW|THD:"
 # --- parameter sweeps (tables) ---
 run sweep_preamp_bias.cir        "^[0-9R]"
 run sweep_tonestack.cir          "^(---|bass=|treble=|mid_)"

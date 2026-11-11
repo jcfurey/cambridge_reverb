@@ -56,6 +56,8 @@ behavioural VTL5C1 (datasheet LDR-vs-LED-current curve: 20 k @ 1 mA, 600 Ω @ 10
 |---|---:|---:|---:|---:|---:|
 | As drawn (LED from the depth-pot wiper via 1 k to GND) | 0.50 V pk | 6.4–7.4 mA **DC** | 960–1200 Ω | **−19.5 dB** | **1.7 dB** |
 | Redesign | 2.1 V pk | 0–4.7 mA | 1.9 k–50 MΩ | −0.8 dB | **15 dB** |
+| + `R_qb` 1 k (errata #27, as built) | 2.1 V pk | 0–4.2 mA | 2.2 k–50 MΩ | −0.8 dB | **14 dB** |
+| footswitch closed (`FS_TREM` to GND) | 2.1 V pk | 0 | 50 MΩ | −0.8 dB | **0.02 dB** |
 
 The LFO sits at the 8.5 V mid-rail, so wiring its LED to ground gave 7 mA of DC with a
 ±0.5 mA wiggle: the vactrol was a fixed −20 dB pad, not a tremolo. Redesign (errata #22):

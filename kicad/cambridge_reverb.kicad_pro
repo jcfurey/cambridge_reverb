@@ -747,7 +747,7 @@
       },
       {
         "netclass": "HiZ",
-        "pattern": "REVWCW"
+        "pattern": "FS_REV"
       },
       {
         "netclass": "HiZ",
@@ -760,6 +760,10 @@
       {
         "netclass": "HighCurrent",
         "pattern": "ZOB"
+      },
+      {
+        "netclass": "HighCurrent",
+        "pattern": "BR_NEG"
       }
     ]
   },

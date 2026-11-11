@@ -9,7 +9,9 @@
 #   kicad/gen/check.sh tht --no-regen   # verify only (keeps a ROUTED board intact!)
 #
 # NOTE: regenerating rewrites the PLACED board -- it discards routing. After a
-# re-route run with --no-regen, or route again (kicad/gen/route_board.py).
+# re-route run with --no-regen, or route again (kicad/gen/route_board.py +
+# finish_routes.py). kicad/gen/build.sh <profile> runs the whole chain, including the
+# JLCPCB order package (fab_jlcpcb.py) and the full verification (verify.py).
 set -u
 cd "$(dirname "$0")/../.."
 P=${1:-tht}; REGEN=1; [ "${2:-}" = "--no-regen" ] && REGEN=0
@@ -23,10 +25,6 @@ if [ $REGEN = 1 ]; then
   python3 kicad/gen/gen_kicad.py --profile $P | tail -1 || { echo "gen_kicad FAILED"; exit 1; }
   python3 kicad/gen/gen_pcb.py --profile $P 2>&1 | grep -vE "^$|Debug:"
   python3 kicad/gen/gen_bom.py --profile $P $BOMF | head -3
-  if [ "$P" = smd ]; then
-    kicad-cli pcb export pos --side front --format csv --units mm --smd-only --exclude-dnp \
-      -o production/smd/cambridge_reverb_smd-top-pos.csv $DIR/$PCB >/dev/null 2>&1 && echo "position file: $(($(wc -l < production/smd/cambridge_reverb_smd-top-pos.csv)-1)) SMD parts"
-  fi
 fi
 kicad-cli sch erc --severity-all --exit-code-violations -o $R/$P-erc.rpt $DIR/$SCH >/dev/null 2>&1
 echo "ERC[$P] exit=$? ($(grep -cE '^\[' $R/$P-erc.rpt) violation lines)"

@@ -1,41 +1,34 @@
-# Production / fab package checklist
+# Pre-order checklist — mixed SMD/THT board
 
-What goes in a JLCPCB order package, and the gate checks before you click "order."
-Order settings and the full pre-order DRC checklist live in
-`../docs/04-jlcpcb-fabrication.md`; this is the packaging/handoff view.
+Order settings and file-by-file instructions: `smd/README.md`. Background and the
+JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 
-## Fab package contents (per board revision)
+## Checked by the tools (run `kicad/gen/build.sh smd`, or `kicad/gen/verify.py smd` on an existing build)
 
-```
-production/
-  vox_cambridge_revA/
-    gerbers_revA.zip        # F.Cu B.Cu F.SilkS B.SilkS F.Mask B.Mask Edge.Cuts + .drl
-    bom_revA.csv            # snapshot of ../bom/bom.csv at tape-out
-    cpl_revA.csv            # pick-and-place (only if using JLCPCB assembly)
-    assembly_revA.pdf       # placement / orientation drawing
-    NOTES.md                # what changed vs previous rev, known issues
-```
+`kicad/reports/verify-smd.txt` is the last result — 49 of 49 on the committed board.
 
-Gerbers/zip are regenerated artifacts — `.gitignore` leaves `production/` and
-`kicad/gerbers/` untracked by default. Commit a tagged zip only when you want a
-frozen, orderable revision in history (uncomment the lines in `.gitignore`).
+- [x] ERC: 0 violations
+- [x] DRC with JLCPCB's limits and the project rules: 0 errors, 0 warnings, **0 open
+      connections**
+- [x] Schematic and board agree pin for pin; same footprint on every reference
+- [x] Every polarised pad is what its datasheet says (diodes, LEDs, electrolytics,
+      JFETs, BJT, regulator, power amp, bridge, op-amps, vactrol)
+- [x] Clamp diodes reverse-biased; electrolytics the right way round at the DC
+      operating point; rectifier not shorted; supply pins; pot directions; footswitch
+- [x] Every part labelled on the silkscreen at a legal size; wiring pads labelled
+- [x] BOM = pick-and-place file = placed SMD footprints; an LCSC number on every line
+- [x] Gerber zip complete (4 copper layers); drill count = pads + vias
+- [x] SPICE suite runs; schematic values = netlist values
 
-## JLCPCB order recap (from Part 4)
+## Yours to check
 
-- 2 layers, **1.6 mm**, **2 oz copper**, HASL(lead), green mask, white silk, tented vias
-- Board outline = your measured size (190×115 or 155×90 — errata #9)
-- Qty 5 (minimum); ~$2–7 + shipping, under ~$25 total
-- "Confirm production file" = Yes; review the Gerber preview every layer
-
-## Pre-order gate (must all pass)
-
-- [ ] DRC clean (zero errors) with the three net classes from
-      `../kicad/cambridge_reverb.kicad_pro` (Default / Power / HighCurrent)
-- [ ] All zones filled; bottom-layer ground pour continuous, no islands
-- [ ] Edge.Cuts is a single closed outline at the measured size
-- [ ] Power path: +33V5 / SPK_P / SPK_N / PA_OUT on **HighCurrent (2.5 mm)** class
-      (errata #11); VREG_IN / +17V / GND on Power (1.5 mm)
-- [ ] LM1875 + LM317 oriented toward the heatsink-side board edge
-- [ ] Polarity markers on electrolytics; pin-1 dots on ICs
-- [ ] Wiring-edge pads all silkscreen-labeled; one edge only
-- [ ] Gerber preview on JLCPCB matches the design on every layer
+- [ ] **Chassis measured** — the board is 170 × 105 mm with M3 holes 5 mm in from each
+      corner (errata #9)
+- [ ] **Transformer identified** — centre-tapped (leave `JP_BR` open, CT to the `CT`
+      pad) or single winding (fit `JP_BR`, `CT` pad empty). Never both (errata #26)
+- [ ] `python3 kicad/gen/jlc_parts.py --check` — parts still in stock
+- [ ] JLCPCB's Gerber viewer matches `smd/cambridge_reverb_smd-top.svg`, every layer
+- [ ] JLCPCB's placement preview: D1 / D2 cathodes, Q1 / Q2 / Q_rec / Q_trem orientation
+- [ ] Mains side: fused IEC inlet (T800 mA at 120 V), earth bonded to the chassis —
+      not on this board, and not optional (roast R1)
+- [ ] Footswitch pedal: each button shorts its line to the common (errata #27)

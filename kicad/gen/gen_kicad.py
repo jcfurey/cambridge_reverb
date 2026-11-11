@@ -69,16 +69,27 @@ SYMS = {
  "L":  dict(ref="L", desc="Inductor", hide_nums=True,
             pins=[("1","~",-5.08,0,-1,0),("2","~",5.08,0,1,0)],
             body=[(-2.54,-1.0,2.54,1.0)]),
- "D":  dict(ref="D", desc="Diode (1=A 2=K)", hide_nums=True,
-            pins=[("1","A",-5.08,0,-1,0),("2","K",5.08,0,1,0)],
-            body=[(-1.27,-1.27,1.27,1.27)]),
- "LED":dict(ref="D", desc="LED (1=A 2=K)", hide_nums=True,
-            pins=[("1","A",-5.08,0,-1,0),("2","K",5.08,0,1,0)],
-            body=[(-1.27,-1.27,1.27,1.27)]),
+ # Diodes and LEDs follow the KiCad / IPC library convention: pin 1 = CATHODE, pin 2 = anode.
+ # Every stock diode footprint (D_SMA, D_SOD-123, D_DO-41, LED_D3.0mm) puts the cathode
+ # mark -- silk bar, "K", the LED's flat -- on pad 1. Until 2026-11 these two symbols were
+ # numbered 1 = A / 2 = K, so on the board the anode net sat on the pad marked as the
+ # cathode: built to the silkscreen (or by a pick-and-place machine), D1 and D2 would have
+ # been a forward-biased short from +33V5 to GND (errata #25).
+ "D":  dict(ref="D", desc="Diode (1=K 2=A, KiCad convention: pad 1 is the marked cathode)", hide_nums=False,
+            pins=[("2","A",-5.08,0,-1,0),("1","K",5.08,0,1,0)],
+            body=[(-1.27,-1.27,1.27,1.27),(0.762,-1.27,0.762,1.27)]),
+ "LED":dict(ref="D", desc="LED (1=K 2=A, KiCad convention: pad 1 is the cathode / flat side)", hide_nums=False,
+            pins=[("2","A",-5.08,0,-1,0),("1","K",5.08,0,1,0)],
+            body=[(-1.27,-1.27,1.27,1.27),(0.762,-1.27,0.762,1.27)]),
  "FUSE":dict(ref="F", desc="Fuse", hide_nums=True,
             pins=[("1","~",-5.08,0,-1,0),("2","~",5.08,0,1,0)],
             body=[(-2.54,-1.0,2.54,1.0)]),
- "POT":dict(ref="RV", desc="Potentiometer (1,3 ends; 2 wiper)", hide_nums=False,
+ # Lug numbers as on a real pot seen from the shaft, lugs down: 1 = CCW end, 2 = wiper,
+ # 3 = CW end. Every pot here is wired so that CLOCKWISE = more (louder, more reverb,
+ # deeper, faster, boost). The two rheostats (speed gangs) tie 1 to the wiper, so the
+ # resistance falls clockwise. Until 2026-11 volume / reverb / depth / speed had 1 and 3
+ # swapped (clockwise = less) -- errata #29.
+ "POT":dict(ref="RV", desc="Potentiometer (1 = CCW end, 2 = wiper, 3 = CW end)", hide_nums=False,
             pins=[("1","1",-5.08,0,-1,0),("3","3",5.08,0,1,0),("2","W",0,5.08,0,1)],
             body=[(-2.54,-1.27,2.54,1.27)]),
  # pin numbers follow the onsemi 2N5457 (TO-92) AND MMBF5457 (SOT-23) datasheets:
@@ -119,6 +130,9 @@ SYMS = {
                   ("8","OUT3",12.7,-1.27,1,0),("14","OUT4",12.7,-8.89,1,0),
                   ("4","V+",0,20.32,0,1),("11","V-",0,-15.24,0,-1)],
             body=[(-7.62,-12.7,7.62,17.78)]),
+ "LINK": dict(ref="JP", desc="Wire link / jumper (2 pads): fitted or left open as a build option", hide_nums=True,
+            pins=[("1","1",-5.08,0,-1,0),("2","2",5.08,0,1,0)],
+            body=[(-2.54,0,-1.0,0),(1.0,0,2.54,0)]),
  "SW_SPST":dict(ref="SW", desc="SPST toggle switch (panel)", hide_nums=True,
             pins=[("1","1",-5.08,0,-1,0),("2","2",5.08,0,1,0)],
             body=[(-2.54,-1.27,2.54,1.27)]),
@@ -324,6 +338,7 @@ FOOTPRINTS = {
  "LM1875":"cambridge_reverb:TO-220-5_Vertical_P1.70mm_LM1875",  # wide-pad: fixes the annular-ring DRC error
  "OPAMP8":"Package_DIP:DIP-8_W7.62mm",
  "OPAMP14":"Package_DIP:DIP-14_W7.62mm",
+ "LINK": "cambridge_reverb:WirePad_1x02_P5.08mm_D1.5mm",     # wire link between two 3.0 mm power pads
  "SW_SPST":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",   # panel toggle, wired
  "JACK":"cambridge_reverb:WirePad_1x02_P2.54mm_D1.2mm",
  "SPEAKER":"cambridge_reverb:WirePad_1x02_P5.08mm_D1.5mm",     # 3.0 mm power pads (Part 4)
@@ -440,10 +455,12 @@ GLOBAL_NETS = {
  "GUITAR_IN","PREAMP_OUT","TONE_OUT","BLEND","TREM_OUT","PA_IN",
  "MRB_OUT","FX_RET","VBIAS_R","VBIAS_T","FS_REV","FS_TREM","FS_MRB",
 }
-# FS_REV/FS_TREM/FS_MRB are footswitch control lines: they leave the DIN
-# connector (switching sheet) and land on their effect sheet via a control
-# pulldown. Exact switching topology follows the original pedal; represented
-# here as defined control nets so they aren't single-ended.
+# FS_REV/FS_TREM/FS_MRB are the footswitch lines. Each pedal switch closes its line to
+# GND (DIN pins 4-6): FS_REV shorts the reverb-recovery output (reverb off), FS_TREM
+# shorts the tremolo LED driver's base (tremolo off), FS_MRB completes the MRB tank's
+# ground return (MRB ON). With no pedal plugged in: reverb and tremolo follow their
+# panel pots and the MRB is out of circuit (errata #27; until 2026-11 the three lines
+# ended on 100 k pull-downs and switched nothing, and the MRB tank was hard-wired in).
 
 # Bench test points (Part 5 build order: rails -> preamp bias -> effects -> power
 # amp). One per node you actually put a meter/scope on, plus a GND pin per zone
@@ -495,9 +512,16 @@ def build():
 
     # ---- Sheet 1: Power Supply ----
     s=Sheet("Power Supply","power_supply.kicad_sch"); sheets.append(s)
-    s.note("POWER SUPPLY  -- bridge -> 33.5V main, 27V dropper, LM317 17V rail",50,20)
+    s.note("POWER SUPPLY  -- T1 centre tap = GND, BR1 as a 2-diode full-wave (JP_BR OPEN) -> 33.5V main, LM317 17V rail. Single 24 V winding without a tap: fit JP_BR, leave the CT pad empty. NEVER both.",50,20)
     s.comp("XFMR","T1","reuse / AnTek AS-0524",40,60,{"1":"AC1","2":"GND","3":"AC2"})
-    s.comp("BRIDGE","BR1","KBP410G",80,60,{"1":"VRAW","2":"AC1","3":"AC2","4":"GND"})  # KBP pin order + ~ ~ -
+    # T1 pad 2 is the secondary CENTRE TAP -> GND. With a centre-tapped transformer (the
+    # original, 48 V CT; or a 2 x 24 V toroid wired in series) the rectifier is the classic
+    # two-diode full wave: only the bridge's two "+" diodes work and its "-" pin must float.
+    # Until 2026-11 that pin was tied to GND as well, which shorts each half-winding through
+    # a "-" diode on alternate half-cycles (errata #26). It now ends on its own net BR_NEG,
+    # and JP_BR links it to GND ONLY for a transformer with a single winding and no tap.
+    s.comp("BRIDGE","BR1","KBP410G",80,60,{"1":"VRAW","2":"AC1","3":"AC2","4":"BR_NEG"})  # KBP pin order + ~ ~ -
+    s.comp("LINK","JP_BR","no-CT link (opt)",80,100,{"1":"BR_NEG","2":"GND"})   # OPEN for a centre-tapped T1 (default); fit for a single 24 V winding and leave the CT pad empty
     s.comp("FUSE","F1","1A SB",120,40,{"1":"VRAW","2":"+33V5"})
     s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"GND"})
     s.comp("R","R_bleed","10k/5W",150,70,{"1":"+33V5","2":"GND"})
@@ -537,7 +561,7 @@ def build():
 
     # ---- Sheet 2: Preamp ----
     s=Sheet("Preamp","preamp.kicad_sch"); sheets.append(s)
-    s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15)",50,20)
+    s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15). C_s1 / C_s2 are a VOICING option, default NOT fitted: none = 21 dB, clean to ~0.3 V pk; C_s1 only = 33 dB, breaks up above ~0.1 V; both = 45 dB, 8 % THD at 20 mV (spice/tran_preamp_headroom.cir, errata #28)",50,20)
     s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"RF1"})
     # RF stopper at the gate (the guitar cable is the antenna): 1k + 100 pF = 1.6 MHz corner,
     # nothing at audio; 1k adds 4 nV/rtHz against the pickup's own 10 (2026-09-08)
@@ -547,14 +571,14 @@ def build():
     s.comp("NJFET","Q1","MMBF5457",90,70,{"3":"Q1G","1":"Q1D","2":"Q1S"})   # 1=D 2=S 3=G
     s.comp("R","R_d1","10k",90,40,{"1":"+17V_PRE","2":"Q1D"})
     s.comp("R","R_s1","2K2",90,110,{"1":"Q1S","2":"GND"})
-    s.comp("CP","C_s1","10uF/25V",130,110,{"1":"Q1S","2":"GND"})
+    s.comp("CP","C_s1","10uF/25V (opt)",130,110,{"1":"Q1S","2":"GND"})
     s.comp("C","C_cpl12","100nF",130,70,{"1":"Q1D","2":"Q2G"})
     s.comp("R","R_g2","1M",130,95,{"1":"Q2G","2":"GND"})
     s.comp("NJFET","Q2","MMBF5457",175,70,{"3":"Q2G","1":"Q2D","2":"Q2S"})
     s.comp("R","R_d2","10k",175,40,{"1":"+17V_PRE","2":"Q2D"})
     s.comp("C","C_pres","100pF",175,110,{"1":"Q2D","2":"GND"})
     s.comp("R","R_s2","2K2",215,95,{"1":"Q2S","2":"GND"})
-    s.comp("CP","C_s2","10uF/25V",215,120,{"1":"Q2S","2":"GND"})
+    s.comp("CP","C_s2","10uF/25V (opt)",215,120,{"1":"Q2S","2":"GND"})
     s.comp("C","C_cpl_out","1uF",215,55,{"1":"Q2D","2":"PREAMP_OUT"})   # full-band coupling (errata #20: the generated sheet had only the 470 pF chime cap here = a 1.3 kHz high-pass)
 
     # ---- Sheet 3: Tone Stack -- passive James (Vox-style) Bass/Treble + switchable MID CUT (errata #20) ----
@@ -597,7 +621,7 @@ def build():
     s.comp("R","R_gg","180k",320,215,{"1":"GYP","2":"VBIAS_3"})
     # output buffer -> volume pot (chime cap as a BRIGHT cap across the top half) -> TONE_OUT feeds summer / tank driver / FX send
     s.comp("C","C_tout","1uF",95,215,{"1":"OBUF","2":"VOLTOP"})
-    s.comp("POT","POT_VOL","250k log",140,215,{"1":"VOLTOP","2":"TONE_OUT","3":"GND"})
+    s.comp("POT","POT_VOL","250k log",140,215,{"3":"VOLTOP","2":"TONE_OUT","1":"GND"})   # 3 = CW = input end: clockwise is louder
     s.comp("C","C_treble","470pF",235,215,{"1":"VOLTOP","2":"TONE_OUT"})   # Vox 'chime' -> bright cap (treble lift at low volume)
     s.comp("R","R_fx_pad","10k",185,215,{"1":"TONE_OUT","2":"FX_RET"})       # internal FX send tap (IN3)
 
@@ -623,8 +647,10 @@ def build():
     s.comp("R","R_rec1","10k",110,115,{"1":"+17V_PRE","2":"QRD"})
     s.comp("R","R_rec2","2K2",110,170,{"1":"QRS","2":"GND"})
     s.comp("CP","C_rec_byp","10uF",150,170,{"1":"QRS","2":"GND"})
-    s.comp("C","C_rev4","100nF",150,140,{"1":"QRD","2":"REVWCW"})
-    s.comp("POT","POT_REV","reuse",200,150,{"1":"REVWCW","2":"WET","3":"GND"})  # reverb-level (wet send)
+    # FS_REV = the recovery stage's output node (top of the reverb-level pot, ~10 k source):
+    # the pedal's reverb switch shorts it to GND = reverb off. Line open / no pedal = reverb on.
+    s.comp("C","C_rev4","100nF",150,140,{"1":"QRD","2":"FS_REV"})
+    s.comp("POT","POT_REV","reuse",200,150,{"3":"FS_REV","2":"WET","1":"GND"})  # reverb-level (wet send); 3 = CW = signal end
     # IC1-B active inverting summer (roast R3): dry always on, wet via POT_REV.
     # Out = -(dry + wet) about VBIAS_R, low-Z. Unity each (all 100k).
     s.comp("R","R_mixfb","100k",90,55,{"1":"SUMJ","2":"BLEND"})        # summer feedback
@@ -632,7 +658,7 @@ def build():
     s.comp("R","R_drymix","100k",55,40,{"1":"DRMX","2":"SUMJ"})        # dry -> summer
     s.comp("C","C_wetmix","1uF",230,150,{"1":"WET","2":"WMX"})         # wet in (post POT_REV)
     s.comp("R","R_wetmix","100k",265,150,{"1":"WMX","2":"SUMJ"})       # wet -> summer
-    s.comp("R","R_fs_rev","100k",30,170,{"1":"FS_REV","2":"GND"})   # footswitch control tap
+    # (R_fs_rev removed: the level pot already returns FS_REV to GND)
 
     # ---- Sheet 5: Tremolo (netlist-notes sheet 5) ----
     s=Sheet("Tremolo","tremolo.kicad_sch"); sheets.append(s)
@@ -648,41 +674,46 @@ def build():
     # each arm the attenuation stays 1/3 at every setting: f = 1/(2*pi*(15k+pot)*1u)
     # = 10.6 Hz (pot 0) .. 0.60 Hz (pot 250k)  -- spice/sweep_lfo_speed.cir.
     s.comp("R","R_lfo_ser","15k",140,55,{"1":"LFO_OUT","2":"SPD_A"})   # series arm min-R floor
-    s.comp("POT","POT_SPD_A","250k lin dual",170,55,{"1":"SPD_A","2":"WN1","3":"WN1"})  # SPEED gang A (rheostat), series arm
+    s.comp("POT","POT_SPD_A","250k lin dual",170,55,{"3":"SPD_A","2":"WN1","1":"WN1"})  # SPEED gang A (rheostat), series arm
     s.comp("C","C_lfo1","1uF",200,60,{"1":"WN1","2":"LFO_P"})
     s.comp("R","R_lfo_sh","15k",150,120,{"1":"LFO_P","2":"SPD_B"})     # shunt arm min-R floor
-    s.comp("POT","POT_SPD_B","250k lin dual",150,150,{"1":"SPD_B","2":"VBIAS_T","3":"VBIAS_T"})  # SPEED gang B (rheostat), shunt arm -> mid-rail
+    s.comp("POT","POT_SPD_B","250k lin dual",150,150,{"3":"SPD_B","2":"VBIAS_T","1":"VBIAS_T"})  # SPEED gang B (rheostat), shunt arm -> mid-rail
     s.comp("C","C_lfo2","1uF",185,120,{"1":"LFO_P","2":"VBIAS_T"})
     s.comp("R","R_lfo_fb1","10k",70,70,{"1":"LFO_OUT","2":"LFO_N"})
     s.comp("R","R_lfo_fb2","4K7",70,110,{"1":"LFO_N","2":"VBIAS_T"}) # AC gnd via VBIAS_T
-    s.comp("LED","LED_rate","3mm red",40,70,{"1":"LFO_OUT","2":"LFO_N"})   # limiter + rate indicator (positive half-cycle)
-    s.comp("LED","LED_lim","3mm red",40,100,{"1":"LFO_N","2":"LFO_OUT"})   # limiter, negative half-cycle
-    s.comp("POT","POT_DPT","100k lin",100,150,{"1":"LFO_OUT","2":"DPT_W","3":"VBIAS_T"})  # DEPTH: scales LFO into the LED
+    s.comp("LED","LED_rate","3mm red",40,70,{"2":"LFO_OUT","1":"LFO_N"})   # limiter + rate indicator (positive half-cycle)
+    s.comp("LED","LED_lim","3mm red",40,100,{"2":"LFO_N","1":"LFO_OUT"})   # limiter, negative half-cycle
+    s.comp("POT","POT_DPT","100k lin",100,150,{"3":"LFO_OUT","2":"DPT_W","1":"VBIAS_T"})  # DEPTH: scales LFO into the LED
     # LED driver: depth-pot wiper -> C_drv -> base (biased ~0.9 V, just below conduction) -> emitter
     # follower, R_e sets ~6 mA peak; vactrol LED in the collector from +17V via R_c
-    s.comp("CP","C_drv","100uF/25V",115,185,{"1":"DPT_W","2":"QB"})
-    s.comp("R","R_b1","180k",85,215,{"1":"+17V","2":"QB"})
-    s.comp("R","R_b2","10k",145,215,{"1":"QB","2":"GND"})
-    s.comp("NPN","Q_trem","2N3904",200,195,{"2":"QB","3":"QC","1":"QE"})
+    # FS_TREM = the driver's BASE node: the pedal's tremolo switch shorts it to GND -> Q_trem
+    # off, vactrol dark, signal at full level (tremolo off, no thump: the LFO keeps running).
+    # R_qb isolates the depth-pot wiper / LFO output from that short (1 k, not a dead short
+    # through C_drv). Line open / no pedal = tremolo on, set by the depth pot.
+    s.comp("CP","C_drv","100uF/25V",115,185,{"1":"DPT_W","2":"QDRV"})
+    s.comp("R","R_qb","1k",150,185,{"1":"QDRV","2":"FS_TREM"})
+    s.comp("R","R_b1","180k",85,215,{"1":"+17V","2":"FS_TREM"})
+    s.comp("R","R_b2","10k",145,215,{"1":"FS_TREM","2":"GND"})
+    s.comp("NPN","Q_trem","2N3904",200,195,{"2":"FS_TREM","3":"QC","1":"QE"})
     s.comp("R","R_e","470R",240,215,{"1":"QE","2":"GND"})
     s.comp("R","R_c","100R",240,150,{"1":"+17V","2":"VLED"})
-    s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"1":"VLED","2":"QC","3":"TREM_S","4":"GND"})
+    s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"2":"VLED","1":"QC","3":"TREM_S","4":"GND"})   # PerkinElmer numbering: 1 = LED cathode, 2 = LED anode (errata #25)
     s.comp("R","R_trem1","10k",60,150,{"1":"BLEND","2":"TREM_OUT"})  # series; VTL1 LDR shunts to GND
     s.comp("CP","C_dc_blk","10uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
     # (removed dead C_trem_out/R_trem_pass MRB_FEED branch -- TREM_OUT feeds MRB directly)
-    s.comp("R","R_fs_trem","100k",30,180,{"1":"FS_TREM","2":"GND"})   # footswitch control tap
+    # (R_fs_trem removed: R_b2 is the base node's return)
 
     # ---- Sheet 6: MRB (netlist-notes sheet 6) ----
     s=Sheet("MRB","mrb.kicad_sch"); sheets.append(s)
-    s.note("MRB -- parallel LC tank, default 600 Hz (1H || 68n). 450/750 internal-only.",40,20)
+    s.note("MRB -- parallel LC tank, default 600 Hz (1H || 68n). 450/750 internal-only. The tank returns to GND THROUGH the footswitch (FS_MRB): switch closed = MRB on; open / no pedal = flat (R_fs_mrb only keeps the tank at 0 V DC). No pedal and MRB wanted: link FS1 pads 3-4.",40,20)
     s.comp("C","C_mrb_in","100nF",50,70,{"1":"TREM_OUT","2":"MRB_N"})
     s.comp("R","R_mrb_ser","10k",90,70,{"1":"MRB_N","2":"MRB_T"})
-    s.comp("L","L1","1H toroid",130,100,{"1":"MRB_T","2":"GND"})
-    s.comp("C","C_mrb_600","68nF",170,100,{"1":"MRB_T","2":"GND"})
-    s.comp("C","C_mrb_450","120nF (opt)",170,130,{"1":"MRB_T","2":"GND"})
-    s.comp("C","C_mrb_750","47nF (opt)",170,160,{"1":"MRB_T","2":"GND"})
+    s.comp("L","L1","1H toroid",130,100,{"1":"MRB_T","2":"FS_MRB"})
+    s.comp("C","C_mrb_600","68nF",170,100,{"1":"MRB_T","2":"FS_MRB"})
+    s.comp("C","C_mrb_450","120nF (opt)",170,130,{"1":"MRB_T","2":"FS_MRB"})
+    s.comp("C","C_mrb_750","47nF (opt)",170,160,{"1":"MRB_T","2":"FS_MRB"})
     s.comp("C","C_mrb_out","100nF",90,130,{"1":"MRB_T","2":"MRB_OUT"})
-    s.comp("R","R_fs_mrb","100k",50,160,{"1":"FS_MRB","2":"GND"})   # footswitch control tap
+    s.comp("R","R_fs_mrb","1M",50,160,{"1":"FS_MRB","2":"GND"})   # DC return for the floating tank (no pop when the pedal closes)
 
     # ---- Sheet 7: Power Amp (netlist-notes sheet 7, verbatim) ----
     s=Sheet("Power Amp","power_amp.kicad_sch"); sheets.append(s)
@@ -702,8 +733,8 @@ def build():
     s.comp("R","R_zobel","10R",160,110,{"1":"PA_OUT","2":"ZOB"})
     s.comp("C","C_zobel","100nF",190,110,{"1":"ZOB","2":"GND"})
     s.comp("CP","C_out","2200uF/35V",160,80,{"1":"PA_OUT","2":"SPK_P"})
-    s.comp("D","D1","1N4007",150,150,{"1":"PA_OUT","2":"+33V5"})
-    s.comp("D","D2","1N4007",190,150,{"1":"GND","2":"PA_OUT"})
+    s.comp("D","D1","1N4007",150,150,{"2":"PA_OUT","1":"+33V5"})   # anode (2) on the output, cathode (1) on the rail
+    s.comp("D","D2","1N4007",190,150,{"2":"GND","1":"PA_OUT"})     # anode (2) on GND, cathode (1) on the output
     s.comp("C","C_byp1","100nF",40,150,{"1":"+33V5","2":"GND"})
     s.comp("CP","C_byp2","10uF/50V",75,150,{"1":"+33V5","2":"GND"})
 

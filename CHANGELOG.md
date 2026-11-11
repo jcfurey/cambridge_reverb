@@ -3,6 +3,57 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Order-ready: pinout and wiring audit, footswitch, full routing, JLCPCB package (2026-11-11)
+- **Errata #25 (critical).** Diode and LED symbols were numbered 1 = A / 2 = K against
+  footprints whose pad 1 is the cathode: built to the silkscreen, or placed by JLCPCB, the
+  output clamps `D1` / `D2` were a forward-biased short across the 33.5 V rail. Symbols
+  renumbered to the KiCad convention. The vactrol had the same fault (datasheet pin 1 =
+  LED cathode) and a footprint that was four pads in a row for an **axial** part: symbol
+  renumbered, footprint redrawn from the PerkinElmer drawing.
+- **Errata #26 (critical).** Transformer centre tap and the bridge's "−" pin were both on
+  GND — a short across each half-winding with a centre-tapped transformer. The "−" pin now
+  ends on `BR_NEG`; link `JP_BR` (open by default, on the wiring edge beside `T1`) grounds
+  it only for a single winding with no tap.
+- **Errata #27.** The footswitch lines ended on pull-downs and switched nothing, and the
+  MRB tank went straight to ground — a 577 Hz band-pass permanently in the signal path.
+  Now: `FS_MRB` is the tank's ground return (pedal closed = MRB on, open = flat within
+  1.3 dB), `FS_REV` grounds the reverb-recovery output, `FS_TREM` grounds the LED
+  driver's base through new `R_qb` 1 k. `R_fs_rev`, `R_fs_trem` removed; `R_fs_mrb` 1 M.
+  `ac_mrb.cir` and `tran_tremolo_depth.cir` model both switch states.
+- **Errata #28.** New `spice/tran_preamp_headroom.cir`: with both source-bypass caps the
+  preamp has 45 dB ahead of the volume control — 8 % THD at 20 mV. `C_s1` / `C_s2` are now
+  optional (do-not-place by default): 21 dB, clean to ~0.3 V peak.
+- **Errata #29.** Volume, reverb, depth and speed pots had lugs 1 and 3 swapped
+  (clockwise = less). One rule for all seven groups: pad 3 = clockwise end.
+- **Errata #30 — what "ready for JLCPCB" needed.**
+  - `kicad/gen/jlc_parts.py`: a looked-up LCSC part for each of the 30 assembly lines
+    (stock, class, package from JLCPCB's library; `--check` re-reads them). C0G for the
+    signal-path and frequency-setting capacitors, 100 V X7R on the rail. Real class
+    count 15 basic / 2 preferred / 13 extended — the earlier "3 extended, ~$20" assumed
+    1206 C0G parts were basic; fees are ≈ $50 per five boards (`jlc_cost.py` now reads
+    the class from the BOM).
+  - **Silkscreen** on both boards: every reference at JLCPCB's legend minimum in a label
+    strip the placer reserves; wiring pads labelled by function; board name / revision;
+    `JLCJLCJLCJLC` on the bottom silk.
+  - `kicad/gen/finish_routes.py`: a grid maze router that closes the links Freerouting
+    leaves open, with the `.kicad_dru` rules as written and necked-down widths for
+    signal-level branches of power nets. **Both boards: 232 / 232 routed, 0 DRC errors,
+    0 warnings** (were 216 / 226 with one error, and 218 / 226).
+  - `kicad/gen/fab_jlcpcb.py` → `production/smd/`: Gerber + drill zip, BOM, CPL in
+    JLCPCB's columns with the SOT-23 rotation offset, assembly drawing.
+  - `kicad/gen/verify.py`: ERC, DRC, schematic-to-board parity, pin-function audit
+    against the datasheets, electrical assertions, silkscreen, order package, SPICE and a
+    schematic-to-netlist value cross-check — 49 / 49 (SMD), 40 / 40 (THT).
+  - `kicad/gen/build.sh <profile>`: the whole chain in one command.
+- **Placement.** Column widths are now read off a table of each column's height at every
+  width (shelf packing is a step function; the iterative balance stalled). SMD board
+  **170 × 105 mm** (was 170 × 100). THT board: part gap 1.5 mm, channels 3.0 mm, to take
+  the larger vactrol footprint inside the original 190 × 115 outline. Third fiducial moved
+  off the wiring edge. Footprints keep their library link (`Lib:Name`).
+- Crosstalk after routing: SMD worst pair −90 dB (was −74), THT −64 dB (was −66).
+- Docs: errata #25–#30, README, PCB-NOTES (status table, finishing router, silkscreen,
+  build options), `production/` (order package README, checklist), Part 3, Part 4.
+
 ### Four-layer boards, no routes through footprints, rules by impedance (2026-09-08)
 - **Errata #24.** Both boards move to a **4-layer** stack (JLC04161H-7628): F.Cu signal,
   **In1 solid GND plane**, In2 inner signal layer, B.Cu signal + GND pour, perimeter GND

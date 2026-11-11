@@ -6,7 +6,7 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  174 components (146 + 28 test points) · 83 nets · 0 unconnected pins
+kicad-cli sch export netlist ->  178 components (150 + 28 test points) · 85 nets · 0 unconnected pins
 GND spans 65 nodes · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 
@@ -51,10 +51,17 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   the Power Supply sheet) feeds the reverb driver and the tremolo LFO; the
   op-amp `+in`/gain-return nets reference `VBIAS` instead of GND. Flagged in the
   sheet notes as a design addition — verify values for your rail.
-- **Footswitch control taps.** `FS_REV/FS_TREM/FS_MRB` leave the DIN connector
-  and land on their effect sheet through a 100 k control pulldown (R_fs_*). The
-  exact pedal switching topology follows the original footswitch; these nets are
-  represented as defined control lines so they aren't single-ended.
+- **Footswitch (errata #27, 2026-11).** Each pedal contact closes its line to GND:
+  `FS_REV` is the reverb-recovery output (closed = reverb off), `FS_TREM` the tremolo
+  LED driver's base behind `R_qb` (closed = tremolo off), `FS_MRB` the MRB tank's ground
+  return (closed = MRB **on**; open = the tank floats on `R_fs_mrb` 1 M and the path is
+  flat). Until then the three lines ended on 100 k pull-downs and switched nothing.
+- **Rectifier (errata #26).** `T1` centre tap on GND, bridge "−" on its own net
+  `BR_NEG`, link `JP_BR` to GND for a single-winding transformer only.
+- **Numbering conventions.** Diodes and LEDs: pin 1 = cathode (the KiCad footprints'
+  pad 1). Pots: 1 = CCW end, 2 = wiper, 3 = CW end. Vactrol: 1 = LED cathode
+  (PerkinElmer). JFETs: 1 D / 2 S / 3 G. `kicad/gen/verify.py` checks all of them on
+  the finished board.
 
 ## Effects chain — redesigned 2026-06-16 (roast R3/R6 resolved)
 - **Active wet/dry summer** on the spare **IC1-B** half (inverting summer about

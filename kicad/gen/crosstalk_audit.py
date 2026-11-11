@@ -45,6 +45,8 @@ VICT = {"GUITAR_IN": (50e3, 0.1, "jack -> C_in; pickup + 1 M"), "RF1": (50e3, 0.
         "TONE_OUT": (50e3, 1.0, "volume wiper"), "DRVP": (100e3, 1.0, "tank driver +in"),
         "TANK_OUT": (10e3, 0.02, "tank return (recovery gate)"), "QRG": (10e3, 0.02, "recovery JFET gate"),
         "QRD": (10e3, 0.3, "recovery drain"), "WET": (50e3, 0.3, "reverb level wiper"),
+        "FS_REV": (10e3, 0.3, "recovery output / top of the reverb pot (footswitch line)"),
+        "FS_MRB": (50e3, 1.0, "MRB tank return (footswitch line; floats on the tank when open)"),
         "SUMJ": (100e3, 1.0, "summer virtual ground: coupled charge x R_fb -> BLEND (1 V)"),
         "TREM_OUT": (10e3, 1.0, "tremolo shunt node"), "TREM_S": (10e3, 1.0, "LDR node"),
         "OBUF_IN": (100e3, 1.0, "output buffer +in"), "MRB_T": (50e3, 1.0, "MRB tank node"),
@@ -55,7 +57,8 @@ FWD_DB = {"GUITAR_IN": 74.3, "RF1": 74.3, "Q1G": 74.3, "RF2": 47.3, "Q1D": 50.0,
           "JA": 27.0, "JB": 27.0, "JWB": 27.0, "JTA": 27.0, "JTB": 27.0, "JWT": 27.0, "JOUT": 33.0,
           "MID": 27.0, "TONE_OUT": 27.3, "DRVP": 27.3, "SUMJ": 27.3, "TREM_OUT": 27.3, "TREM_S": 27.3,
           "OBUF_IN": 27.3, "MRB_T": 27.3, "PA_IN": 27.3, "PA_BIAS": 27.3, "PA_INV": 27.3 - 27.0,
-          "TANK_OUT": 27.3 + 20, "QRG": 27.3 + 20, "QRD": 27.3, "WET": 27.3, "GYA": 20.0}
+          "TANK_OUT": 27.3 + 20, "QRG": 27.3 + 20, "QRD": 27.3, "WET": 27.3, "GYA": 20.0,
+          "FS_REV": 27.3, "FS_MRB": 27.3}
 
 def c_self_per_m(w):
     """Hammerstad microstrip capacitance per metre (F/m) for width w over height H."""

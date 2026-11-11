@@ -4,7 +4,8 @@ qty,value,footprint,refs
 1,2200uF/35V,CP_Radial_D16.0mm_P7.50mm,C_out
 1,4700uF/50V,CP_Radial_D18.0mm_P7.50mm,C_main
 2,10uF,CP_Radial_D5.0mm_P2.00mm,C_dc_blk C_rec_byp
-3,10uF/25V,CP_Radial_D5.0mm_P2.00mm,C_adj C_s1 C_s2
+1,10uF/25V,CP_Radial_D5.0mm_P2.00mm,C_adj
+2,10uF/25V (opt),CP_Radial_D5.0mm_P2.00mm,C_s1 C_s2
 1,10uF/50V,CP_Radial_D5.0mm_P2.00mm,C_byp2
 1,1uF,CP_Radial_D5.0mm_P2.00mm,C_rev1
 1,22uF/25V,CP_Radial_D5.0mm_P2.00mm,C_gain
@@ -33,13 +34,13 @@ qty,value,footprint,refs
 1,1H toroid,Inductor_MRB_1H_Toroid,L1
 2,3mm red,LED_D3.0mm,LED_lim LED_rate
 2,100R,R_0805_2012Metric,R_c R_pre
-14,100k,R_0805_2012Metric,R_drv1 R_drymix R_fs_mrb R_fs_rev R_fs_trem R_mixfb R_obuf_b R_vb31 R_vb32 R_vbr1 R_vbr2 R_vbt1 R_vbt2 R_wetmix
+11,100k,R_0805_2012Metric,R_drv1 R_drymix R_mixfb R_obuf_b R_vb31 R_vb32 R_vbr1 R_vbr2 R_vbt1 R_vbt2 R_wetmix
 1,10R,R_0805_2012Metric,R_drv3
 14,10k,R_0805_2012Metric,R_b2 R_d1 R_d2 R_drv2 R_fx_pad R_j1 R_j2 R_lfo_fb1 R_mid R_mk1 R_mk2 R_mrb_ser R_rec1 R_trem1
 2,15k,R_0805_2012Metric,R_lfo_ser R_lfo_sh
 2,180k,R_0805_2012Metric,R_b1 R_gg
-4,1M,R_0805_2012Metric,R_g1 R_g2 R_inb R_rec_bias
-4,1k,R_0805_2012Metric,R_gain R_j4 R_rf1 R_rf2
+5,1M,R_0805_2012Metric,R_fs_mrb R_g1 R_g2 R_inb R_rec_bias
+5,1k,R_0805_2012Metric,R_gain R_j4 R_qb R_rf1 R_rf2
 1,220k,R_0805_2012Metric,R_drvbias
 4,22k,R_0805_2012Metric,R_bias1 R_bias2 R_bias3 R_fb
 1,240R,R_0805_2012Metric,R_reg1
@@ -63,6 +64,7 @@ qty,value,footprint,refs
 1,Input 2,WirePad_1x02_P2.54mm_D1.2mm,J_IN2
 1,MID CUT,WirePad_1x02_P2.54mm_D1.2mm,SW_MID
 1,10in Bulldog,WirePad_1x02_P5.08mm_D1.5mm,LS1
+1,no-CT link (opt),WirePad_1x02_P5.08mm_D1.5mm,JP_BR
 1,100k lin,WirePad_1x03_P2.54mm_D1.2mm,POT_DPT
 2,250k lin,WirePad_1x03_P2.54mm_D1.2mm,POT_BASS POT_TREB
 2,250k lin dual,WirePad_1x03_P2.54mm_D1.2mm,POT_SPD_A POT_SPD_B

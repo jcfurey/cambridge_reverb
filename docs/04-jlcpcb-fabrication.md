@@ -4,6 +4,13 @@
 > classes, Gerber/drill export steps, silkscreen layout, and the pre-order
 > checklist are recovered substantially verbatim.
 >
+> **Ordering the SMD / THT board (2026-11):** the order package is generated —
+> `production/smd/` holds the Gerber + drill zip, the assembly BOM with LCSC part numbers
+> and the pick-and-place file, and `production/smd/README.md` lists the order settings.
+> This Part is the background: design limits, net classes, the reasoning. Build it with
+> `kicad/gen/build.sh smd`; the manual Gerber steps further down are only needed for the
+> THT board.
+>
 > Note: the board outline below shows 190×115 mm (matching the original
 > 25-5274-2 footprint). Part 7 recommends 155×90 mm as a conservative default
 > pending chassis measurement. Use whichever your measured chassis supports;
@@ -14,7 +21,7 @@
 | Parameter | Setting | Notes |
 |-----------|---------|-------|
 | Layers | **4** *(2026-09-08, errata #24; was 2)* | F.Cu signal / In1 GND plane / In2 signal / B.Cu signal + GND pour — stackup **JLC04161H-7628** (0.035 mm outer copper, 0.2104 mm 7628 prepreg, 1.065 mm core, 0.0152 mm inner copper) |
-| Dimensions | 190 × 115 mm | Matches original 25-5274-2 board footprint |
+| Dimensions | 190 × 115 mm (THT board) · **170 × 105 mm (SMD / THT board, the assembled one)** | 190 × 115 matches the original 25-5274-2 board |
 | PCB Qty | 5 | Minimum order |
 | PCB Thickness | 1.6 mm | Matches original board thickness |
 | Copper Weight | 2 oz *(1 oz is enough — see the 2026-09-07 rules note below)* | Handles power-amp traces better |
@@ -42,21 +49,32 @@ board area: setup $8 + stencil $1.50 + $0.0016 per joint, plus **$3 per order fo
 "extended" (non-basic-library) part type**. `kicad/gen/jlc_cost.py` reads the generated
 assembly BOM and shows which knob moves the number:
 
-| | Before | After (errata #23) |
-|---|---:|---:|
-| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 |
-| Extended part types (× $3) | 7 ($21) | 3 ($9: MMBF5457 SOT-23, 3.09 k E96, 68 nF) |
-| Joints per board | 183 | 194 |
-| Assembly for 5 boards (estimate) | ~$32 | **~$20** |
+| | Before | Errata #23 (assumed classes) | **2026-11, classes looked up (errata #30)** |
+|---|---:|---:|---:|
+| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 | **94 / 30** |
+| Extended part types (× $3) | 7 ($21) | 3 ($9) | **13 ($39)** + 2 "preferred" (no fee) |
+| Joints per board | 183 | 194 | 192 |
+| Assembly fees for 5 boards | ~$32 | ~$20 | **~$50**, parts extra |
+
+The middle column rested on an assumption — that common 1206 capacitor values are
+basic-library parts whatever the dielectric. `kicad/gen/jlc_parts.py` now holds a part
+that was actually looked up for every line: in 1206 only the 100 nF and 1 µF X7R 50 V
+parts are basic, and none of the C0G values this board needs above 100 pF is basic in
+0603, 0805 or 1206. The board keeps C0G on the high-impedance and frequency-setting
+nodes (DC-biased X7R on a 1 MΩ node in a combo cabinet is a microphone) and uses 100 V
+X7R on the 33.5 V rail and across the bridge: nine C0G lines, two 100 V X7R lines, the
+JFET and the E96 set resistor are the thirteen.
 
 What changed: every SMD capacitor is **1206** (the 1210 line — 1 µF X7R 50 V and the
 Zobel 100 nF — was an extended part for no electrical gain; 1206 1 µF/50 V X7R is a
 basic part), the two optional MRB caps (`C_mrb_450`, `C_mrb_750`, marked "(opt)") are
 **DNP** — on the board, excluded from the assembly BOM and the position file — and the
 mid-cut gyrator uses **2.2 nF / 180 k** (E24, same 1.86 H) instead of 1.8 nF / 220 k.
-Three **fiducials** (1 mm copper, 2 mm mask; `FID1–3`, an asymmetric set) sit in the
-margins for the placement camera. Rotation of SOT-23 and SMA parts in JLC's preview must
-still be checked by eye (KiCad's 0° and JLC's 0° differ for some packages).
+Three **fiducials** (1 mm copper, 2 mm mask; `FID1–3`, an asymmetric set, ≥ 4 mm from the
+edge) sit in the margins for the placement camera. `kicad/gen/fab_jlcpcb.py` writes the
+pick-and-place file in JLCPCB's columns with the usual +180° on the SOT-23 parts; the
+orientation of D1 / D2 and the four SOT-23s in JLCPCB's placement preview must still be
+checked by eye before paying.
 
 ## KiCad design rules for JLCPCB — recovered, re-checked 2026-09-07
 
@@ -141,7 +159,7 @@ to generate JLCPCB-ready zipped Gerbers in one click.
 - [ ] No copper within 0.5 mm of board edge
 - [ ] Correct pad sizes and drills on all footprints
 - [ ] Ground plane covers entire bottom layer, no isolated islands
-- [ ] All test points and wiring pads labeled on silkscreen
+- [x] All test points and wiring pads labeled on silkscreen (generated, errata #30)
 - [ ] Power trace widths 1.5 mm+ (rails), 2.5 mm+ (speaker/power amp)
 - [ ] Polarity markers on electrolytics; pin-1 dots on ICs
 - [ ] LM1875/LM317 oriented toward the board edge nearest the heatsink

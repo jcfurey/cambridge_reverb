@@ -30,6 +30,15 @@ REPO_KI = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SYS_FP  = "/usr/share/kicad/footprints"
 OUT_DEMO = os.path.join(REPO_KI, "power_section_demo.kicad_pcb")
 
+# silkscreen label geometry (see the silkscreen section below)
+LBL_H, LBL_W, LBL_T = 1.0, 0.65, 0.15
+LBL_OFF = 0.95             # label centre above the part's top edge: the baseline clears it by 0.45 mm,
+                           # the underscores in "R_rec_bias" (0.25 mm below the baseline) by 0.2 mm
+STRIP = LBL_OFF + 0.6      # label strip height: up to the top of the capitals
+LBL_CLEAR = 0.4            # clear silk between a label and the next part's courtyard
+STRIP_CELL = STRIP         # height the strip ADDS to the placement cell (set in configure(): the
+                           # label shares the part gap, so only STRIP - (GAP - LBL_CLEAR) is extra)
+
 # Board parameters per build profile (see gen_kicad.set_profile):
 #   tht -- the primary all-through-hole board, 190 x 115 (original 25-5274-2, errata #9)
 #   smd -- the mixed SMD/THT variant, sized for the Part 7 155 x 90 "safe-bet" chassis
@@ -46,11 +55,17 @@ PROFILES = {
   # over a plane (JLC 7628 prepreg) instead of 1.5 mm: ~10x less trace-to-trace
   # coupling, a real RF/EMI reference, and the router no longer has to thread between
   # pins. Set LAYERS=2 to get the old two-layer boards back (TOP_POUR then applies).
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.6, MARGIN=10.0, ZONE_GAP=3.5, BOT_GAP=4.5, TOP_POUR=False, LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR=""),
+  # LBL_CLEAR 0.05 on the THT board: its 1.6 mm part gap is exactly one label strip, so the
+  # silkscreen labels cost no board area there (the SMD board keeps 0.4 mm of clear silk).
+  # GAP 1.5 / ZONE_GAP 3.0 / BOT_GAP 4.0 (were 1.6 / 3.5 / 4.5) since the axial VTL5C1 footprint
+  # (2026-11): with the old numbers the narrowest fitting columns needed 167 mm of 159.5.
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=3.0, BOT_GAP=4.0, TOP_POUR=False, LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
   # SMD board 170x100 since the 4-layer / keepout regime (was 155x90, Part 7's "safe bet"):
   # at a 0.5 mm part gap no via fits next to an SMD ground or rail pad, and 30 of 52 open
   # links were exactly those. 170x100 still fits any chassis the 190x115 original did.
-  "smd": dict(BW=170.0, BH=100.0, GAP=1.2, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
+  # 170x105 since the silkscreen labels, the axial VTL5C1 footprint and JP_BR (2026-11): at
+  # 170x100 the narrowest fitting columns added up to 146.7 mm of 146.6 mm available.
+  "smd": dict(BW=170.0, BH=105.0, GAP=1.2, MARGIN=6.0,  ZONE_GAP=3.0, BOT_GAP=3.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb_smd.kicad_pcb", SUBDIR="smd"),
 }
 PROFILE = "tht"
 MARGIN = 10.0              # (set per profile in configure())
@@ -58,9 +73,10 @@ ZONE_GAP = 4.0             # empty channel between columns (routing room)
 ZONE_VGAP = 2.0            # gap between zones stacked in one column
 def configure(profile):
     """Select the build profile: board size, margins, part gap, output path (+ gen_kicad's footprint map)."""
-    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR, LAYERS
+    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR, LAYERS, STRIP_CELL
     PROFILE = profile; P = PROFILES[profile]
     BW, BH, GAP, MARGIN, ZONE_GAP, LAYERS = P["BW"], P["BH"], P["GAP"], P["MARGIN"], P["ZONE_GAP"], P["LAYERS"]
+    STRIP_CELL = max(0.0, STRIP - (GAP - P.get("LBL_CLEAR", LBL_CLEAR)))
     TOP_POUR = P["TOP_POUR"]        # SMD board: F.Cu GND pour connects the SMD ground pads solid (plus a via each from the router)
     EDGE_Y   = BH - MARGIN - 2.5   # wiring-edge connector row (Part 5: "all pads on one edge")
     MAIN_TOP = MARGIN + 1.5
@@ -90,6 +106,7 @@ EDGE_ZONE = {"J_IN1": 0, "J_IN2": 0, "J_IN3": 0,
              "POT_SPD_A": 2, "POT_SPD_B": 2, "POT_DPT": 2,   # dual-gang speed pot = two 3-pad groups
              "REV1": 3, "POT_REV": 3, "FS1": 3,
              "LS1": 4,
+             "JP_BR": 5,                   # the no-centre-tap link: two power pads right beside the transformer pads
              "T1": 5}                      # transformer pads: far right, away from signal
 BODY_ZONE = {"R_spk_rtn": 4}                # switching-sheet part that lives on the board body
 # The 155x90 SMD board's wiring edge (137 mm between the corner holes) is ~9 mm
@@ -101,7 +118,7 @@ BODY_ZONE = {"R_spk_rtn": 4}                # switching-sheet part that lives on
 LEFT_EDGE = {"smd": ["J_IN1", "J_IN2", "J_IN3"]}
 # pack these with another sheet's parts: the footswitch pull-downs belong next to
 # the DIN pads on the wiring edge (reverb block = bottom of the effects column)
-SHEET_OVERRIDE = {"R_fs_trem": "Reverb", "R_fs_mrb": "Reverb",
+SHEET_OVERRIDE = {"R_fs_mrb": "Reverb",
                   # the VBIAS_R / VBIAS_T mid-rail dividers (drawn on the PSU sheet) feed
                   # only the effects ICs: place them next to their loads
                   "R_vbr1": "Reverb", "R_vbr2": "Reverb", "C_vbr": "Reverb",
@@ -119,6 +136,70 @@ COLUMNS = [[0, 1], [2, 3], [4], [5]]
 # extra width weight: tone/preamp column (routing room, see above) and the PA
 # zone that carries the fat HighCurrent/Power traces
 ZONE_WEIGHT = {1: 1.35, 4: 1.05}     # (a bigger PA weight starves the effects column once the TP strips are in)
+
+# ---- silkscreen -----------------------------------------------------------------
+# Every part carries its reference on F.SilkS (JLCPCB legend minimum: 1.0 mm high,
+# 0.15 mm stroke; the glyphs are set 0.65 mm wide so "R_rec_bias" is 6 mm, not 9).
+# Small parts RESERVE a label strip above themselves in the placer (bbox_mm), so a
+# label never lands on a pad, on a neighbour or under a part -- and the strip is free
+# copper: an extra routing channel between every two rows. Big parts carry the label
+# inside their outline; the heat-sinked TO-220s carry it below (the tab side is the
+# board edge / heatsink).
+LBL = {}                   # ref -> (mode, label width mm): "above" | "below" | "inside" | "edge" | None
+BOARD_ID = {"tht": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  THT  REV B  2026-11",
+            "smd": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  SMD/THT  REV B  2026-11"}
+# off-board wiring pads: what each pad is FOR (printed next to it), pad number -> label.
+# Pots: lug 1 = CCW end, 2 = wiper, 3 = CW end (clockwise = more on every control).
+POT_PADS = {"1": "CCW", "2": "W", "3": "CW"}
+PAD_LABELS = {
+  "J_IN1": {"1": "T", "2": "S"}, "J_IN2": {"1": "T", "2": "S"}, "J_IN3": {"1": "T", "2": "S"},
+  "POT_VOL": POT_PADS, "POT_BASS": POT_PADS, "POT_TREB": POT_PADS, "POT_REV": POT_PADS,
+  "POT_DPT": POT_PADS, "POT_SPD_A": POT_PADS, "POT_SPD_B": POT_PADS,
+  "SW_MID": {"1": "A", "2": "B"},
+  "REV1": {"1": "IN", "2": "G", "3": "OUT", "4": "G"},
+  "FS1": {"1": "REV", "2": "TRM", "3": "MRB", "4": "G", "5": "G", "6": "G"},
+  "LS1": {"1": "+", "2": "-"},
+  "T1": {"1": "AC", "2": "CT", "3": "AC"},
+  "JP_BR": {"1": "NO CT", "2": "ONLY"},      # read together: fit the link for a transformer with NO centre tap ONLY
+}
+# a second silk line under a part where the reference alone is not enough
+NOTE = {"F1": "T1A 250V"}
+LEFT_LABEL = 2.4           # extra room right of the left-edge jack pads for their labels (SMD board)
+
+def label_mode(fp, c):
+    ref = c["ref"]; name = c["fp"].split(":")[-1]
+    if c["libsym"] == "TP":
+        return None                                   # the VALUE (net alias) is the silk label
+    if ref in EDGE_ZONE:
+        return "edge"
+    if ref in HEATSINK:
+        return "below"
+    if name.startswith(("DIP-", "Fuseholder", "R_Axial_Power", "Inductor_MRB")) or "_Horizontal" in name and name.startswith("R_Axial_DIN0414"):
+        return "inside"
+    return "above"
+
+def style_ref(fp, c):
+    """Reference text: front silk, JLC-legal size, visible. Returns (mode, label width)."""
+    t = fp.Reference()
+    t.SetLayer(pcbnew.F_SilkS); t.SetVisible(True); t.SetKeepUpright(True)
+    t.SetTextSize(pcbnew.VECTOR2I(mm(LBL_W), mm(LBL_H))); t.SetTextThickness(mm(LBL_T))
+    t.SetItalic(False); t.SetBold(False)
+    t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER); t.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+    t.SetTextAngleDegrees(0)
+    mode = label_mode(fp, c)
+    if mode is None:
+        t.SetVisible(False)
+    bb = t.GetBoundingBox()
+    return mode, pcbnew.ToMM(bb.GetWidth())
+
+def silk_text(board_or_fp, board, text, x, y, angle=0, h=LBL_H, w=LBL_W, layer=None, mirror=False):
+    t = pcbnew.PCB_TEXT(board_or_fp)
+    t.SetText(text); t.SetLayer(pcbnew.F_SilkS if layer is None else layer)
+    t.SetTextSize(pcbnew.VECTOR2I(mm(w), mm(h))); t.SetTextThickness(mm(LBL_T))
+    t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER); t.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+    t.SetPosition(V(x, y)); t.SetTextAngleDegrees(angle); t.SetMirrored(mirror)
+    board_or_fp.Add(t)
+    return t
 
 def fp_libpath(fpid):
     lib, name = fpid.split(":")
@@ -142,11 +223,14 @@ def add_footprint(board, c, x, y, netmap, rot=0, hide_text=True):
     if fp is None:
         return None
     board.Add(fp)
+    lib, item = c["fp"].split(":")
+    fp.SetFPID(pcbnew.LIB_ID(lib, item))     # keep the library link ("Lib:Name"), as the schematic's Footprint field has it
     fp.SetReference(c["ref"]); fp.SetValue(c["value"])
     if "(opt)" in c["value"]:                # optional MRB caps: on the board, not fitted
         fp.SetAttributes(fp.GetAttributes() | pcbnew.FP_DNP)   # -> excluded from the JLC position file
     if hide_text:
-        fp.Value().SetVisible(False); fp.Reference().SetVisible(False)
+        fp.Value().SetVisible(False)
+    LBL[c["ref"]] = style_ref(fp, c)
     if c["libsym"] == "TP":                      # the value IS the silk label (net alias)
         fp.Value().SetVisible(True)
     fp.SetPosition(V(x, y))
@@ -385,9 +469,10 @@ def keepouts(board, w, h, edge=2.0, hole_inset=5.0, hole_r=3.6):
 def fiducials(board, w, h):
     """Three 1 mm copper / 2 mm mask fiducials for the pick-and-place camera (JLCPCB asks
     for >= 3 on the assembled side; a non-symmetric set so orientation is unambiguous).
-    They sit in the margin strip between the corner holes' courtyards and the first row
-    of parts (top) / below the wiring-edge pads (bottom right)."""
-    for i, (x, y) in enumerate([(12.0, 4.0), (w - 12.0, 4.0), (w - 12.0, h - 4.0)]):
+    Two sit in the top margin between the corner holes' courtyards and the first row of
+    parts, the third in the right-hand margin above the corner hole (the wiring edge
+    carries the pad labels now) -- all >= 4 mm from the board edge (JLC: >= 3.85 mm)."""
+    for i, (x, y) in enumerate([(12.0, 4.0), (w - 12.0, 4.0), (w - 4.0, h - 16.0)]):
         fp = pcbnew.FootprintLoad(os.path.join(SYS_FP, "Fiducial.pretty"), "Fiducial_1mm_Mask2mm")
         if fp is None:
             return
@@ -407,11 +492,88 @@ def mounting_holes(board, w, h, inset=5.0):
 
 # ---------------------------------------------------------------------------
 # Placement helpers: work in bounding-box space (no text), then move the anchor.
-def bbox_mm(fp):
+def raw_bbox_mm(fp):
+    """Text-less bounding box: (w, h, centre offset x, centre offset y) from the anchor."""
     bb = fp.GetBoundingBox(False, False)
     return (pcbnew.ToMM(bb.GetWidth()), pcbnew.ToMM(bb.GetHeight()),
             pcbnew.ToMM(bb.GetCenter().x) - pcbnew.ToMM(fp.GetPosition().x),
             pcbnew.ToMM(bb.GetCenter().y) - pcbnew.ToMM(fp.GetPosition().y))
+
+def bbox_mm(fp):
+    """Placement cell = the part plus its silkscreen label strip (above or below it)."""
+    w, h, ox, oy = raw_bbox_mm(fp)
+    ref = fp.GetReference()
+    mode, lw = LBL.get(ref, (None, 0.0))
+    # a label ABOVE a part shares the gap to the part above it; anything BELOW a part
+    # (heatsink parts' labels, notes) takes its full strip, because the part underneath
+    # may push its own label up into that same gap
+    top = STRIP_CELL if mode == "above" else 0.0
+    bot = STRIP if mode == "below" and ref not in HEATSINK else 0.0   # (a heatsink part's label sits in its own 10 mm keep-out)
+    if mode not in ("above", "below"):
+        lw = 0.0
+    if ref in NOTE:
+        bot += STRIP; lw = max(lw, len(NOTE[ref]) * LBL_W)
+    return max(w, lw), h + top + bot, ox, oy + (bot - top) / 2
+
+def place_labels(board, fps):
+    """Put every reference where its mode says, after the final placement."""
+    for ref, (c, fp) in fps.items():
+        mode, lw = LBL.get(ref, (None, 0.0))
+        if mode in (None, "edge"):
+            continue
+        t = fp.Reference()
+        w, h, ox, oy = raw_bbox_mm(fp)
+        cx = pcbnew.ToMM(fp.GetPosition().x) + ox; cy = pcbnew.ToMM(fp.GetPosition().y) + oy
+        if mode == "above":
+            t.SetPosition(V(cx, cy - h / 2 - LBL_OFF))
+        elif mode == "below":
+            t.SetPosition(V(cx, cy + h / 2 + STRIP - LBL_OFF + 0.1))
+        else:                                   # inside the outline, clear of the pads
+            name = c["fp"].split(":")[-1]
+            pads = list(fp.Pads())
+            pxs = [pcbnew.ToMM(p.GetPosition().x) for p in pads]; pys = [pcbnew.ToMM(p.GetPosition().y) for p in pads]
+            mx, my = (min(pxs) + max(pxs)) / 2, (min(pys) + max(pys)) / 2
+            if name.startswith("DIP-"):
+                t.SetPosition(V(mx, my)); t.SetTextAngleDegrees(90)
+            elif name.startswith("Inductor_MRB"):
+                t.SetPosition(V(mx, my - 5.0))
+            else:                               # fuse clip, 5 W / 1 W resistors: middle of the body
+                t.SetPosition(V(mx, my))
+        if ref in NOTE:
+            below = cy + h / 2 + (STRIP if mode == "below" else 0.0)
+            silk_text(fp, board, NOTE[ref], cx, below + STRIP - LBL_OFF + 0.1)
+
+def edge_labels(board, fps, left_refs):
+    """Wiring pads: the connector's reference plus what every pad is for. Bottom-edge
+    groups: pad labels (vertical) under the pads, the reference under those. Left-edge
+    jack groups (SMD board): pad labels to the right of the pads, the reference
+    vertical beside them."""
+    for ref, labels in PAD_LABELS.items():
+        if ref not in fps:
+            continue
+        c, fp = fps[ref]; t = fp.Reference()
+        pads = sorted(fp.Pads(), key=lambda p: p.GetNumber())
+        xs = [pcbnew.ToMM(p.GetPosition().x) for p in pads]; ys = [pcbnew.ToMM(p.GetPosition().y) for p in pads]
+        half = max(pcbnew.ToMM(max(p.GetSize().x, p.GetSize().y)) for p in pads) / 2 + 0.75   # pad + its silk frame
+        if ref in left_refs:
+            x0 = max(xs) + half
+            for p in pads:
+                silk_text(fp, board, labels[p.GetNumber()], x0 + 0.45, pcbnew.ToMM(p.GetPosition().y))
+            t.SetPosition(V(x0 + 1.55, (min(ys) + max(ys)) / 2)); t.SetTextAngleDegrees(90)
+        else:
+            y0 = max(ys) + half
+            longest = max((len(v) for v in labels.values()), default=0)
+            run = longest * LBL_W * 0.98
+            for p in pads:
+                silk_text(fp, board, labels[p.GetNumber()], pcbnew.ToMM(p.GetPosition().x), y0 + 0.2 + run / 2, angle=90)
+            t.SetPosition(V((min(xs) + max(xs)) / 2, y0 + 0.2 + run + 0.25 + LBL_H / 2))
+
+def board_marks(board, w, h):
+    """Board identity on the top silk (in the margin above the stitching-via row) and the
+    spot JLCPCB may print its order number on: they replace the text JLCJLCJLCJLC, on the
+    bottom silk here, instead of dropping the number somewhere on the top side."""
+    silk_text(board, board, BOARD_ID[PROFILE], w / 2, 1.55)
+    silk_text(board, board, "JLCJLCJLCJLC", w / 2, h - 1.6, layer=pcbnew.B_SilkS, mirror=True)
 
 def put(fp, cx, cy, rot=0):
     """Place the footprint so that its (text-less) bounding box is centred on (cx, cy)."""
@@ -506,7 +668,7 @@ def main():
     # parts keep their schematic (signal) order: netlist neighbours stay board
     # neighbours, which is what the router needs in a dense zone
     def hkey(fp):
-        h = bbox_mm(fp)[1]
+        h = raw_bbox_mm(fp)[1]
         if h > 4.4:                      # ICs and cans: tallest first (few, no locality to lose)
             return (0, -h)
         return (1, 0.0)                  # axials, discs, chips: schematic order
@@ -542,7 +704,8 @@ def main():
     # rebalance a few times so every column packs to about the same height,
     # floored at the widest part so nothing sticks out sideways.
     ncol = len(COLUMNS)
-    total_w = BW - 2 * MARGIN - ZONE_GAP * (ncol - 1)
+    X0 = MARGIN + (LEFT_LABEL if LEFT_EDGE.get(PROFILE) else 0.0)     # first column starts right of the jack labels
+    total_w = BW - MARGIN - X0 - ZONE_GAP * (ncol - 1)
     def padded(parts):
         return sum((bbox_mm(fp)[0] + GAP) * (bbox_mm(fp)[1] + GAP) for _, fp in parts)
     zarea = [padded(p) + len(t) * TP_W * TP_H for p, t in zip(zone_parts, tp_parts)]
@@ -557,46 +720,42 @@ def main():
     edge_w = [[put(fp, 0, 0, 0)[0] for _, fp in ep] for ep in edge_parts]   # wire pads run along the edge
     min_col = 12.0 if PROFILE == "tht" else 10.5     # narrowest useful column (axial R vs 0805 rows)
     minw = [max([bbox_mm(fp)[0] for z in col for _, fp in zone_parts[z]] + [min_col]) + GAP for col in COLUMNS]
-    widths = [max(total_w * a / sum(areas), m) for a, m in zip(areas, minw)]
-    for _ in range(12):
+    # Column widths: shelf packing makes a column's height a STEP function of its width
+    # (and not even a monotonic one), so instead of iterating towards a balance the
+    # height of every column is tabulated over every width it could have (0.25 mm steps)
+    # and the widths are read off: the smallest common height H at which the narrowest
+    # fitting widths still add up to the board. A weighted column (ZONE_WEIGHT) is asked
+    # to be that much SHORTER, i.e. it gets the extra width. Whatever width is left over
+    # goes into the channels between the columns.
+    avail = MAIN_BOT - MAIN_TOP
+    def col_h(ci, w):
+        return pack_column(ci, X0, X0 + w) - MAIN_TOP
+    tab = []
+    for ci in range(ncol):
+        wmax = total_w - (sum(minw) - minw[ci])
+        n = int((wmax - minw[ci]) / 0.25) + 1
+        tab.append([(minw[ci] + 0.25 * k, col_h(ci, minw[ci] + 0.25 * k)) for k in range(n)])
+    def need(ci, H):
+        for w, hh in tab[ci]:
+            if hh * wt[ci] <= H + 1e-6 and hh <= avail + 1e-6:
+                return w
+        return None
+    widths = None
+    for H in sorted({round(hh * wt[ci], 3) for ci in range(ncol) for _, hh in tab[ci]}):
+        ws = [need(ci, H) for ci in range(ncol)]
+        if None not in ws and sum(ws) <= total_w + 1e-6:
+            widths = ws
+            break
+    narrow = [next((w for w, hh in tab[ci] if hh <= avail + 1e-6), None) for ci in range(ncol)]
+    print(f"  narrowest fitting column widths {narrow} = {sum(w for w in narrow if w):.1f} mm of {total_w:.1f} mm available")
+    if widths is None:                       # does not fit at all: narrowest widths, report the overflow
+        widths = [max(total_w * a / sum(areas), m) for a, m in zip(areas, minw)]
         widths = [w * total_w / sum(widths) for w in widths]
-        x = MARGIN; hts = []
-        for ci in range(ncol):
-            hts.append(pack_column(ci, x, x + widths[ci]) - MAIN_TOP); x += widths[ci] + ZONE_GAP
-        target = sum(w * h * k for w, h, k in zip(widths, hts, wt)) / total_w
-        widths = [max(w * (0.5 + 0.5 * (h * k) / target), m) for w, h, m, k in zip(widths, hts, minw, wt)]
-    widths = [w * total_w / sum(widths) for w in widths]
-    # shelf packing is discrete, so the proportional balance can leave one column a
-    # fraction of a row over MAIN_BOT while another has slack: repair by moving width
-    # from a column that can spare it to the overflowing one, 1 mm at a time. A donor is
-    # accepted only if it still fits after the move (a 0.5 mm step used to oscillate:
-    # the donor wrapped a row, overflowed, and took the width straight back).
-    def heights(ws):
-        x = MARGIN; bs = []
-        for ci in range(ncol):
-            bs.append(pack_column(ci, x, x + ws[ci])); x += ws[ci] + ZONE_GAP
-        return bs
-    step = 1.0
-    for _ in range(60):
-        bots = heights(widths)
-        over = [ci for ci in range(ncol) if bots[ci] > MAIN_BOT + 1e-6]
-        if not over:
-            break
-        worst = max(over, key=lambda ci: bots[ci])
-        moved = False
-        for donor in sorted((ci for ci in range(ncol) if ci != worst and widths[ci] - step >= minw[ci]),
-                            key=lambda ci: bots[ci]):
-            trial = list(widths); trial[donor] -= step; trial[worst] += step
-            tb = heights(trial)
-            if tb[donor] <= MAIN_BOT + 1e-6 and tb[worst] <= bots[worst] + 1e-6:
-                widths = trial; moved = True
-                break
-        if not moved:
-            break
+    ZG = ZONE_GAP + max(0.0, total_w - sum(widths)) / max(ncol - 1, 1)
 
     # final placement, plus the wiring-edge connector row (one global cursor so
     # neighbouring groups never collide; T1 pinned to the far right)
-    x = MARGIN; util = []
+    x = X0; util = []
     edge_lo, edge_hi = max(MARGIN, 9.0), min(BW - MARGIN, BW - 9.0)   # clear of the corner M3 holes
     cursor = edge_lo
     for ci, col in enumerate(COLUMNS):
@@ -612,7 +771,7 @@ def main():
         cursor = ex
         name = " + ".join(ZONES[z][0] for z in col)
         util.append((name, x0, x1, ybot, ybot > MAIN_BOT + 1e-6))
-        x = x1 + ZONE_GAP
+        x = x1 + ZG
 
     # left-edge column (SMD board): pad groups stacked top -> bottom below the
     # corner hole's courtyard, centred in the margin, GAP clear of the first column
@@ -620,6 +779,9 @@ def main():
     for c, fp in left_parts:
         w, h = put(fp, 0, 0, 90)
         put(fp, MARGIN - GAP - w / 2, ly + h / 2, 90); ly += h + GAP
+    place_labels(board, fps)
+    edge_labels(board, fps, left_refs)
+    board_marks(board, BW, BH)
 
     outline(board, BW, BH)
     mounting_holes(board, BW, BH)
@@ -640,7 +802,7 @@ def main():
     print(f"  {LAYERS} copper layers; {nkp} footprint keepout areas; {nst} perimeter GND stitching vias")
 
     # chassis-fit packing-density check (bounding boxes, as before)
-    areas_all = [bbox_mm(fp)[0] * bbox_mm(fp)[1] for _, fp in fps.values()]
+    areas_all = [raw_bbox_mm(fp)[0] * raw_bbox_mm(fp)[1] for _, fp in fps.values()]
     part_area = sum(areas_all)
     print(f"[{PROFILE}] placed {len(fps)}/{len(comps)} footprints, {len(netmap)} nets, {stubs} locked escape stubs "
           f"-> {os.path.relpath(OUT, REPO_KI)} ({BW:.0f}x{BH:.0f} mm)")
@@ -709,7 +871,10 @@ def power_demo():
     # ratsnest here: the point a real layout makes the jump with a via.
 
     outline(board, DW, DH)
+    global LAYERS
+    saved, LAYERS = LAYERS, 2                 # the demo is a two-layer board: its bottom pour IS the ground connection
     gnd_pour(board, netmap, DW, DH)
+    LAYERS = saved
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(OUT_DEMO, board)
     print(f"[demo] routed {routed} track segments across 2 rails -> {OUT_DEMO}")

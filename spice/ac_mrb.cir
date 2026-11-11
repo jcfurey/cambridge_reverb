@@ -1,29 +1,56 @@
-MRB (Mid Resonance Boost) -- parallel LC tank, ngspice AC analysis
+MRB (Mid Resonance Boost) -- parallel LC tank, footswitched ground return. ngspice AC analysis
 * Default 600 Hz position: L1 = 1 H, C_mrb = 68 nF -> f0 = 1/(2*pi*sqrt(LC)) ~ 610 Hz.
 *
-* Topology note: kicad/netlist-notes.txt records the MRB string ambiguously as a
-* series chain; Part 1 sec.6 describes it as a PARALLEL LC tank giving a mid boost.
-* This sim uses the parallel-tank interpretation (consistent with Part 1 and the
-* original Vox MRB): a series resistor feeds the signal node, and L1||C_mrb shunts
-* to ground. Off resonance the tank is low-Z (shunts signal); at resonance it is
-* high-Z (signal passes) -> a peak at f0. Swap C_mrb to 120n (~460 Hz) or 47n
-* (~734 Hz) for the optional internal positions.
+* Topology: a series resistor feeds the signal node, and L1 || C_mrb shunts it. Off
+* resonance the tank is low-Z (shunts the signal); at resonance it is high-Z (signal
+* passes) -> a peak at f0. Swap C_mrb to 120n (~460 Hz) or 47n (~734 Hz) for the optional
+* internal positions.
+*
+* Errata #27 (2026-11): the tank used to return straight to GND, so this band-pass was
+* permanently in the signal path (-29 dB at 100 Hz, -10 dB at 1 kHz: no way to play
+* without it). The tank now returns through the footswitch line FS_MRB:
+*   fs=1  pedal switch CLOSED (FS_MRB = GND)       -> MRB on, the response below
+*   fs=0  switch OPEN / no pedal: only R_fs_mrb 1M (DC return) and the pedal cable's
+*         capacitance (~1 nF for a few metres) hang on FS_MRB -> flat within 1 dB
 
+.param fs=1
 V_in    IN 0 AC 1
 C_mrb_in IN N1 100n
-R_series N1 OUT 10k
-* parallel LC tank to ground
-L1   OUT 0 1
-C_mrb OUT 0 68n
-C_mrb_out OUT N2 100n
-R_load N2 0 220k
+R_mrb_ser N1 MRB_T 10k
+* parallel LC tank to the footswitch line
+L1   MRB_T FS_MRB 1
+R_dcr FS_MRB FS_MRBX 0
+C_mrb_600 MRB_T FS_MRB 68n
+R_fs_mrb FS_MRB 0 1meg
+C_cable  FS_MRB 0 1n
+R_fsw    FS_MRB 0 {fs==1 ? 1 : 1e12}
+R_x FS_MRBX 0 1e12
+C_mrb_out MRB_T N2 100n
+* load: C_obuf_in 1u into R_obuf_b 100k (IC2-B buffer input bias)
+C_obuf_in N2 OBUF_IN 1u
+R_obuf_b OBUF_IN 0 100k
 
 .control
-ac dec 200 20 20k
-meas ac vpk   MAX  vdb(out)
-meas ac fpk   WHEN vdb(out)=vpk
-meas ac g_100 FIND vdb(out) AT=100
-meas ac g_1k  FIND vdb(out) AT=1000
-print vpk fpk g_100 g_1k
+foreach f 1 0
+  alterparam fs = $f
+  reset
+  ac dec 200 20 20k
+  meas ac vpk   MAX  vdb(obuf_in)
+  meas ac fpk   MAX_AT vdb(obuf_in)
+  meas ac g_100 FIND vdb(obuf_in) AT=100
+  meas ac g_600 FIND vdb(obuf_in) AT=600
+  meas ac g_1k  FIND vdb(obuf_in) AT=1000
+  meas ac g_5k  FIND vdb(obuf_in) AT=5000
+  meas ac g_10k FIND vdb(obuf_in) AT=10000
+  set sv="$&vpk"
+  set sf="$&fpk"
+  set s1="$&g_100"
+  set s6="$&g_600"
+  set sk="$&g_1k"
+  set s5="$&g_5k"
+  set s10="$&g_10k"
+  echo fs=$f peak=$sv dB at $sf Hz | 100 Hz=$s1 dB | 600 Hz=$s6 dB | 1 kHz=$sk dB | 5 kHz=$s5 dB | 10 kHz=$s10 dB
+  destroy all
+end
 .endc
 .end

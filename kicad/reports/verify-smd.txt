@@ -1,0 +1,51 @@
+verify [smd]  kicad/smd/cambridge_reverb_smd.kicad_pcb  (kicad/gen/verify.py)
+[ok] ERC           0 violations
+[ok] DRC           0 unconnected
+[ok] DRC           0 errors 
+[ok] DRC           0 silkscreen / text warnings 
+[ok] DRC           0 other warnings 
+[ok] parity        178 schematic parts, 178 board footprints
+[ok] parity        0 footprint mismatches 
+[ok] parity        85 schematic nets, 85 board nets, 0 differ
+[ok] parity        378 connected pins in the schematic, 378 netted pads on the board
+[ok] pin map       86 pads checked against their datasheet function
+[ok] pin map       SOT-23 (MMBT3904) and VTL5C1 pad geometry match their package drawings
+[ok] electrical    D1 clamps the output to V+: cathode +33V5, anode PA_OUT
+[ok] electrical    D2 clamps the output to GND: cathode PA_OUT, anode GND
+[ok] electrical    both clamp diodes are reverse-biased at the DC operating point
+[ok] electrical    LFO limiter LEDs are antiparallel
+[ok] electrical    rectifier: T1 centre tap on GND, bridge '-' on BR_NEG (not both hard-wired to GND)
+[ok] electrical    JP_BR is the only path from the bridge '-' pin to GND
+[ok] electrical    bridge: + on VRAW, ~ on the two secondary ends
+[ok] electrical    20 electrolytics: '+' pad on the more positive net
+[ok] electrical    IC supply pins
+[ok] electrical    JFETs: pad 1 drain -> load -> +17V_PRE, pad 2 source -> Rs -> GND, pad 3 gate
+[ok] electrical    tremolo driver: base on FS_TREM, emitter on R_e, collector on the vactrol LED cathode
+[ok] electrical    vactrol LED anode (pad 2) is fed from +17V through R_c
+[ok] electrical    pots: clockwise lug (pad 3) on the 'more' end, speed gangs fall in resistance clockwise
+[ok] electrical    footswitch pads: REV, TRM, MRB, then three grounds
+[ok] electrical    MRB tank returns through the footswitch line (out of circuit when the pedal is open)
+[ok] electrical    reverb and tremolo are defeated by grounding their footswitch lines
+[ok] silkscreen    every part labelled on the front silk
+[ok] silkscreen    labels >= 1.0 mm high, >= 0.15 mm stroke (JLCPCB legend minimum)
+[ok] silkscreen    board identity and JLCPCB order-number spot present
+[ok] order package BOM lists exactly the 94 placed SMD parts (30 lines)
+[ok] order package CPL lists the same 94 parts
+[ok] order package every BOM line carries an LCSC number from the verified parts table
+[ok] order package CPL positions lie on their footprints, rotations = board angle + JLCPCB package offset
+[ok] order package BOM footprint column agrees with each part's package
+[ok] order package Gerber zip has the 4 copper layers, mask, paste, silk, outline and both drill files (13 files)
+[ok] order package plated drill file: 298 holes = 184 pads + 114 vias on the board (the zip was made from THIS board)
+[ok] order package 3 fiducials on the assembled side
+[ok] order package package was exported from a fully routed, DRC-clean board
+[ok] SPICE         79 schematic parts appear by name in the netlists with the schematic's value (8 documented exceptions)
+[ok] SPICE         spice/run_all.sh: every netlist ran
+[ok] SPICE         tremolo depth 14.1 dB (>= 12)
+[ok] SPICE         footswitch closed: depth 0.02 dB (<= 0.5)
+[ok] SPICE         MRB engaged: 29 dB between the peak and 100 Hz (>= 20)
+[ok] SPICE         MRB bypassed: -1.4 .. -1.0 dB, 100 Hz - 5 kHz (flat within 1.5)
+[ok] SPICE         preamp as built (no source bypass): 0.501125 % THD at 0.1 V pk, 1.06142 % at 0.2 V
+[ok] SPICE         ...and the reason the bypass caps are optional: 34.7362 % at 0.1 V with both fitted
+[ok] SPICE         JFET drain bias 12.1 V (6 .. 14; trim R_s for 8-9)
+[ok] SPICE         power amp at the nominal rail: 11.7 W into 8 ohm (>= 11)
+49 of 49 checks passed

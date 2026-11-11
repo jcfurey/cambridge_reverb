@@ -1,0 +1,33 @@
+{
+ "bom_lines": 30,
+ "drc_errors": 0,
+ "gerber_files": [
+  "cambridge_reverb_smd-B_Cu.gbl",
+  "cambridge_reverb_smd-B_Mask.gbs",
+  "cambridge_reverb_smd-B_Paste.gbp",
+  "cambridge_reverb_smd-B_Silkscreen.gbo",
+  "cambridge_reverb_smd-Edge_Cuts.gm1",
+  "cambridge_reverb_smd-F_Cu.gtl",
+  "cambridge_reverb_smd-F_Mask.gts",
+  "cambridge_reverb_smd-F_Paste.gtp",
+  "cambridge_reverb_smd-F_Silkscreen.gto",
+  "cambridge_reverb_smd-In1_Cu.g2",
+  "cambridge_reverb_smd-In2_Cu.g3",
+  "cambridge_reverb_smd-NPTH.drl",
+  "cambridge_reverb_smd-PTH.drl"
+ ],
+ "h": 105.15,
+ "layers": 4,
+ "min_hole": 0.8,
+ "min_track": 0.3,
+ "min_via_dia": 0.8,
+ "min_via_drill": 0.4,
+ "npth": 4,
+ "placements": 94,
+ "pth": 184,
+ "unconnected": 0,
+ "vias": 114,
+ "w": 170.15,
+ "x0": -0.075,
+ "y0": -0.075
+}

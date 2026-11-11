@@ -36,8 +36,8 @@
 #   IC_PA pin4 (out) = PA_OUT
 #   PA_OUT -> C_out(2200uF) -> SPK_POS
 #   PA_OUT -> R_zobel(10R) -> C_zobel(100nF) -> GND
-#   D1: PA_OUT(cathode) -> +33V5(anode)
-#   D2: GND(cathode) -> PA_OUT(anode)
+#   D1: PA_OUT(ANODE) -> +33V5(CATHODE)   [as recovered the labels were swapped: errata #25]
+#   D2: GND(ANODE) -> PA_OUT(CATHODE)
 #   SPK_POS -> Speaker(+), Speaker(-) -> GND
 #   Gain = 1 + R_fb/R_gain = 1 + 22K/1K = 23x (27.2 dB)
 

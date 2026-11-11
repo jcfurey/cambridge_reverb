@@ -1,6 +1,6 @@
 # spice/
 
-ngspice simulations for the design blocks: **8 fixed-point block checks** and
+ngspice simulations for the design blocks: **13 fixed-point block checks** and
 **6 parameter sweeps**. `./run_all.sh` runs everything and writes each result
 table to **`results/<name>.txt`** — those files are committed as the evidence for
 the numbers below (re-run and diff after any value change). The original set was
@@ -14,7 +14,8 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 |------|-------|----------------|
 | `dc_preamp_jfet.cir` | Preamp | JFET bias point + midband gain (recovered R_s = 2.2 k) |
 | `ac_reverb_driver.cir` | Reverb driver | Non-inverting gain (11×) |
-| `ac_mrb.cir` | MRB | Resonant-peak frequency |
+| `ac_mrb.cir` | MRB | Resonant peak with the footswitch closed; **flatness with it open** (errata #27) |
+| **`tran_preamp_headroom.cir`** | Preamp, both stages | Gain and THD at pickup levels (20 mV – 0.5 V pk) with both / one / no source-bypass cap (errata #28) |
 | `tran_tremolo_lfo.cir` | Tremolo LFO | Oscillation + rate at the fast end of the **errata #19** network |
 | `ac_power_amp_lm1875.cir` | Power amp | Gain + LF/HF −3 dB with `C_fb_hf` + a 10″ speaker model |
 | `tran_reverb_mixer.cir` | Reverb summer | **Rail-aware**: mid-rail bias, unity sum, headroom / clipping |
@@ -22,7 +23,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | `tran_classa_output.cir` | Class-A stage | AB vs A: idle current and crossover THD |
 | **`noise_frontend.cir`** | whole front end | `.noise` 20 Hz–20 kHz incl. the LM317's rail noise; EIN, SNR at 12 W, per supply fix (Part 6c) |
 | **`ac_hum_psrr.cir`** | PSU → PA / preamp | Rail-ripple paths to the speaker (bias divider, LM317 → JFETs), before / after errata #21 |
-| **`tran_tremolo_depth.cir`** | Tremolo | LFO → LED driver → behavioural VTL5C1 → audio: depth in dB, as drawn vs errata #22 |
+| **`tran_tremolo_depth.cir`** | Tremolo | LFO → LED driver → behavioural VTL5C1 → audio: depth in dB, as drawn vs errata #22, and with the **footswitch closed** (errata #27) |
 | **`tran_thermal_lm1875.cir`** | Power amp | Electro-thermal RC ladder: Tj vs heatsink / ambient, heatsink saturation time |
 | `models/opamp_noise.sub` | shared | Op-amp macromodel with an en source and noiseless internals, for `.noise` |
 | **`sweep_preamp_bias.cir`** | Preamp | **Vd vs R_s for LO / TYP / HI JFET corners** (datasheet Idss 1–5 mA) |
@@ -43,7 +44,10 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Power amp HF −3 dB | **6.83 kHz** | ~7.2 kHz (`C_fb_hf`) | ✅ |
 | Power amp LF −3 dB | **17.2 Hz** | "7.2 Hz" (C_gain only) | ⚠️ input pole adds a second LF corner — fine for guitar |
 | Reverb driver gain | **20.83 dB** (11.0×) | 11× | ✅ |
-| MRB resonant peak | **577 Hz** | ~610 Hz (1 H ‖ 68 nF) | ✅ (pulled low by the output network) |
+| MRB resonant peak (footswitch closed) | **577 Hz**, −29 dB at 100 Hz, −10 dB at 1 kHz | ~610 Hz (1 H ‖ 68 nF) | ✅ (pulled low by the output network) |
+| MRB bypassed (footswitch open, 1 nF of pedal cable) | **−1.0 … −1.4 dB, 100 Hz – 5 kHz**; −2.1 dB at 10 kHz | flat | ✅ errata #27 (was: band-pass always in circuit) |
+| Preamp, both stages, no source bypass (as built) | **21.0 dB**; THD 0.5 % at 0.1 V pk, 1.1 % at 0.2 V, 4.7 % at 0.5 V | clean amplifier | ✅ errata #28 |
+| Preamp with `C_s1` + `C_s2` fitted (as drawn) | 44.7 dB; THD **8 % at 20 mV**, 35 % at 0.1 V | — | ⚠️ the reason the caps are optional |
 | Tremolo LFO, pot at min | **10.59 Hz**, 0.48 V amplitude | 10.6 Hz = 1/(2π·15 k·1 µF) | ✅ (errata #19 network) |
 | Preamp drain Vd (R_s = 2.2 k, nominal JFET) | **12.1 V** | 8–9 V target | ⚠️ see the sweep below |
 | Reverb summer bias / gain / clip | **8.50 V**, **0.0 dB**, clips 15.5 / 1.5 V | mid-rail, unity, ±7 V | ✅ |
@@ -51,7 +55,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Class-A stage AB → A | THD 1.05 % → 0.0025 %, idle 0.11 → 0.49 A | crossover removed | ✅ |
 | Front-end noise, as drawn → errata #21 | EIN **37 µV → 2.7 µV** rms; SNR at 12 W **34 → 57 dB** | LM317 noise was 23 dB above the JFET floor | ✅ fixed |
 | Hum at the speaker (0.25 Vrms rail ripple), as drawn → #21 | **408 mV → 0.3 mV** rms (−28 → −90 dB re 12 W) | unbypassed PA bias divider | ✅ fixed |
-| Tremolo depth, as drawn → errata #22 | **1.7 dB → 15 dB**; insertion loss −19.5 → −0.8 dB | vactrol LED was 7 mA DC | ✅ fixed |
+| Tremolo depth, as drawn → errata #22 / #27 | **1.7 dB → 14.1 dB** (15.1 before `R_qb`); insertion loss −19.5 → −0.8 dB; footswitch closed **0.02 dB** | vactrol LED was 7 mA DC | ✅ fixed |
 | LM1875 Tj, 2.5 K/W sink, worst sine, Ta 40 °C | **97 °C** (4 K/W: 111; 8 K/W: 149) | < 150 °C | ✅ Part 5 spec confirmed |
 
 ## Sweeps

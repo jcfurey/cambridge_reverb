@@ -330,3 +330,137 @@ stayed open; 170 × 100 still fits any chassis the 190 × 115 original did (Issu
 **Cost:** a 4-layer 170 × 100 / 190 × 115 board is area-priced above JLC's $7 100 × 100 mm
 tier (Part 4). **Severity:** MEDIUM — the two-layer boards worked on paper; this is the
 layout a low-noise guitar amp should have.
+
+## Issue 25 — Diode, LED and vactrol pads were numbered against their footprints (2026-11-11) — CRITICAL
+The generator's `D` and `LED` symbols were numbered **1 = anode, 2 = cathode**. Every KiCad
+diode footprint the boards use — `D_SMA`, `D_DO-41_SOD81`, `LED_D3.0mm` — follows the
+library convention **pad 1 = cathode** (the silk bar, the printed "K", the LED's flat). So
+on both boards the anode net sat on the pad *marked* as the cathode. Built to the
+silkscreen — or placed by JLCPCB, whose machine follows the footprint — the two output
+clamps `D1` / `D2` would have gone in backwards: forward-biased from `+33V5` through
+`PA_OUT` to GND, a short across the 33.5 V rail through two 1 A diodes. ERC and DRC are
+both blind to this (a net on a pad is a net on a pad); the JFET version of the same
+mistake was errata #18.
+
+The vactrol had the same fault and a second one. The PerkinElmer drawing
+(`datasheets/VTL5C1_VTL5C2_PerkinElmer_Vactec.pdf`, p. 43) numbers **pin 1 = LED
+cathode**, pin 2 = anode, 3 / 4 = photocell; the symbol had 1 = anode. And the footprint
+was four pads in a row on a 2.54 mm pitch, where the part is **axial**: the LED leads leave
+one end (1–3 mm apart), the cell leads the other end (5.08 mm apart), with a 9.1–9.9 mm
+body between them.
+
+Fix: `D` / `LED` renumbered to the KiCad convention (1 = K, 2 = A) with the nets swapped to
+match; `VTL5C1` symbol renumbered to the datasheet and the footprint redrawn — LED pads
+2.54 mm apart at one end, cell pads 5.08 mm apart 15.24 mm away, 1.0 mm drills (the LED
+leads are up to 0.64 mm square), "K" on the silk beside pad 1. `kicad/gen/verify.py` now
+carries a hand-entered table of what every polarised pad physically is, per footprint,
+straight from the datasheets, and compares it with the symbol pin wired to that pad on
+the finished board — plus net-level assertions (clamp-diode direction, electrolytic
+polarity against the DC operating point). **Severity:** CRITICAL — an assembled board
+would have blown its fuse or its clamp diodes at first power-up, and the tremolo would
+not have worked.
+
+## Issue 26 — Centre tap and bridge "−" both on GND: each half-winding shorted through a diode (2026-11-11) — CRITICAL
+The power-supply sheet wired the transformer's centre tap (`T1` pad 2, "CT") to GND **and**
+the bridge's "−" pin to GND. With a centre-tapped secondary — the original transformer
+("~48 VAC", Part 9) or a 2 × 24 V toroid in series — that is the classic mistake: on each
+half-cycle one end of the winding swings 34 V below the tap, and the bridge's "−" diode on
+that end conducts straight from GND into it, with only the winding resistance in the
+loop. The intended rail (33.5 V from a 24-0-24 V secondary) is the **two-diode** full-wave
+rectifier; the bridge's "−" pin must float.
+
+Fix: the "−" pin ends on its own net `BR_NEG`; a wire link **`JP_BR`** (two 3 mm power
+pads on the wiring edge, beside the transformer pads, silk "NO CT ONLY") joins it to GND.
+**Default: link open** — centre tap to the `CT` pad, the bridge works as a two-diode
+full-wave. Fit the link only for a transformer with a **single 24 V winding and no
+tap** (a dual-secondary toroid wired in parallel), and then leave the `CT` pad empty.
+Never both. `verify.py` asserts that the two are not hard-wired together.
+**Severity:** CRITICAL — with the original transformer the first power-up would have been
+a dead short across the secondary, limited by the mains fuse.
+
+## Issue 27 — The footswitch switched nothing, and the MRB band-pass was permanently in the signal path (2026-11-11) — HIGH
+`FS_REV` / `FS_TREM` / `FS_MRB` left the DIN connector and each ended on a 100 k
+pull-down — "defined control lines so they aren't single-ended" (SCHEMATIC-BUILD). No
+effect was switched by anything. Reverb and tremolo at least follow their panel pots,
+but the MRB tank (`L1` ∥ `C_mrb_600`) went straight to GND: the signal passed through a
+577 Hz band-pass at all times, −29 dB at 100 Hz and −10 dB at 1 kHz
+(`spice/ac_mrb.cir`). There was no way to play the amplifier without it.
+
+Fix — three switches to ground, the way the pedal's contacts work, no added active parts:
+- **MRB:** the tank's ground return *is* the footswitch line. Switch closed → MRB on
+  (the response above). Switch open, or no pedal → the tank floats on `R_fs_mrb` (now
+  1 M, a DC return so closing the switch does not pop) and the path is flat within
+  1.3 dB from 100 Hz to 5 kHz with a metre or three of pedal cable hanging on it. No
+  pedal and MRB wanted: link `FS1` pads 3–4.
+- **Reverb:** `FS_REV` is the recovery stage's output, the top of the reverb-level pot
+  (~10 k source impedance — the lowest in the wet path, which matters for a line that
+  leaves the chassis). Closed → reverb off; open → reverb on. `R_fs_rev` is gone (the
+  pot is the DC return).
+- **Tremolo:** `FS_TREM` is the LED driver's base. Closed → `Q_trem` off, the vactrol
+  goes dark, the signal passes at full level; the LFO keeps running, so there is no
+  thump and no restart delay. New **`R_qb` 1 k** between `C_drv` and the base keeps that
+  short off the depth-pot wiper (without it the LFO output would be shorted through
+  100 µF at full depth). Depth 15.1 → 14.1 dB; with the switch closed 0.02 dB
+  (`spice/tran_tremolo_depth.cir`, cfg 2). `R_fs_trem` is gone (`R_b2` is the base
+  return).
+
+With no pedal plugged in the amp is a normal amp: reverb and tremolo on their pots, MRB
+out. The pedal's own wiring was never recovered (Part 3): if a button does not short its
+line to the common, rewire the button — the board side needs one contact to GND per
+effect. **Severity:** HIGH — as drawn the amplifier had a telephone-band frequency
+response and a dead footswitch.
+
+## Issue 28 — 45 dB of gain ahead of the volume control (2026-11-11) — HIGH (build option, no board change)
+Both JFET stages had their source resistors bypassed (`C_s1`, `C_s2`): 22 dB each, 45 dB
+in front of the tone stack and the volume pot. `spice/tran_preamp_headroom.cir` drives
+the two stages with a 1 kHz sine at pickup levels: **8 % THD at 20 mV peak, 35 % at
+100 mV** — the second stage is overdriven by any guitar, at any volume setting. With both
+bypass caps left out the preamp has 21 dB of gain and stays under 1.1 % THD up to
+200 mV peak (4.7 % at 500 mV); the power amp still reaches full output from ~55 mV peak.
+With only `C_s1` fitted: 33 dB, 1 % at 100 mV, 14 % at 200 mV.
+
+Resolution: the two caps are through-hole electrolytics fitted by hand, so this is a
+**voicing option, not a layout change**. They are now marked "(opt)" — do-not-place by
+default — and the three choices are tabulated in `kicad/PCB-NOTES.md`. The bias trim of
+errata #15 is unaffected (it is a DC matter). **Severity:** HIGH — built as drawn, a
+clean amplifier would have had no clean sound.
+
+## Issue 29 — Four controls turned the wrong way (2026-11-11) — MEDIUM
+The tone pots were wired with pad 3 as the clockwise end; volume, reverb, depth and both
+speed gangs had pads 1 and 3 the other way round, so wiring lug-to-pad would have given
+clockwise = quieter / less reverb / shallower / slower. All seven pot footprints now
+follow one rule — **pad 1 = CCW end, pad 2 = wiper, pad 3 = CW end, clockwise = more** —
+and the silkscreen prints `CCW` / `W` / `CW` under the pads. **Severity:** MEDIUM
+(caught at first power-up, fixed with a soldering iron — but on every board).
+
+## Issue 30 — "Ready for JLCPCB" was not: no part numbers, no silkscreen, open links, unverified claims (2026-11-11) — MEDIUM
+What the SMD board lacked to be an order, and what each item is now:
+- **Part numbers.** The assembly BOM's LCSC column was empty "for the parts picker".
+  `kicad/gen/jlc_parts.py` now holds one looked-up part per line — stock, class and
+  package read from JLCPCB's library on 2026-11-11, re-checkable with `--check`. The
+  earlier cost claim (3 extended types, ~$20 per five boards) assumed that 1206 C0G
+  capacitors are basic parts; they are not, in any of the packages checked. Real count:
+  **30 lines — 15 basic, 2 preferred, 13 extended**; fees ≈ $50 per five boards plus
+  parts (`jlc_cost.py`). The policy that costs the money (C0G on the high-impedance and
+  frequency-setting nodes, 100 V X7R on the 33.5 V rail) is argued in `jlc_parts.py`.
+- **Silkscreen.** Reference designators were hidden on both boards. Every part now has
+  its reference on the front silk at JLCPCB's legend minimum (1.0 mm / 0.15 mm), in a
+  strip the placer reserves above it, so no label sits on a pad or under a neighbour;
+  the wiring pads carry what each pad is for (`T` / `S`, `CCW` / `W` / `CW`, `IN` / `G` /
+  `OUT`, `REV` / `TRM` / `MRB`, `AC` / `CT` / `AC`, `+` / `−`); the board carries its
+  name and revision, and `JLCJLCJLCJLC` on the bottom silk for the order number.
+- **Routing.** 216 of 226 connections, 1 DRC error. Both boards are now **fully routed
+  with 0 DRC errors and 0 warnings**: Freerouting does the bulk, and a small maze router
+  (`kicad/gen/finish_routes.py`) closes what it leaves — signal-level branches of power
+  nets, necked down to 0.5 mm where they only feed a resistor or a test point, and the
+  tank-drive nets, whose spacing rule the autorouter had to apply to everything.
+- **Order package.** `kicad/gen/fab_jlcpcb.py` writes the Gerber + drill zip, the CPL in
+  JLCPCB's column format with the SOT-23 rotation offset, and an assembly drawing, and
+  refuses a board that is not clean.
+- **Size.** The SMD board is **170 × 105 mm** (was 170 × 100): the labels, the axial
+  vactrol and the link did not pack into 100 mm of height.
+- **One command.** `kicad/gen/build.sh smd` rebuilds everything;
+  `kicad/gen/verify.py smd` is the gate — rule checks, schematic-to-board parity pin for
+  pin, the pin-function audit, the electrical assertions, the order-package consistency
+  checks and the SPICE suite with a schematic-to-netlist value cross-check.
+**Severity:** MEDIUM — none of it dangerous, all of it between the design and an order.

@@ -27,8 +27,33 @@ and sensitive audio signals.
 ```
 
 ## Footswitch (6-pin DIN)
-The original 6-pin DIN footswitch connector and pedal are retained. Footswitch
-pads on the PCB: FS_REV, FS_TREM, FS_MRB, FS_GND.
+The original 6-pin DIN footswitch connector and pedal are retained. Pads on the PCB
+(group `FS1`, silk `REV TRM MRB G G G`): three lines and three grounds. **Each pedal
+button must short its line to a ground pad** (errata #27):
+
+| Line | Button closed | Button open / no pedal |
+|------|---------------|------------------------|
+| `REV` | reverb off | reverb on (level pot) |
+| `TRM` | tremolo off | tremolo on (depth pot) |
+| `MRB` | **MRB on** | MRB out of circuit (flat) |
+
+`REV` carries the reverb signal at ~10 kΩ: use the pedal's screened cable. To have the
+MRB without a pedal, link pads 3 and 4.
+
+## Panel pots
+Every pot group is labelled `CCW · W · CW` on the board: lug 1 (the counter-clockwise
+end, left lug seen from the shaft with the lugs down) to `CCW`, the wiper to `W`, lug 3
+to `CW`. Clockwise is then "more" on every control (errata #29). The speed pot is one
+dual-gang part: gang A to `POT_SPD_A`, gang B to `POT_SPD_B`.
+
+## Power transformer (errata #26)
+Pads `AC · CT · AC` and the link `JP_BR` beside them:
+- **centre-tapped secondary** (the original; or 2 × 24 V in series): ends to `AC`, tap to
+  `CT`, **`JP_BR` open**;
+- **single 24 V winding** (or 2 × 24 V in parallel): ends to `AC`, `CT` empty, **wire
+  link in `JP_BR`**.
+Never both: the centre tap and the bridge's "−" pin on ground together short each
+half-winding through a bridge diode.
 
 ## Troubleshooting — no sound at all (recovered verbatim)
 

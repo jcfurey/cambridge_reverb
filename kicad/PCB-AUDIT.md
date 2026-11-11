@@ -72,7 +72,7 @@ o o o  wiring edge: jacks · pots · tank/pots/DIN · speaker · transformer  o 
   honour it; check the tremolo area by eye.
 
 ## 2b. The SMD variant's placement
-Same generator, `--profile smd`: **170 × 100 mm, 1.0 mm part gap** since errata #24
+Same generator, `--profile smd`: **170 × 105 mm, 1.2 mm part gap** (170 × 100 / 1.0 mm at errata #24; 105 mm since the silkscreen labels and the axial vactrol, errata #30)
 (155 × 90 / 0.4–0.5 mm before: on four layers with the footprint keepouts no ground via
 fitted beside the SMD pads), 6 mm margin, 3 mm channels, pad row kept clear of the corner
 holes; the three input-jack pad groups run down the left edge because the bottom

@@ -108,7 +108,7 @@
     (property "Datasheet" "" (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Description" "LED/LDR optocoupler (vactrol) for tremolo modulation; pins 1=LED_A 2=LED_K 3=LDR_1 4=LDR_2" (at 0 0 0)
+    (property "Description" "LED/LDR optocoupler (vactrol) for tremolo modulation; pins 1=LED_K 2=LED_A 3=LDR_1 4=LDR_2 (PerkinElmer/Vactec numbering: 1 is the marked cathode)" (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "VTL5C1_0_1"
@@ -149,11 +149,11 @@
     (symbol "VTL5C1_1_1"
       (pin passive line (at -7.62 2.54 0) (length 2.54)
         (name "LED_A" (effects (font (size 1.016 1.016))))
-        (number "1" (effects (font (size 1.016 1.016))))
+        (number "2" (effects (font (size 1.016 1.016))))
       )
       (pin passive line (at -7.62 -2.54 0) (length 2.54)
         (name "LED_K" (effects (font (size 1.016 1.016))))
-        (number "2" (effects (font (size 1.016 1.016))))
+        (number "1" (effects (font (size 1.016 1.016))))
       )
       (pin passive line (at 7.62 -2.54 180) (length 2.54)
         (name "LDR_1" (effects (font (size 1.016 1.016))))

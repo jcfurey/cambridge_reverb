@@ -21,122 +21,143 @@
    2-layer limits** (Part 4) and `cambridge_reverb.kicad_dru` adds two crosstalk
    rules (below). **DRC before routing: 0 errors, 0 warnings** apart from the two
    dangling stubs.
-2. **`gen/route_board.py` — routing.** Exports a Specctra DSN (the project's three
-   net classes come through: 0.5 / 1.5 / 2.5 mm), injects Freerouting's
-   `autoroute_settings` (bottom layer 6× trace cost so it is used only for short
-   jumpers and the GND pour stays whole; via cost 80), runs **Freerouting 1.9.0**
-   under `xvfb-run`, imports the SES and refills the pour.
+2. **`gen/route_board.py` — routing.** Exports a Specctra DSN (the project's net
+   classes come through), strips the In1 plane layer, injects Freerouting's
+   `autoroute_settings` and the per-class routing clearances, runs **Freerouting 1.9.0**
+   under `xvfb-run`, imports the SES and refills the pours.
+3. **`gen/finish_routes.py` — the last links.** A grid maze router that closes the
+   connections Freerouting leaves open, with the project's rules as written (below).
 
-Regenerate: `python3 kicad/gen/gen_pcb.py && python3 kicad/gen/route_board.py`
-(needs Java + `kicad/gen/freerouting.jar` = freerouting-1.9.0.jar, git-ignored;
-`apt install xvfb`). **Verify:** `kicad/gen/check.sh tht --no-regen` (or `smd`)
-runs ERC + DRC and writes the reports to **`kicad/reports/`** — the committed
-`*-erc.rpt` / `*-drc.json` files there are the evidence for every number in this
-file. Without `--no-regen` the script regenerates first (which discards routing).
+Rebuild: **`kicad/gen/build.sh tht`** (or `smd`) — generate, route, finish, reports,
+order package, verify; about ten minutes. Needs Java + `kicad/gen/freerouting.jar`
+(freerouting-1.9.0.jar, git-ignored), `xvfb`, `python3-numpy`, `python3-scipy`, ngspice.
+**Verify an existing build:** `kicad/gen/verify.py tht` (or `smd`); `kicad/gen/check.sh
+<profile> --no-regen` rewrites the ERC / DRC reports in **`kicad/reports/`**, the
+committed evidence for the numbers in this file. Freerouting's result is not
+bit-reproducible from run to run (the open-link count moved between 7 and 15 on the SMD
+board during this work); `finish_routes.py` and the DRC gate are what make the outcome
+the same — complete and clean — every time.
 
-## Routing result — THT board (`kicad-cli 8.0.9 pcb drc`, this commit; `kicad/reports/tht-drc.json`)
-| Item | Result |
-|------|-------:|
-| Connections (ratsnest, incl. 28 test points, the dual-gang speed pot, the errata #20–#24 parts) | 226 |
-| **Routed** | **218 / 226** (`unconnected_items`: 8) |
-| DRC violations (`--severity-all`, JLCPCB limits, `.kicad_dru` rules, 155 footprint keepouts, edge / hole keepouts) | **0 errors, 0 rule hits**; 1 `track_dangling` warning (an escape stub end) |
-| Track segments | 947 — F.Cu 1 706 mm, **In2.Cu 2 257 mm**, B.Cu 1 378 mm |
-| Vias | 48 (+ 34 locked perimeter GND stitching vias) |
-| Router settings | Freerouting 1.9.0, `-mp 150`, 3-layer DSN (In1 plane stripped), B.Cu cost ×1.2, via cost 50, class clearances HighCurrent 0.6 / HiZ 0.3 / TankDrive 0.8 mm (`route_board.py --bottom-cost 1.2 --via-cost 50 --passes 150`) |
+## Status — both boards fully routed, 0 DRC errors, 0 warnings (2026-11-11)
 
-The outer layers carry only escapes; the long runs are on In2 under the GND plane. The
-eight open connections: `+33V5` ×2 (`C_byp2` ↔ an In2 run; the pin-5 stub end ↔ the
-rail), `PA_BREF`, `PA_IN` (IC2 pin 7's In2 run ↔ `TP_PA_IN`), `QC` and `TREM_S` (the
-vactrol to `Q_trem` / `C_dc_blk`, 40 mm across the tremolo zone), `VBIAS_T` (`R_vbt2`)
-and `VOLTOP` (`POT_VOL` on the wiring edge). Eight GUI touches — on In2, where there is
-room — listed so nobody trusts the copper blindly.
+`kicad/gen/build.sh <smd|tht>` runs the whole chain; `kicad/gen/verify.py <profile>` is
+the gate (`kicad/reports/verify-*.txt`: **49 / 49** checks on the SMD board, **40 / 40**
+on the THT board). Numbers from `kicad-cli 8.0.9 pcb drc --severity-all`, reports in
+`kicad/reports/`.
 
-Honest note on the sweep: the 4-layer flow needed four fixes before it routed at all —
-Freerouting ignores `active off` (7 m of copper on the planes), a `power`-typed plane
-layer made it treat every through-hole pad as connected (adjacent same-net pins left
-open), the first keepouts blocked the tiny link between a unity buffer's two pins, and
-keepouts on *both* outer layers plus a 1.0 mm HighCurrent / 0.5 mm HiZ clearance left
-33–73 links open. With the plane stripped from the DSN, keepouts on the component side
-only, same-net pin gaps exempt and 0.6 / 0.3 / 0.8 mm class clearances: via cost 40 → 10
-open, 50 → **8 (committed)**, 60 → 11, 70 → 12; the same placement without any footprint
-keepouts → 21, so the keepouts now cost nothing. Evaluate candidates *in place* (next
-to the `.kicad_pro` / `.kicad_dru`).
+| | SMD / THT board (`smd/`, the JLCPCB one) | THT board |
+|---|---:|---:|
+| Outline | **170 × 105 mm** | 190 × 115 mm |
+| Parts / nets / connections | 178 / 85 / 232 | 178 / 85 / 232 |
+| Routed by Freerouting 1.9.0 (150 passes) | 217 | 224 |
+| Closed by `finish_routes.py` | 15 | 8 |
+| **Open connections** | **0** | **0** |
+| DRC (JLCPCB limits, `.kicad_dru` rules, keepouts) | **0 errors, 0 warnings** | **0 errors, 0 warnings** |
+| Track segments | 1 095 — F.Cu 2 370 mm, In2 1 583 mm, B.Cu 1 139 mm | 1 155 — F.Cu 1 974 mm, In2 2 474 mm, B.Cu 1 228 mm |
+| Vias (+ locked perimeter stitching vias) | 87 (+ 27) | 24 (+ 34) |
+| Footprint keepout areas | 144 | 152 |
+| Worst crosstalk pair (`reports/crosstalk-*.md`) | `PA_OUT` → `PA_BIAS` −90 dB, loop −82 dB | `TANK_IN` → `SUMJ` −64 dB; worst loop −77 dB |
+| Router settings | via cost 60, B.Cu ×1.2 | via cost 50, B.Cu ×1.2 |
 
-## Mixed SMD / THT variant — `smd/cambridge_reverb_smd.kicad_pcb` (170 × 100 mm)
-Same schematic, second footprint profile (`--profile smd` on all three scripts). It was
-sized for the **Part 7 155 × 90 "safe-bet" chassis** until errata #24: on four layers
-with the footprint keepouts every SMD ground / rail pad needs a via beside it, and at
-the 0.5 mm part gap that 155 × 90 forced there was room for none (30 of 52 open links
-were exactly those). **170 × 100 mm, 1.0 mm gap** routes; it is still 20 mm shorter and
-15 mm narrower than the 190 × 115 original, so any chassis that took the original takes
-it. Set `BW, BH, GAP` back in `gen_pcb.py` if the measured chassis really is smaller,
-and expect to finish the ground vias by hand. What moves to SMD and what deliberately
-does not:
+### How the last links get closed — `gen/finish_routes.py`
+Freerouting takes each net class as one width and one clearance, so on every run the
+same two kinds of connection stay open:
 
-| SMD (90 parts) | Stays THT (and why) |
+- **signal-level branches of a power net** — `PA_OUT` to the feedback parts `R_fb` /
+  `C_fb_hf`, `+33V5` to the bias divider. A 1.5 mm trace with its 0.4 / 0.6 mm rule does
+  not fit between 0805 pads, although those branches carry microamps;
+- **the tank drive** (`R_DRVO`, `TKDRV`, `TANK_IN`): its 0.6 / 0.8 mm spacing is only
+  required from the tank *return* nets (the `.kicad_dru` rule), but the router has to
+  keep it from everything.
+
+`finish_routes.py` reads the open links from KiCad's own DRC and routes them with an A*
+search on a 0.1 mm grid over F.Cu / In2 / B.Cu, using the rules as written: per-pair
+clearances exactly as the `.kicad_dru` states them, the footprint / edge / hole keepouts,
+hole-to-hole spacing, no via on an SMD pad, none within 1 mm of a ground pin (the plane's
+thermal spokes). A link attaches to the nearest point of the copper it has to reach.
+Widths: the class width first; a rail link that cannot get through is tried at 1.0 mm;
+a link that only feeds a resistor, a small capacitor or a test point — and does not end
+on one of the parts that carry the amps — may neck down to 0.5 mm. The script prints
+every link with its length, width and the reason for a reduced width, and KiCad's DRC is
+the judge afterwards. On the committed SMD board it placed 15 links: six at 0.5 mm
+signal width, five on `PA_OUT` / `+33V5` at 1.0 mm (feedback network, bias divider and
+the D1 clamp), one at the full 1.5 mm, and the three tank-drive nets.
+
+### Mixed SMD / THT variant — what is SMD and what is not
+Same schematic, second footprint profile (`--profile smd` on every script).
+
+| SMD (96 footprints, 94 placed by JLCPCB) | Stays THT (and why) |
 |----------------|---------------------|
-| 53 × R → **0805** (thin-film for the 1 M gate/input resistors); `R_reg2` → 1206 (85 mW) | LM1875, LM317, KBP bridge, 5 W / 1 W resistors, `R_zobel`, the 0 Ω speaker link — power |
-| ≤ 100 nF → **1206** (C0G/NP0 in the signal path, 100 V X7R snubbers) | **all electrolytics** — a radial can standing up uses *less* board than an SMD can |
-| 120 nF MRB, 1 µF coupling, `C_zobel` → **1210** (X7R 50/100 V; PPS film on a 2220 pad if you prefer) | TL072 × 2 in **DIP-8 sockets**, the tone TL074 in a **DIP-14 socket** (availability audit: swappable) |
-| 1N4007 → **SMA** (S1M); 1N4148 → **SOD-123** (1N4148W) | `R_s1`, `R_s2`, `R_rec2` — bench-trimmed per JFET (errata #15), swap an axial not an 0805 |
-| MMBF5457 → **SOT-23** fitted directly (1 D / 2 S / 3 G, errata #18) — no TO-92 adapter | LED, vactrol, toroid, fuse clip, wire pads, test points |
+| 57 × R → **0805** 1 %; `R_reg2` → 1206 (85 mW) | LM1875, LM317, KBP bridge, 5 W / 1 W resistors, `R_zobel`, the 0 Ω speaker link — power |
+| every film / ceramic C → **1206**: C0G in the signal path, 100 V X7R on the rails and the bridge, 1 µF X7R (`gen/jlc_parts.py`) | **all electrolytics** — a radial can standing up uses *less* board than an SMD can |
+| 1N4007 → **SMA** (M7) | TL072 × 2 in **DIP-8 sockets**, the tone TL074 in a **DIP-14 socket** (swappable) |
+| MMBF5457 → **SOT-23** fitted directly (1 D / 2 S / 3 G, errata #18); 2N3904 → MMBT3904 on the E-B-C-renumbered SOT-23 | `R_s1`, `R_s2`, `R_rec2` — bench-trimmed per JFET (errata #15), swap an axial not an 0805 |
+| `C_mrb_450`, `C_mrb_750`: footprints only (DNP) | LEDs, vactrol, toroid, fuse clip, wire pads, test points |
 
-Placement rules for this profile: 6 mm margin (corner M3 holes stay), 1.0 mm part
-gap (1.5 mm body-to-body once the courtyards are counted; 0.4 → 0.5 → 1.0 as the
-footprint keepouts made the gaps the routing channels and the ground vias needed room),
-3 mm channels;
-otherwise the same floor plan, test-point strips and escape stubs. The wiring edge
-differs in one point: with the Bass/Treble pots and the MID CUT toggle (errata #20)
-the 13 connector groups need ~146 mm and the 155 mm board has 137 mm between the
-corner holes, so the **three input-jack pad groups run down the left edge**
-(rotated, in the margin next to the preamp — the shortest input wiring); everything
-else stays on the bottom edge, `T1` far right. Two more deliberate differences:
-- **GND pour on both layers.** SMD ground pads have no through-hole to the bottom
-  pour, so the top gets a pour too — connected *solid* to the SMD ground pads only
-  (THT pads ground through the bottom pour, no top thermal spokes). The router is
-  shown only the bottom plane (`route_board.py` drops the F.Cu plane from the DSN),
-  so it drops a via from every SMD ground pad: real copper connectivity, and the
-  top pour is extra ground copper on refill. (With both planes visible the router
-  treated every SMD ground pad as "done" and 20 of them ended on pour islands.)
-- **Net-class widths 2.0 / 1.0 mm** (HighCurrent / Power, 0.25 mm clearance) in
-  `smd/cambridge_reverb_smd.kicad_pro`, vs 2.5 / 1.5 on the THT board. Part 4's
-  widths were sized for the 190×115 board; at ~1.7 A peak and under 1 A RMS, 1 oz
-  copper needs well under 1 mm, and 2.5 mm traces cannot pass between 0805/1206
-  pads on a 155×90 board (errata #11 addendum). Parts area **~5 300 mm² → 41 % of the 170 × 100 usable area** (54 % of the old 155 × 90)
-(the THT-profile parts would be 68 %). **Pre-route DRC: 0 errors, 0 warnings** beyond the two stub warnings.
+Placement: 6 mm margin, 1.2 mm part gap, the input-jack pads down the **left edge**
+(shortest input wiring, their labels beside them), everything else on the bottom edge
+with `JP_BR` and `T1` at the far right. GND pour on both outer layers (SMD ground pads
+sit solid in the top pour and get a via to the In1 plane). Net-class widths on this
+board: HighCurrent 1.5 mm, Power 0.5 mm, HiZ 0.3 mm, Default 0.5 mm.
 
-**Routing result (this commit; `kicad/reports/smd-drc.json`)** — `route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb --bottom-cost 1.2 --via-cost 40 --passes 150 --drop-planes top` (3-layer DSN, F.Cu pour hidden so every SMD ground pad gets a via; class clearances HighCurrent 0.4 / HiZ 0.25 / TankDrive 0.6 mm):
+**Assembly path:** JLCPCB places the 94 SMD parts; you solder 36 through-hole parts and
+the wiring. The order package — Gerber zip, BOM with LCSC numbers, pick-and-place file,
+assembly drawing — is in `production/smd/` (`gen/fab_jlcpcb.py`).
 
-| Item | Result |
-|------|-------:|
-| Connections (incl. 28 test points, the dual-gang speed pot, tone stack, #21–#24 parts; SMD ground pads sit solid in the F.Cu pour) | 226 |
-| **Routed** | **216 / 226** |
-| DRC (`--severity-all`, JLC limits, rules, 147 footprint keepouts) | **1 error** — `starved_thermal` on `IC3` pin 11 on the In1 plane; 0 rule hits; 1 `track_dangling` warning (stub end) |
-| Track segments | 1 041 — F.Cu 2 243 mm, **In2.Cu 1 699 mm**, B.Cu 792 mm |
-| Vias | 124 (+ 27 locked perimeter GND stitching vias) |
+## Silkscreen (2026-11-11)
+Every part has its reference on the front silk at JLCPCB's legend minimum (1.0 mm high,
+0.15 mm stroke, glyphs 0.65 mm wide). The placer reserves a **label strip above every
+small part** — the label shares the gap to the row above, so on the THT board it costs
+no area and on the SMD board 0.75 mm per row — which keeps every label off the pads and
+out from under its neighbours, and leaves the strip as extra routing room on copper.
+DIP sockets, the fuse clip, the 5 W / 1 W resistors and the toroid carry the reference
+inside their outline; the two heat-sinked TO-220s below (the tab side is the board
+edge). Test points print their net alias instead.
 
-The ten open items: the **power-amp cluster** — `PA_OUT` ×4 (`C_fb_hf` / `R_fb` / `D2`
-and the pin-4 stub end to the In2 run; the 1.5 mm HighCurrent trace with its 0.4 mm
-rule does not thread the 0805 feedback parts), `+33V5` (`R_bias1`), `+17V_PRE`
-(`C_pre`, 25 mm), the **tank-drive cluster** — `TANK_IN` (a 39 mm In2 run to `R_drv3`),
-`TKDRV`, `R_DRVO`, and `VBIAS_R` (`R_drv2`). Ten GUI touches; the PA cluster is one
-short hand-routed 1.5 mm trace along D2 / C_fb_hf / R_fb.
+Wiring pads say what each pad is for:
 
-Sweep on this placement (150 passes, in-place DRC): via cost 40 → **10 open + 1 thermal
-(committed)**, 50 → 14, 70 (bottom ×1.0) → 12. Before the 1.2 mm gap and the smaller
-rail vias (1.0 mm gap, 1.2 / 1.4 mm Power / HighCurrent vias) the same board gave
-28–30 open, 30 of them rail / ground pads with no room for a via; at 155 × 90 / 0.5 mm
-it gave 52. The SMD board is now 41 % parts by area and routes like the THT board.
+| Group | Pads |
+|---|---|
+| `J_IN1` / `J_IN2` / `J_IN3` | `T` tip, `S` sleeve |
+| all seven pot groups | `CCW` · `W` · `CW` — **lug 1 = CCW end, 2 = wiper, 3 = CW end; clockwise = more** on every control (errata #29). `POT_SPD_A` / `POT_SPD_B` are the two gangs of one dual pot |
+| `SW_MID` | `A` · `B` |
+| `REV1` (tank) | `IN` · `G` · `OUT` · `G` |
+| `FS1` (footswitch) | `REV` · `TRM` · `MRB` · `G` · `G` · `G` — each button shorts its line to a `G` |
+| `LS1` | `+` · `−` |
+| `T1` | `AC` · `CT` · `AC` |
+| `JP_BR` | `NO CT` `ONLY` — the bridge-negative link, see below |
 
-**Assembly path:** JLCPCB places the SMD side (all are basic-class part sizes),
-you hand-solder the ~76 THT parts. `production/smd/bom-jlcpcb.csv` (Comment /
-Designator / Footprint / LCSC — LCSC left for the parts picker, nothing invented)
-and `production/smd/cambridge_reverb_smd-top-pos.csv` (kicad-cli position file)
-are the two inputs. Regenerate:
-`python3 kicad/gen/gen_kicad.py --profile smd && python3 kicad/gen/gen_pcb.py --profile smd && python3 kicad/gen/gen_bom.py --profile smd --jlc && python3 kicad/gen/route_board.py --in kicad/smd/cambridge_reverb_smd.kicad_pcb`.
+The board's name and revision are on the top edge; `JLCJLCJLCJLC` on the bottom silk is
+where JLCPCB may print the order number.
+
+## Build options (2026-11-11)
+
+**Transformer / rectifier — `JP_BR` (errata #26).**
+- Centre-tapped secondary (the original transformer, ~48 V CT; or a 2 × 24 V toroid in
+  series): ends to the two `AC` pads, tap to `CT`, **`JP_BR` open**. The bridge works as
+  a two-diode full-wave rectifier.
+- Single 24 V winding, no tap (or two 24 V windings in parallel): ends to the two `AC`
+  pads, `CT` pad empty, **fit a wire link in `JP_BR`**.
+- Both at once shorts each half-winding through a bridge diode. Bring the supply up on a
+  series lamp either way.
+
+**Voicing — `C_s1`, `C_s2` (errata #28).** Source-bypass electrolytics, default not fitted.
+
+| Fitted | Preamp gain | THD at 0.1 V pk in | at 0.2 V pk | Character |
+|---|---:|---:|---:|---|
+| neither (default) | 21 dB | 0.5 % | 1.1 % | clean; full power from ~55 mV pk |
+| `C_s1` only | 33 dB | 1.0 % | 14 % | breaks up with humbuckers / hard picking |
+| both | 45 dB | 35 % | 43 % | overdriven at any guitar level (8 % at 20 mV) |
+
+(`spice/tran_preamp_headroom.cir`.) The JFET drain trim of errata #15 is the same in all
+three.
+
+**Footswitch (errata #27).** No pedal: reverb and tremolo follow their pots, MRB is
+out. Pedal buttons short `REV` (reverb off), `TRM` (tremolo off), `MRB` (MRB **on**) to
+`G`. MRB without a pedal: link `FS1` pads 3–4.
 
 ## Test points (bench bring-up, Part 5 order)
-26 labelled test points (`TP_*` in the schematic/BOM; footprint
+28 labelled test points (`TP_*` in the schematic/BOM; footprint
 `TestPoint_THT_D2.0mm_Label`: 2.0 mm pad / 1.0 mm drill — fit a header pin or a
 bare 0.6 mm wire loop so a scope hook grabs it). They sit in a **strip across the
 top of each zone**, the silkscreen prints the alias, and every zone has a **GND**
@@ -251,8 +272,10 @@ boards: the planes did what the spacing rules alone could not.
   in width but the router may loop them around the power-amp column; tighten them.
 - **Bottom-layer jumpers** cut the pour locally. Check every GND pad still has ≥ 2
   thermal spokes (the DRC `starved_thermal` check) after any edit.
-- **Silkscreen:** reference designators are hidden (regenerate with
-  `hide_text=False` in `gen_pcb.py` and tidy in the GUI).
+- **Inner copper.** The wide rail and output traces partly run on In2 (0.5 oz at
+  JLCPCB by default): 1.5 mm there is good for about 1 A RMS at a 10 K rise, which
+  covers this amplifier (0.55 A average at full power). Order 1 oz inner copper if you
+  want the margin.
 
 ## Why the LM1875 has pre-routed stubs
 The TO-220-5 pins are on a **1.70 mm pitch**. With the 0.3 mm HighCurrent/Power

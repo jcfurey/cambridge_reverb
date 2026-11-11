@@ -2,9 +2,12 @@
 
 | Aggressor | Victim | C_m (pF) | longest run (mm) | f | on victim (µV) | vs signal (dB) | loop gain (dB) |
 |---|---|---:|---:|---:|---:|---:|---:|
-| `TANK_IN` | `TANK_OUT` (tank return (recovery gate)) | 0.00 | 5.7 | 5000 Hz | 4.0 | -74 |  |
-| `TANK_IN` | `QRD` (recovery drain) | 0.01 | 4.8 | 5000 Hz | 13.9 | -87 |  |
-| `PA_OUT` | `PA_IN` (PA input (22k||22k)) | 0.01 | 7.1 | 5000 Hz | 32.9 | -90 | -82 |
-| `PA_OUT` | `PA_INV` (PA -in (1k||22k)) | 0.00 | 6.0 | 5000 Hz | 1.3 | -110 | -137 |
+| `PA_OUT` | `PA_BIAS` (PA +in) | 0.01 | 2.4 | 5000 Hz | 32.1 | -90 | -82 |
+| `TANK_IN` | `WET` (reverb level wiper) | 0.00 | 2.5 | 5000 Hz | 5.2 | -95 |  |
+| `PA_OUT` | `PA_INV` (PA -in (1k||22k)) | 0.01 | 6.0 | 5000 Hz | 3.2 | -102 | -129 |
+| `PA_OUT` | `PA_IN` (PA input (22k||22k)) | 0.00 | 2.4 | 5000 Hz | 5.6 | -105 | -98 |
+| `+33V5` | `FS_MRB` (MRB tank return (footswitch line; floats on the tank when open)) | 0.01 | 11.4 | 150 Hz | 0.1 | -141 |  |
+| `+33V5` | `PA_BIAS` (PA +in) | 0.01 | 3.4 | 150 Hz | 0.0 | -154 |  |
+| `+33V5` | `PA_INV` (PA -in (1k||22k)) | 0.00 | 0.9 | 150 Hz | 0.0 | -186 |  |
 
-Worst feedback loop: `PA_OUT` → `PA_IN`: loop gain **-82 dB** (forward 27 dB + coupling -109 dB); stable with margin if well below 0 dB.
+Worst feedback loop: `PA_OUT` → `PA_BIAS`: loop gain **-82 dB** (forward 27 dB + coupling -110 dB); stable with margin if well below 0 dB.

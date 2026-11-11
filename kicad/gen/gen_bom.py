@@ -13,6 +13,7 @@ import sys, os, csv
 from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 import gen_kicad as g
+import jlc_parts
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -25,6 +26,7 @@ CLASS_DESC = {
  "SPEAKER":"Speaker (reused)","XFMR":"Power transformer (reused/AnTek)",
  "VTL5C1":"LED/LDR optocoupler","Reverb_Tank_4FB2A1C":"Reverb pan (off-board)",
  "Footswitch_DIN6":"6-pin DIN footswitch (panel)","PWR_FLAG":"","TP":"Test point (header pin or wire loop)",
+ "LINK":"Wire link (build option)",
 }
 # per-ref description override (function), where it adds clarity
 DESC = {
@@ -44,6 +46,10 @@ DESC = {
  "C_bref":"LM1875 bias-divider bypass (kills the rail-ripple path into the + input)",
  "R_rf1":"RF stopper, guitar input (with C_rf1: 1.6 MHz)","C_rf1":"RF stopper, guitar input (C0G)",
  "R_rf2":"RF stopper, reverb tank return (with C_rf2)","C_rf2":"RF stopper, tank return (C0G)",
+ "JP_BR":"Bridge '-' pin to GND link: ONLY for a transformer WITHOUT centre tap",
+ "R_qb":"Tremolo driver base series resistor (isolates the LFO from the footswitch short)",
+ "R_fs_mrb":"DC return for the footswitched MRB tank",
+ "C_s1":"Q1 source bypass (voicing option)","C_s2":"Q2 source bypass (voicing option)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference
@@ -60,8 +66,8 @@ CUR = {
  "Q1":   dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="AVAILABILITY WATCH (JFETs going EOL) - buy spares; alts J113/LSK170. THT board: SOT-23 on a TO-92 adapter or J113 -- pads 1/2/3 = D/S/G (errata #18); SMD variant fits it directly"),
  "Q2":   dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="see Q1"),
  "Q_rec":dict(dk="MMBF5457CT-ND", mou="863-MMBF5457", notes="see Q1"),
- "D1":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp"),
- "D2":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp"),
+ "D1":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp to V+; cathode (pad 1, the banded end) on +33V5"),
+ "D2":   dict(dk="1N4007-E3/54GICT-ND", mou="625-1N4007-E3", notes="output clamp to GND; cathode (pad 1, the banded end) on PA_OUT"),
  "LED_rate":dict(dk="160-1127-ND", mou="", notes="3 mm red; antiparallel with LED_lim across R_lfo_fb1 = the LFO amplitude limiter (~1.6 V knee -> ~2 V LFO swing) AND the rate indicator; on-board, not panel"),
  "LED_lim": dict(dk="160-1127-ND", mou="", notes="3 mm red; the other half of the limiter (lights on the negative half-cycle)"),
  "Q_trem": dict(dk="2N3904FS-ND", mou="512-2N3904BU", notes="any small NPN; SMD board: MMBT3904 on the EBC-renumbered SOT-23 footprint (1=E 2=B 3=C like the TO-92)"),
@@ -69,7 +75,12 @@ CUR = {
  "C_adj":  dict(dk="", mou="", notes="10 uF/25 V on the LM317 ADJ pin (TI: 65 -> 80 dB ripple rejection; output noise falls ~10x) -- spice/noise_frontend.cir"),
  "C_pre":  dict(dk="", mou="", notes="220 uF/25 V; with R_pre 100R a 7 Hz corner on the preamp/recovery JFET rail -- the resistor-loaded JFET stages have ~0 dB PSRR"),
  "C_bref": dict(dk="", mou="", notes="100 uF/25 V bypass on the LM1875 bias divider; without it the divider injected rail ripple x23 into the speaker (spice/ac_hum_psrr.cir)"),
- "VTL1": dict(dk="", mou="", notes="Xvive VTL5C1 (single-source) or DIY LED+LDR"),
+ "VTL1": dict(dk="", mou="", notes="Xvive VTL5C1 (single-source) or DIY LED+LDR. AXIAL part laid flat: LED leads at the K end (pad 1 = LED CATHODE, the marked lead; pad 2 = anode), LDR leads at the other end (errata #25)"),
+ "JP_BR": dict(dk="", mou="", notes="DO NOT FIT with a centre-tapped transformer (the original, or 2x24 V in series): CT goes to the T1 'CT' pad and the bridge works as a two-diode full wave. Fit a wire link ONLY for a single 24 V winding with no tap, and then leave the CT pad empty. Both together short the transformer (errata #26)"),
+ "R_qb": dict(dk="", mou="", notes="1k; the footswitch's tremolo switch shorts the driver base (FS_TREM) to GND -- without R_qb that short would load the LFO through C_drv (errata #27)"),
+ "R_fs_mrb": dict(dk="", mou="", notes="1M: keeps the MRB tank at 0 V DC while the footswitch is open (no pop); the tank's ground return is the footswitch (errata #27)"),
+ "C_s1": dict(dk="", mou="", notes="VOICING OPTION, default NOT fitted. Without C_s1/C_s2 the preamp has 21 dB and stays clean to ~0.3 V pk; C_s1 only: 33 dB, breaks up above ~0.1 V pk; both: 45 dB, 8 % THD at 20 mV (spice/tran_preamp_headroom.cir, errata #28)"),
+ "C_s2": dict(dk="", mou="", notes="see C_s1 (errata #28)"),
  "C_main":dict(dk="", mou="667-EEU-FC1H472", notes="low-ESR; or 2x2200uF if PCB-mounted (errata #16)"),
  "C_filt1":dict(dk="", mou="667-EEU-FC1H102", notes="low-ESR pre-filter bulk"),
  "C_filt2":dict(dk="", mou="667-EEU-FC1H102", notes="low-ESR pre-filter bulk"),
@@ -118,17 +129,14 @@ def describe(c):
 
 # "smd" profile: the curated THT part numbers do not apply to the remapped parts;
 # they get a spec note instead (generic JLCPCB-basic-class parts) -- no invented P/Ns.
-SMD_NOTES = {
- "R_0805_2012Metric": "0805 1% (thin-film for the 1M gate / input resistors; thick-film elsewhere); JLCPCB basic",
- "R_1206_3216Metric": "1206 1% 0.25 W (dissipates ~85 mW)",
- "C_1206_3216Metric": "1206 50 V; C0G/NP0 in the signal path (X7R ok for supply bypass); snubbers 100 V X7R",
- "D_SMA":             "S1M (1 kV 1 A SMA) replaces 1N4007",
- "D_SOD-123":         "1N4148W replaces 1N4148",
- "SOT-23":            "MMBF5457 fitted directly (no TO-92 adapter); pin 1 D, 2 S, 3 G per onsemi",
-}
 def smd_note(c):
-    fpn = c["fp"].split(":")[-1] if c["fp"] else ""
-    return SMD_NOTES.get(fpn)
+    """SMD rows of bom-smd.csv: the exact JLCPCB part chosen in jlc_parts.py."""
+    p = jlc_parts.part_for(c)
+    if p is None:
+        return None
+    return f"JLCPCB {p['lcsc']} ({p['cls']}): {p['mfr']} {p['mpn']} -- {p['comment']}"
+JLC_PKG = {"R0805": "0805", "R1206": "1206", "C0G": "1206", "X7R": "1206", "X7R100": "1206",
+           "D_SMA": "SMA", "JFET": "SOT-23", "NPN": "SOT-23"}
 
 def main(profile="tht", jlc=False):
     g.set_profile(profile)
@@ -167,19 +175,25 @@ def main(profile="tht", jlc=False):
     print(f"wrote {len(rows)} electrical + {len(MECH)} mechanical rows -> bom/bom{suffix}.csv")
     print(f"wrote {len(grp)} grouped lines -> bom/bom{suffix}-grouped.csv")
     if jlc:
-        # JLCPCB assembly BOM for the SMD side only (Comment, Designator, Footprint, LCSC).
-        # LCSC numbers are left for the JLC parts picker -- none are invented here.
-        smd = [c for c in comps if c["fp"] and ("_SMD:" in c["fp"] or "SOT_SMD" in c["fp"] or "SOT-23" in c["fp"])
-               and "(opt)" not in c["value"]]          # optional MRB caps are DNP: not placed by JLC
+        # JLCPCB assembly BOM for the SMD side (Comment, Designator, Footprint, LCSC Part #),
+        # one line per LCSC part. The part numbers come from jlc_parts.py: every one was
+        # looked up in JLCPCB's library (stock, class, package) -- none is a guess.
+        smd = [(c, jlc_parts.part_for(c)) for c in comps if "(opt)" not in c["value"]]   # optional parts are DNP: not placed
+        smd = [(c, p) for c, p in smd if p is not None]
         os.makedirs(os.path.join(ROOT, "production", "smd"), exist_ok=True)
         jout = os.path.join(ROOT, "production", "smd", "bom-jlcpcb.csv")
         by = defaultdict(list)
-        for c in smd: by[(c["value"], c["fp"].split(":")[-1])].append(c["ref"])
+        for c, p in smd: by[p["lcsc"]].append((c, p))
+        order = {"basic": 0, "preferred": 1, "extended": 2}
         with open(jout, "w", newline="") as f:
-            w = csv.writer(f); w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
-            for (val, fpn), refs in sorted(by.items(), key=lambda kv: (kv[0][1], kv[0][0])):
-                w.writerow([val, ",".join(sorted(refs)), fpn, ""])
-        print(f"wrote {len(by)} JLCPCB assembly lines ({len(smd)} SMD parts) -> production/smd/bom-jlcpcb.csv")
+            w = csv.writer(f); w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #", "Manufacturer", "MPN", "JLCPCB class"])
+            for lcsc, cps in sorted(by.items(), key=lambda kv: (order[kv[1][0][1]["cls"]], kv[1][0][1]["kind"], kv[1][0][1]["comment"])):
+                p = cps[0][1]
+                w.writerow([p["comment"], ",".join(sorted(c["ref"] for c, _ in cps)), JLC_PKG[p["kind"]], lcsc, p["mfr"], p["mpn"], p["cls"]])
+        ncls = defaultdict(int)
+        for cps in by.values(): ncls[cps[0][1]["cls"]] += 1
+        print(f"wrote {len(by)} JLCPCB assembly lines ({len(smd)} SMD parts; {ncls['basic']} basic, {ncls['preferred']} preferred, "
+              f"{ncls['extended']} extended) -> production/smd/bom-jlcpcb.csv")
     miss = [c["ref"] for c in comps if c["ref"] not in CUR and c["libsym"] in ("OPAMP8","OPAMP14","LM1875","LM317","BRIDGE","NJFET","NPN")]
     if miss: print("  note: active parts without a curated P/N:", miss)
 

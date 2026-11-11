@@ -139,8 +139,8 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 #   IC_PA pin4 -> C_out(2200uF) -> SPEAKER(+)
 #   SPEAKER(-) -> GND (star ground point)
 #   R_zobel(10R) + C_zobel(100nF) in series: pin4 to GND
-#   D1: pin4(cathode) -> +33.5V(anode)   [clamp to V+]
-#   D2: GND(cathode)  -> pin4(anode)      [clamp to GND]
+#   D1: pin4(ANODE) -> +33.5V(CATHODE)  [clamp to V+; recovered text had the two labels swapped -- errata #25]
+#   D2: GND(ANODE)  -> pin4(CATHODE)    [clamp to GND]
 #
 # GAIN: Av = 1 + (R_fb / R_gain) = 1 + 22000/1000 = 23 (27.2 dB)
 #   Adjustable: R_gain = 2.2K -> Av = 11;  R_gain = 470R -> Av = 48 (max rec.)
@@ -159,7 +159,7 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 > antiparallel red LEDs as the LFO limiter (`LED_rate` doubles as the rate indicator),
 > `Q_trem` 2N3904 emitter follower AC-coupled from the depth pot (`C_drv` 100 µF,
 > 180 k/10 k bias, `R_e` 470 Ω) driving the vactrol LED from +17 V via `R_c` 100 Ω —
-> 15 dB depth, 0.8 dB insertion loss.
+> 15 dB depth, 0.8 dB insertion loss (14 dB with the footswitch isolation resistor `R_qb`, errata #27).
 ```
 #   IC_TREM   TL072CP    LFO oscillator (uses half)
 #   VTL1      VTL5C1     LED/LDR optocoupler

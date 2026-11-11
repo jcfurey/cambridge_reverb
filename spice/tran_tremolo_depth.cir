@@ -15,6 +15,10 @@ TREMOLO DEPTH: LFO -> LED driver -> VTL5C1 vactrol model -> audio shunt. As draw
 *          emitter-follower LED driver, AC-coupled from the depth-pot wiper (C_drv 100 uF
 *          into a 180k/10k base bias ~0.9 V, R_e 470), so the vactrol LED current goes
 *          0 .. ~6 mA at the LFO rate instead of 7 mA DC +/- 0.5 mA.
+*   cfg 2  cfg 1 with the FOOTSWITCH closed (errata #27): the pedal's tremolo switch shorts
+*          the driver's base node (FS_TREM) to GND. R_qb 1k keeps that short off the
+*          depth-pot wiper, so the LFO keeps running; the LED goes dark, the LDR goes to
+*          50 M and the carrier passes at full level -> depth 0 dB.
 * Measured: LFO amplitude, LED current min/max, LDR min/max, and the carrier envelope
 * max/min at TREM_OUT over the last LFO cycles -> depth in dB and insertion loss.
 
@@ -41,7 +45,7 @@ R_lfo_fb2 LFO_N VBT 4.7k
 R_sw0 LFO_OUT LIM0 {cfg==0 ? 1e-3 : 1e12}
 D_lfo1 LIM0 LFO_N D1N4148
 D_lfo2 LFO_N LIM0 D1N4148
-R_sw1 LFO_OUT LIM1 {cfg==1 ? 1e-3 : 1e12}
+R_sw1 LFO_OUT LIM1 {cfg>=1 ? 1e-3 : 1e12}
 D_lim1 LIM1 LFO_N DLED
 D_lim2 LFO_N LIM1 DLED
 .model D1N4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 Tt=20n Bv=100)
@@ -56,9 +60,12 @@ R_led DPT_W VLED0 {cfg==0 ? 1e3 : 1e12}
 D_v0 VLED0 SENS0 DLED
 V_s0 SENS0 0 0
 * redesign (cfg 1): AC-coupled NPN emitter follower, LEDs in the collector
-C_drv DPT_W QB {cfg==1 ? 100e-6 : 1e-15}
-R_b1 VCC QB {cfg==1 ? 180e3 : 1e12}
-R_b2 QB 0 {cfg==1 ? 10e3 : 1e12}
+C_drv DPT_W QDRV {cfg>=1 ? 100e-6 : 1e-15}
+R_qb QDRV QB 1k
+R_b1 VCC QB {cfg>=1 ? 180e3 : 1e12}
+R_b2 QB 0 {cfg>=1 ? 10e3 : 1e12}
+* footswitch: FS_TREM (= QB) shorted to GND through the pedal switch + cable (~1 ohm)
+R_fsw QB 0 {cfg==2 ? 1 : 1e12}
 Q_drv QC QB QE Q2N3904
 R_e QE 0 470
 R_c VCC VLR 100
@@ -87,7 +94,7 @@ R_e2 ENV1 ENV 1k
 C_e2 ENV 0 2u
 
 .control
-foreach c 0 1
+foreach c 0 1 2
   alterparam cfg = $c
   reset
   tran 20u 3.0 0 20u
