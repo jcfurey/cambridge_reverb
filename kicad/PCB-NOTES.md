@@ -53,7 +53,7 @@ on the THT board). Numbers from `kicad-cli 8.0.9 pcb drc --severity-all`, report
 | Closed by `finish_routes.py` | 15 | 8 |
 | **Open connections** | **0** | **0** |
 | DRC (JLCPCB limits, `.kicad_dru` rules, keepouts) | **0 errors, 0 warnings** | **0 errors, 0 warnings** |
-| Track segments | 1 095 — F.Cu 2 370 mm, In2 1 583 mm, B.Cu 1 139 mm | 1 155 — F.Cu 1 974 mm, In2 2 474 mm, B.Cu 1 228 mm |
+| Track segments | 1 084 — F.Cu 2 370 mm, In2 1 583 mm, B.Cu 1 139 mm | 1 148 — F.Cu 1 973 mm, In2 2 473 mm, B.Cu 1 228 mm |
 | Vias (+ locked perimeter stitching vias) | 87 (+ 27) | 24 (+ 34) |
 | Footprint keepout areas | 144 | 152 |
 | Worst crosstalk pair (`reports/crosstalk-*.md`) | `PA_OUT` → `PA_BIAS` −90 dB, loop −82 dB | `TANK_IN` → `SUMJ` −64 dB; worst loop −77 dB |
@@ -75,13 +75,18 @@ search on a 0.1 mm grid over F.Cu / In2 / B.Cu, using the rules as written: per-
 clearances exactly as the `.kicad_dru` states them, the footprint / edge / hole keepouts,
 hole-to-hole spacing, no via on an SMD pad, none within 1 mm of a ground pin (the plane's
 thermal spokes). A link attaches to the nearest point of the copper it has to reach.
-Widths: the class width first; a rail link that cannot get through is tried at 1.0 mm;
+Widths: the class width first; a rail link that cannot get through is tried at 0.8 mm
+(narrower than an 0805 pad, so its end stays out of the keepout between the pads);
 a link that only feeds a resistor, a small capacitor or a test point — and does not end
 on one of the parts that carry the amps — may neck down to 0.5 mm. The script prints
 every link with its length, width and the reason for a reduced width, and KiCad's DRC is
 the judge afterwards. On the committed SMD board it placed 15 links: six at 0.5 mm
-signal width, five on `PA_OUT` / `+33V5` at 1.0 mm (feedback network, bias divider and
-the D1 clamp), one at the full 1.5 mm, and the three tank-drive nets.
+signal width, five on `PA_OUT` / `+33V5` at 0.8 mm (feedback network, bias divider and
+the D1 clamp — 1 oz copper carries about 2 A at that width), one at the full 1.5 mm, and
+the three tank-drive nets. A link ends exactly on a pad's centre, or on the grid cell
+that lies on a track's centre line; a last pass deletes any stub shorter than its own
+width that KiCad reports as a dangling end, keeping the deletion only if nothing came
+apart.
 
 ### Mixed SMD / THT variant — what is SMD and what is not
 Same schematic, second footprint profile (`--profile smd` on every script).

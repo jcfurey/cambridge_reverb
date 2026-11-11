@@ -34,7 +34,7 @@ from route_board import CLASS_CLEARANCE_UM, prune_zero_length
 RES = 0.1                     # grid pitch, mm
 SAFETY = 0.08                 # added to every clearance: grid quantisation + 45-degree corners
 PAINT = RES / 2               # shapes are painted this much fat, so a cell centre just outside one still counts
-VIA_EXTRA = 0.1               # vias keep this much more: one may be moved up to 0.07 mm onto an exact track end
+VIA_EXTRA = 0.1               # vias keep this much more than tracks
 ROUTE_LAYERS = ["F.Cu", "In2.Cu", "B.Cu"]          # In1 is the GND plane
 LAYER_COST = {"F.Cu": 1.0, "In2.Cu": 1.0, "B.Cu": 1.15}
 VIA_COST = 400                # in units of 0.01 mm of track (a via ~ 4 mm of detour)
@@ -48,7 +48,8 @@ def light_ref(ref):
 HEAVY = {"IC_PA", "C_out", "D1", "D2", "C_byp1", "C_byp2", "C_main", "F1", "BR1", "T1", "LS1", "R_spk_rtn",
          "R_zobel", "C_zobel", "JP_BR", "C_filt1", "C_filt2"}
 NECK_W = 0.5                  # mm, the necked-down width for a signal-level branch (1 oz copper: > 1 A)
-RELIEF_W = 1.0                # mm, second try for a rail link that cannot get through at the class width
+RELIEF_W = 0.8                # mm, second try for a rail link that cannot get through at the class width
+                              # (narrower than an 0805 pad, so its end cap stays out of the keepout between the pads)
 
 def mm(v): return pcbnew.FromMM(v)
 def to_mm(v): return pcbnew.ToMM(v)
@@ -261,7 +262,7 @@ def item_net(desc):
 
 def endpoint(board, grid, net, desc, pos):
     """The copper a ratsnest end sits on: a pad / via centre, or a whole track (any point
-    of its centre line is as good as its end). Returns (cells, layers, exact(iy, ix))."""
+    of its centre line is as good as its end). Returns (cells, layers, end_point(iy, ix))."""
     layers = item_layers(desc)
     if desc.startswith("Track"):
         lid = board.GetLayerID(layers[0])
@@ -271,12 +272,10 @@ def endpoint(board, grid, net, desc, pos):
             if min(math.dist(pos, (ax, ay)), math.dist(pos, (ex, ey))) > 0.01: continue
             n = max(1, int(math.dist((ax, ay), (ex, ey)) / (RES / 2)))
             cells = {grid.cell(ax + (ex - ax) * k / n, ay + (ey - ay) * k / n) for k in range(n + 1)}
-            def exact(iy, ix, ax=ax, ay=ay, ex=ex, ey=ey):      # nearest point of the centre line
-                x, y = grid.pos(iy, ix); dx, dy = ex - ax, ey - ay; L2 = dx * dx + dy * dy
-                u = 0.0 if L2 < 1e-12 else min(1.0, max(0.0, ((x - ax) * dx + (y - ay) * dy) / L2))
-                return ax + u * dx, ay + u * dy
-            return cells, layers, exact
-    return {grid.cell(*pos)}, layers, lambda iy, ix: pos
+            # join at the grid cell itself: it is within 0.07 mm of the centre line, i.e. inside
+            # the track, and no 0.1 mm stub is needed to reach an "exact" point
+            return cells, layers, lambda iy, ix: grid.pos(iy, ix)
+    return {grid.cell(*pos)}, layers, lambda iy, ix: pos        # a pad / via: end exactly on its centre
 
 def unconnected(pcb):
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f: tmp = f.name
@@ -289,16 +288,37 @@ def unconnected(pcb):
                         la=item_layers(a["description"]), lb=item_layers(b["description"]),
                         ra=item_ref(a["description"]), rb=item_ref(b["description"]), da=a["description"], db=b["description"]))
     errors = [v for v in d.get("violations", []) if v["severity"] == "error"]
+    unconnected.dangling = [(v["items"][0]["pos"]["x"], v["items"][0]["pos"]["y"]) for v in d.get("violations", []) if v["type"] == "track_dangling"]
     return out, errors
 
+def clean_stubs(pcb):
+    """KiCad's dangling-end test counts a segment shorter than its own width as connected
+    at one end only (both ends touch the same neighbours) and reports the other end. Such
+    a stub lies inside the copper it joins, so it is redundant: delete it, and keep the
+    deletion only if nothing came apart."""
+    todo, _ = unconnected(pcb)
+    removed = 0
+    for x, y in list(unconnected.dangling):
+        board = pcbnew.LoadBoard(pcb)
+        hit = [t for t in board.GetTracks() if t.GetClass() == "PCB_TRACK" and not t.IsLocked() and to_mm(t.GetLength()) < to_mm(t.GetWidth())
+               and min(math.dist((x, y), (to_mm(t.GetStart().x), to_mm(t.GetStart().y))), math.dist((x, y), (to_mm(t.GetEnd().x), to_mm(t.GetEnd().y)))) < 0.01]
+        if not hit:
+            continue
+        keep = open(pcb, "rb").read()
+        board.Delete(hit[0]); pcbnew.ZONE_FILLER(board).Fill(board.Zones()); pcbnew.SaveBoard(pcb, board)
+        after, errs = unconnected(pcb)
+        if len(after) > len(todo) or errs:
+            open(pcb, "wb").write(keep)                 # it mattered after all: put it back
+        else:
+            removed += 1
+    return removed
+
 def add_path(board, grid, rules, net, width, path, a_xy, b_xy):
+    """Path cells -> tracks and vias. a_xy / b_xy are the end points: a pad's exact
+    centre, or the grid cell on a track's centre line."""
     code = board.FindNet(net).GetNetCode(); vd, vdr = rules.via(net)
     pts = [(l,) + grid.pos(iy, ix) for l, iy, ix in path]
     pts[0] = (pts[0][0], a_xy[0], a_xy[1]); pts[-1] = (pts[-1][0], b_xy[0], b_xy[1])
-    if len(pts) > 2 and pts[1][0] != pts[0][0]:      # a via right at an end: it sits ON the exact end point
-        pts[1] = (pts[1][0], a_xy[0], a_xy[1])
-    if len(pts) > 2 and pts[-2][0] != pts[-1][0]:
-        pts[-2] = (pts[-2][0], b_xy[0], b_xy[1])
     nseg = nvia = 0; i = 0
     while i < len(pts) - 1:
         l, x, y = pts[i]
@@ -360,6 +380,9 @@ def main():
         prune_zero_length(board)
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         pcbnew.SaveBoard(a.src, board)
+    n = clean_stubs(a.src)
+    if n:
+        print(f"removed {n} redundant stub segment(s) (shorter than their own width, inside the copper they joined)")
     todo, errors = unconnected(a.src)
     print(f"result: {len(todo)} open connection(s), {len(errors)} DRC error(s)")
     for e in errors:
