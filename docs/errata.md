@@ -470,6 +470,8 @@ The question was whether the traces sit too close to the pours and lose signal t
 capacitance. Measured on the board as committed (`kicad/gen/rf_audit.py`, new), the
 answer to that is no — and the measurement found four other things that were wrong.
 
+![The inner ground plane and the bottom layer of the SMD board, before and after](ground-planes-before-after.png)
+
 **What was not wrong.** Every pour was already 0.5 mm from every trace (a render at
 board scale makes the gap look like a hairline). The capacitance that matters is the
 trace over its plane, about 1 pF per cm, not the pour beside it; summed over every
