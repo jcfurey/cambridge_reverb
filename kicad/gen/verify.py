@@ -3,7 +3,7 @@
 
     python3 kicad/gen/verify.py smd            # the JLCPCB-assembled board (default)
     python3 kicad/gen/verify.py tht
-    python3 kicad/gen/verify.py smd --no-spice # skip the ngspice suite (a few seconds faster)
+    python3 kicad/gen/verify.py smd --no-spice # skip the ngspice suite (faster; does not rewrite the report file)
 
 Everything here checks the ARTIFACTS (the .kicad_sch / .kicad_pcb files and the order
 package as KiCad reads them), not the generator's own data, so a generator bug cannot
@@ -491,6 +491,9 @@ def main():
     line = f"{n - rep.fail} of {n} checks passed" + ("" if not rep.fail else f" -- {rep.fail} FAILED")
     print(line)
     os.makedirs(os.path.join(ROOT, "kicad", "reports"), exist_ok=True)
+    if a.no_spice:              # a partial run must not replace the committed (complete) report
+        print("(--no-spice: kicad/reports/verify-%s.txt left as it is)" % a.profile)
+        sys.exit(1 if rep.fail else 0)
     with open(os.path.join(ROOT, "kicad", "reports", f"verify-{a.profile}.txt"), "w") as f:
         f.write(f"verify [{a.profile}]  {os.path.relpath(pcb, ROOT)}  (kicad/gen/verify.py)\n")
         for group, ok, text in rep.rows: f.write(f"[{'ok' if ok else 'FAIL'}] {group:13s} {text}\n")

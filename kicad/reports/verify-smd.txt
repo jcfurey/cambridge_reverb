@@ -61,4 +61,17 @@ verify [smd]  kicad/smd/cambridge_reverb_smd.kicad_pcb  (kicad/gen/verify.py)
 [ok] order package 3 fiducials on the assembled side
 [ok] order package package was exported from a fully routed, DRC-clean board
 [ok] SPICE         84 schematic parts appear by name in the netlists with the schematic's value (9 documented exceptions)
-62 of 62 checks passed
+[ok] SPICE         spice/run_all.sh: every netlist ran
+[ok] SPICE         tremolo depth 14.1 dB (>= 12)
+[ok] SPICE         footswitch closed: depth 0.02 dB (<= 0.5)
+[ok] SPICE         MRB engaged: 29 dB between the peak and 100 Hz (>= 20)
+[ok] SPICE         MRB bypassed: -1.4 .. -1.0 dB, 100 Hz - 5 kHz (flat within 1.5)
+[ok] SPICE         preamp as built (no source bypass): 0.501688 % THD at 0.1 V pk, 1.06266 % at 0.2 V
+[ok] SPICE         ...and the reason the bypass caps are optional: 34.7436 % at 0.1 V with both fitted
+[ok] SPICE         reverb summer with C_mixfb: 0.00 dB of peaking for 5-25 pF on the summing node, -0.7 dB at 20 kHz (without it: 5.3 dB at 10 pF)
+[ok] SPICE         JFET drain bias 12.1 V (6 .. 14; trim R_s for 8-9)
+[ok] SPICE         power amp at the nominal rail: 11.7 W into 8 ohm (>= 11)
+[ok] SPICE         power amp: 26.7 dB, HF -3 dB at 7.7 kHz from the input low-pass (6.5 .. 8.5)
+[ok] SPICE         LM1875 phase margin with resistive feedback: 68 / 76 deg (amplifier modelled with 45 / 60 deg at the data sheet's minimum gain of 10); >= 60
+[ok] SPICE         ...and why the 1 nF across R_fb had to go: -9 / -1 deg with it
+75 of 75 checks passed

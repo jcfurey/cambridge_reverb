@@ -35,8 +35,12 @@ order package, verify; about ten minutes. Needs Java + `kicad/gen/freerouting.ja
 <profile> --no-regen` rewrites the ERC / DRC reports in **`kicad/reports/`**, the
 committed evidence for the numbers in this file. Freerouting's result is not
 bit-reproducible from run to run (the open-link count moved between 7 and 15 on the SMD
-board during this work); `finish_routes.py` and the DRC gate are what make the outcome
-the same — complete and clean — every time.
+board during this work), and now and then it boxes a small pad in with its own traces
+so that even `finish_routes.py` cannot reach it (2026-11-12: the bias divider's `+33V5`
+pad behind a `PA_OUT` trace — one from-scratch run in three). `build.sh` therefore
+routes again with the next via cost until KiCad's DRC counts no open connection, and
+`verify.py` / `fab_jlcpcb.py` refuse anything less: the outcome is complete and clean
+every time, the copper is not the same copper every time.
 
 ## Status — both boards fully routed, 0 DRC errors, 0 warnings (2026-11-12, errata #32–#36)
 

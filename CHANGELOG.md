@@ -41,6 +41,10 @@ deliverables produced during the design phase.
   assertions and dying on a breakpoint trap about every second run (KiCad 8.0.9) — the
   same file filled in a new interpreter is clean every time. The committed boards were
   not affected (their fills come from `stitch.py`, already a process of its own).
+- **`build.sh` retries the route** with the next via cost until the board is complete
+  (a from-scratch run ended one link short: the autorouter had boxed a pad in), and
+  its exit code is now really `verify.py`'s (`pipefail`). `verify.py --no-spice` no
+  longer overwrites the committed report.
 - THT board: keeps one 68 nF film cap and one 3 k resistor, 2.5 mm channels between
   columns (it had 2.8 mm of width to spare before the three parts this pass adds).
 
