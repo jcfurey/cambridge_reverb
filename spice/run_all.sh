@@ -33,6 +33,7 @@ run tran_classa_output.cir "= |THD"
 run noise_frontend.cir           "^cfg="
 run ac_hum_psrr.cir              "^cfg="
 run tran_tremolo_depth.cir       "^cfg="
+run tran_tremolo_thump.cir       "^cfg="
 run tran_thermal_lm1875.cir      "^(RthSA|---|t[js]_)"
 # --- gain staging at real pickup levels (2026-11): the source-bypass caps are a build option
 run tran_preamp_headroom.cir     "^ROW|THD:"

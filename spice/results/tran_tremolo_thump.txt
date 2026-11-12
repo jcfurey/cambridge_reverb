@@ -1,0 +1,10 @@
+cfg=0 running depth=1 | LFO at the speaker=0.371285 Vpp | VBIAS_T moves 0.719088 Vpp | footswitch closes: thump=0.371329 Vpp
+cfg=0 running depth=0.5 | LFO at the speaker=0.340126 Vpp | VBIAS_T moves 0.693321 Vpp | footswitch closes: thump=0.334665 Vpp
+cfg=0 running depth=0 | LFO at the speaker=0.373554 Vpp | VBIAS_T moves 0.990089 Vpp | footswitch closes: thump=2.50407 Vpp
+ts0                 =  3.145663e+00
+cfg=0 engage after a long pause | TREM_S had floated to 3.14566 V | thump=8.16434 Vpp at the speaker
+cfg=1 running depth=1 | LFO at the speaker=0.00824931 Vpp | VBIAS_T moves 0.717798 Vpp | footswitch closes: thump=3.38624E-05 Vpp
+cfg=1 running depth=0.5 | LFO at the speaker=8.87958E-05 Vpp | VBIAS_T moves 0.693194 Vpp | footswitch closes: thump=0.00510132 Vpp
+cfg=1 running depth=0 | LFO at the speaker=5.40247E-05 Vpp | VBIAS_T moves 0.990554 Vpp | footswitch closes: thump=0.00421793 Vpp
+ts0                 =  1.448025e-02
+cfg=1 engage after a long pause | TREM_S had floated to 0.0144803 V | thump=0.0381889 Vpp at the speaker

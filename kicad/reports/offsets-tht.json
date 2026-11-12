@@ -1,0 +1,226 @@
+{
+ "board": "kicad/cambridge_reverb.kicad_pcb",
+ "profile": "tht",
+ "track_ends": {
+  "pad": {
+   "ends": 591,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "via": {
+   "ends": 235,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "track": {
+   "ends": 2402,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "free_ends": 0
+ },
+ "placement": {
+  "parts": 0,
+  "max_offset_mm": 0.0,
+  "off_centre": [],
+  "off_axis": [],
+  "rotation_offsets": []
+ },
+ "dc": {
+  "nets": 87,
+  "floating": [
+   "GUITAR_IN",
+   "MIDSW",
+   "MRB_OUT"
+  ],
+  "only_through_the_tank": [
+   "TANK_IN",
+   "TANK_OUT",
+   "TKDRV"
+  ],
+  "offboard_return": {
+   "GUITAR_IN": "10 M across the lugs of input jack 1",
+   "MIDSW": "1 M across the mid-cut switch",
+   "MRB_OUT": "none: do not rest a meter on TP MRB with the amplifier turned up"
+  },
+  "unexplained": []
+ },
+ "rails": [
+  {
+   "rail": "+33V5",
+   "source": "C_main.1",
+   "loads": [
+    {
+     "pad": "IC_PA.5",
+     "what": "LM1875 at full sine power (70 mA idle, 2 A peaks)",
+     "mA": 640.0,
+     "mohm": 20.1,
+     "mV": 12.87
+    },
+    {
+     "pad": "R_27V.1",
+     "what": "regulator pre-filter",
+     "mA": 32.0,
+     "mohm": 32.5,
+     "mV": 1.13
+    },
+    {
+     "pad": "R_bleed.1",
+     "what": "bleeder",
+     "mA": 3.4,
+     "mohm": 20.5,
+     "mV": 0.74
+    },
+    {
+     "pad": "R_bias1.1",
+     "what": "PA bias divider",
+     "mA": 0.8,
+     "mohm": 57.7,
+     "mV": 0.77
+    }
+   ]
+  },
+  {
+   "rail": "PGND",
+   "source": "C_main.2",
+   "loads": [
+    {
+     "pad": "IC_PA.3",
+     "what": "LM1875 return",
+     "mA": -640.0,
+     "mohm": 27.6,
+     "mV": -17.68
+    },
+    {
+     "pad": "R_spk_rtn.2",
+     "what": "signal-ground return through the star",
+     "mA": -32.0,
+     "mohm": 24.9,
+     "mV": -0.8
+    }
+   ]
+  },
+  {
+   "rail": "VREG_IN",
+   "source": "R_27V.2",
+   "loads": [
+    {
+     "pad": "U1.3",
+     "what": "LM317 input",
+     "mA": 32.0,
+     "mohm": 72.6,
+     "mV": 2.32
+    }
+   ]
+  },
+  {
+   "rail": "+17V",
+   "source": "U1.2",
+   "loads": [
+    {
+     "pad": "IC1.8",
+     "what": "reverb driver / mixer TL072",
+     "mA": 3.0,
+     "mohm": 181.4,
+     "mV": 2.88
+    },
+    {
+     "pad": "IC2.8",
+     "what": "LFO / output buffer TL072",
+     "mA": 3.0,
+     "mohm": 174.0,
+     "mV": 2.72
+    },
+    {
+     "pad": "IC3.4",
+     "what": "tone TL074",
+     "mA": 5.6,
+     "mohm": 198.8,
+     "mV": 3.04
+    },
+    {
+     "pad": "R_c.1",
+     "what": "vactrol LED (average with the tremolo on)",
+     "mA": 4.0,
+     "mohm": 127.0,
+     "mV": 2.49
+    },
+    {
+     "pad": "R_pre.1",
+     "what": "JFET rail",
+     "mA": 2.4,
+     "mohm": 72.5,
+     "mV": 1.65
+    },
+    {
+     "pad": "R_reg1.1",
+     "what": "LM317 divider",
+     "mA": 5.2,
+     "mohm": 62.1,
+     "mV": 1.46
+    },
+    {
+     "pad": "R_vbr1.1",
+     "what": "VBIAS_R divider",
+     "mA": 0.09,
+     "mohm": 149.7,
+     "mV": 2.49
+    },
+    {
+     "pad": "R_vbt1.1",
+     "what": "VBIAS_T divider",
+     "mA": 0.09,
+     "mohm": 139.1,
+     "mV": 2.61
+    },
+    {
+     "pad": "R_vb31.1",
+     "what": "VBIAS_3 divider",
+     "mA": 0.09,
+     "mohm": 188.5,
+     "mV": 2.93
+    },
+    {
+     "pad": "R_b1.1",
+     "what": "LED driver bias",
+     "mA": 0.09,
+     "mohm": 107.6,
+     "mV": 2.15
+    }
+   ]
+  },
+  {
+   "rail": "+17V_PRE",
+   "source": "R_pre.2",
+   "loads": [
+    {
+     "pad": "R_d1.1",
+     "what": "Q1",
+     "mA": 0.8,
+     "mohm": 230.1,
+     "mV": 0.43
+    },
+    {
+     "pad": "R_d2.1",
+     "what": "Q2",
+     "mA": 0.8,
+     "mohm": 217.5,
+     "mV": 0.42
+    },
+    {
+     "pad": "R_rec1.1",
+     "what": "Q_rec (reverb recovery)",
+     "mA": 0.8,
+     "mohm": 84.7,
+     "mV": 0.2
+    }
+   ]
+  }
+ ]
+}

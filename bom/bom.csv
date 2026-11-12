@@ -153,7 +153,7 @@ SW_MID,"Mid-cut toggle (panel, line-reverse switch hole)",MID CUT,WirePad_1x02_P
 TP_MK_OUT,Test point (header pin or wire loop),TMK,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_TONE_OUT,Test point (header pin or wire loop),TONE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_VBIAS_3,Test point (header pin or wire loop),VB_3,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
-C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
+C_dc_blk,"Tremolo shunt DC block -- CERAMIC or film, not an electrolytic (leakage: errata #38)",2.2uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,"2.2 uF 50 V X7R (THT board: radial MLCC or box film, 5 mm pitch). NOT an electrolytic: its leakage charges the vactrol node while the tremolo is off and the next start thumps (errata #38)"
 C_drv,LED-driver coupling (LFO -> base),100uF/25V,CP_Radial_D6.3mm_P2.50mm,,,1,"100 uF/25 V electrolytic, + to the depth-pot wiper (8.5 V) side; with R_b1||R_b2 sets the 0.17 Hz LFO coupling corner"
 C_lfo1,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
 C_lfo2,Capacitor (film/ceramic),1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,,,1,
@@ -175,6 +175,7 @@ R_lfo_ser,Resistor,15k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_lfo_sh,Resistor,15k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_obuf_b,Resistor,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_qb,Tremolo driver base series resistor (isolates the LFO from the footswitch short),1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,1k; the footswitch's tremolo switch shorts the driver base (FS_TREM) to GND -- without R_qb that short would load the LFO through C_drv (errata #27)
+R_tb,Bleeder across the vactrol LDR: holds TREM_S at 0 V while the LED is dark (no thump when the tremolo starts),220k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,220k; with C_dc_blk's leakage in nanoamps TREM_S stays within millivolts of ground
 R_trem1,Resistor,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 TP_GND_TREM,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_LFO,Test point (header pin or wire loop),LFO,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net

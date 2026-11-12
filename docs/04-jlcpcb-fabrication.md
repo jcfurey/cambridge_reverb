@@ -60,6 +60,12 @@ the generated assembly BOM and shows which knob moves the number:
 | Assembly fees for 5 boards | ~$32 | ~$20 | ~$54 | **~$21** |
 | … with the parts | | | | **~$45** ($4.83 of parts per board) |
 
+*After errata #38–#41 (the same day): six more 0805 parts on the board — four bleeders, the
+tank loop breaker, and the tremolo's coupling capacitor now a placed 2.2 µF ceramic
+instead of a hand-soldered electrolytic — **105 parts in 28 lines, 3 extended + 4
+"preferred", 214 joints: $20.63 of assembly fees for five boards, $45.20 with the parts
+($4.91 per board).** No new extended line.*
+
 The second column rested on an assumption — that common 1206 capacitor values are
 basic-library parts whatever the dielectric. The third looked every part up, but only in
 the footprint the board already had: in 1206, C0G above 100 pF and 100 V X7R are all
@@ -164,6 +170,14 @@ frequency; measured on the finished board by `kicad/gen/rf_audit.py`, enforced b
 > (`SPK_N` → planes), the star. "Connect to the star ground via multiple vias near
 > C_main" (step 2 above) is superseded: one link, no others.
 > `kicad/gen/ground_audit.py` checks the result on the routed copper.
+>
+> **Ground loops (generated, errata #40, #43):** no ground copper within 3.8 mm of a
+> mounting-hole centre on either outer layer (a screw head or a 7 mm washer on solder
+> mask over ground copper is an unplanned chassis bond). Inside `PGND` the charging
+> pulses have a run of their own from the centre tap to the reservoir's minus pad, so
+> power ground is a star at that pad whatever the autorouter does with the rest.
+> No copper neck under 0.2 mm anywhere (`min_connection` in the `.kicad_pro`).
+> `kicad/gen/loop_audit.py` checks all of it.
 
 In KiCad: Edit → Fill Zones → B.Cu → Net GND; clearance 0.3 mm, min width
 0.25 mm, thermal relief gap 0.5 mm, spoke width 0.5 mm.

@@ -33,7 +33,7 @@ the `notes` column):
   `C_rev2` 10nF, `C_rev4` 100nF, `R_rec_bias` 1M, `R_rec1` 10K, `R_rec2` 2K2,
   `C_rec_byp` 10µF, `POT_REV`.
 - **Tremolo** *(recovered values — superseded 2026-09-07 by errata #19: the single-arm Wien LFO could not oscillate at tremolo rates; built design = dual-gang 250k speed pot, 15k floors in both arms, 1 µF timing caps; and by errata #22: LED limiter + `Q_trem` vactrol driver, 15 dB depth instead of a fixed −20 dB pad)*: `R_lfo1` 33K, `R_lfo_ser` 100K, `R_lfo_fb1` 10K, `R_lfo_fb2` 4K7,
-  `R_led_diag` 2K2, `C_dc_blk` 10µF, `C_trem_out` 100nF, `POT_SPD` 500K,
+  `R_led_diag` 2K2, `C_dc_blk` 10µF *(superseded 2026-11-12, errata #38: 2.2 µF ceramic or film plus `R_tb` 220 k — the electrolytic's leakage charged the vactrol node and thumped)*, `C_trem_out` 100nF, `POT_SPD` 500K,
   `POT_DPT` 100K.
 - **Effects loop / panel:** `R_fx_pad` 10K, `POT_VOL`, `POT_TONE` *(superseded
   2026-09-07 by errata #20: the panel's Bass + Treble pots, `POT_BASS`/`POT_TREB`,

@@ -3,7 +3,7 @@ qty,value,footprint,refs
 2,1000uF/50V,CP_Radial_D12.5mm_P5.00mm,C_filt1 C_filt2
 1,2200uF/35V,CP_Radial_D16.0mm_P7.50mm,C_out
 1,4700uF/50V,CP_Radial_D18.0mm_P7.50mm,C_main
-2,10uF,CP_Radial_D5.0mm_P2.00mm,C_dc_blk C_rec_byp
+1,10uF,CP_Radial_D5.0mm_P2.00mm,C_rec_byp
 1,10uF/25V,CP_Radial_D5.0mm_P2.00mm,C_adj
 2,10uF/25V (opt),CP_Radial_D5.0mm_P2.00mm,C_s1 C_s2
 1,10uF/50V,CP_Radial_D5.0mm_P2.00mm,C_byp2
@@ -20,6 +20,7 @@ qty,value,footprint,refs
 1,120nF (opt),C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mrb_450
 8,1uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_cpl_out C_drymix C_in_pa C_lfo1 C_lfo2 C_obuf_in C_tout C_wetmix
 3,2.2nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_gg C_j3 C_j4
+1,2.2uF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_dc_blk
 5,22nF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_j1 C_j2 C_lp C_res C_rev2
 1,33pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_mixfb
 1,470pF,C_Disc_D7.5mm_W2.5mm_P5.00mm,C_treble
@@ -41,7 +42,7 @@ qty,value,footprint,refs
 5,1M,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_fs_mrb R_g1 R_g2 R_inb R_rec_bias
 6,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_gain R_j4 R_lp R_qb R_rf1 R_rf2
 3,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_rec2 R_s1 R_s2
-1,220k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_drvbias
+2,220k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_drvbias R_tb
 4,22k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_bias1 R_bias2 R_bias3 R_fb
 1,240R,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg1
 1,3k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,R_reg2

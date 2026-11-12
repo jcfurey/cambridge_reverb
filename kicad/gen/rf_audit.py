@@ -31,7 +31,7 @@ In2/B.Cu, 1.065 mm core er 4.6 between In1 and In2; 35 um outer, 15 um inner cop
   via          0.4 pF (same reasoning, smaller)
 Good to roughly +/- 30 %: enough to tell 5 pF from 50, which is the question.
 """
-import sys, os, math, json, argparse, collections
+import re, sys, os, math, json, argparse, collections
 import numpy as np
 from scipy import ndimage
 from PIL import Image, ImageDraw
@@ -61,6 +61,12 @@ Z_NODE = {
     "R_INV": (9.1e3, "tank-driver gain divider"), "PA_INV": (0.96e3, "power-amp gain divider"), "LFO_N": (3.2e3, "LFO gain divider"),
 }
 AUDIO_LIMIT = 100e3                # Hz: a corner above this is < 0.2 dB at 20 kHz
+
+# A fence via is nominally 2.7 mm from the edge. Where the pads of an edge connector sit on
+# that line (the SMD board's input jacks) the nearest free site is further in: up to 4.5 mm
+# still counts as the fence (it was 3.5 until 2026-11-12, when two such vias came out at
+# 3.5 and 4.1 mm and the audit reported a 34 mm "gap" across a row of ground pins).
+FENCE_BAND = 4.5
 
 def mm(v): return pcbnew.ToMM(v)
 
@@ -130,7 +136,10 @@ def audit(path):
         for k, s_ in enumerate(sl):
             hh, ww = (s_[0].stop - s_[0].start) * PX, (s_[1].stop - s_[1].start) * PX
             cy, cx = (s_[0].start + s_[0].stop) / 2 * PX + y0, (s_[1].start + s_[1].stop) / 2 * PX + x0
-            openings.append((round(max(hh, ww), 2), round(min(hh, ww), 2), nearest_ref(cx, cy)))
+            near = nearest_ref(cx, cy)
+            if re.fullmatch(r"H\d", near):
+                continue          # the copper-free land round a mounting hole (errata #40): deliberate, in a corner, outside the via fence
+            openings.append((round(max(hh, ww), 2), round(min(hh, ww), 2), near))
         openings.sort(reverse=True)
         pieces = ndimage.label(fill)[1]
         R["planes"][name] = dict(coverage=round(100 * fill.sum() * PX * PX / (bw * bh), 1), pieces=pieces, openings=len(openings),
@@ -184,7 +193,7 @@ def audit(path):
     per = []
     for x, y in gnd_vias:
         d = min(x - x0, x0 + bw - x, y - y0, y0 + bh - y)
-        if d < 3.5:                                  # on the perimeter: its position along the outline, clockwise from the top-left
+        if d < FENCE_BAND:                           # on the perimeter: its position along the outline, clockwise from the top-left
             s = (x - x0) if d == y - y0 else (bw + (y - y0)) if d == x0 + bw - x else (2 * bw + bh - (x - x0)) if d == y0 + bh - y else (2 * bw + 2 * bh - (y - y0))
             per.append(s)
     per.sort(); gaps = [b_ - a_ for a_, b_ in zip(per, per[1:])] + ([per[0] + 2 * (bw + bh) - per[-1]] if per else [])

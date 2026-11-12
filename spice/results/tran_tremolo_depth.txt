@@ -1,3 +1,3 @@
-cfg=0 LFO_pk=0.502177 V | I_led min/max=0.00637932 / 0.00737332 A | R_ldr min/max=960.101 / 1195.69 ohm | carrier env max/min=0.0673446 / 0.055284 V | DEPTH=1.71407 dB insertion loss at env max=-19.5208 dB
-cfg=1 LFO_pk=2.08217 V | I_led min/max=7.79211E-12 / 0.00424865 A | R_ldr min/max=2224.84 / 5E+07 ohm | carrier env max/min=0.579651 / 0.114057 V | DEPTH=14.1209 dB insertion loss at env max=-0.829512 dB
-cfg=2 LFO_pk=2.08216 V | I_led min/max=3.82268E-11 / 4.24044E-11 A | R_ldr min/max=5E+07 / 5E+07 ohm | carrier env max/min=0.579636 / 0.578428 V | DEPTH=0.0181194 dB insertion loss at env max=-0.829744 dB
+cfg=0 LFO_pk=0.502177 V | I_led min/max=0.00637932 / 0.00737332 A | R_ldr min/max=960.101 / 1195.69 ohm | carrier env max/min=0.0670471 / 0.0551291 V | DEPTH=1.69999 dB insertion loss at env max=-19.5593 dB
+cfg=1 LFO_pk=2.08217 V | I_led min/max=7.7921E-12 / 0.00424865 A | R_ldr min/max=2224.84 / 5E+07 ohm | carrier env max/min=0.556653 / 0.113153 V | DEPTH=13.8384 dB insertion loss at env max=-1.18115 dB
+cfg=2 LFO_pk=2.08216 V | I_led min/max=3.82268E-11 / 4.24045E-11 A | R_ldr min/max=5E+07 / 5E+07 ohm | carrier env max/min=0.556653 / 0.555494 V | DEPTH=0.0181005 dB insertion loss at env max=-1.18115 dB

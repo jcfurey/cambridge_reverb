@@ -47,6 +47,8 @@ done
 rm -f "$PLACED"
 echo "== stitch the grounds"
 python3 kicad/gen/stitch.py --in "$PCB" 2>&1 | q
+echo "== centre every track end on its pad / via"
+python3 kicad/gen/tidy_tracks.py --in "$PCB" 2>&1 | q
 echo "== reports"
 bash kicad/gen/check.sh "$P" --no-regen | q
 python3 kicad/gen/crosstalk_audit.py --board "$PCB" --md "kicad/reports/crosstalk-$P.md" 2>&1 | q | tail -2

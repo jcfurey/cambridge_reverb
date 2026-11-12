@@ -12,6 +12,9 @@ everything else is tied together here.
                        are free, so no piece of the top pour and no region of the two
                        planes is further than a fraction of a wavelength from a tie
                        (7.5 mm = lambda/10 at 1.9 GHz in FR4).
+  split_ct / join_ct   before / after routing: the rectifier's side of power ground is a
+                       net of its own while the routers work, with a locked run from the
+                       centre tap to the reservoir pad (errata #43).
   nfp(board)           non-functional pads off the inner layers (pads and vias keep
                        copper only where something connects): a plane's opening around
                        a foreign pin is then set by the hole, not by the pad, and the
@@ -62,18 +65,142 @@ def _line_free(blk, grid, a, b, own):
             return False
     return True
 
-def fanout(board, pcb, only=None):
-    """A via to the planes for every SMD ground pad (or just the refs in `only`)."""
-    if board.FindNet("GND") is None:
+# ---- the charging pulses get power-ground copper of their own (errata #43) -----------------
+CT_GROUP = ("T1.2", "C103.2", "C104.2", "JP_BR.2")   # the rectifier's side of power ground: centre tap, snubbers, bridge link
+CT_NET, CT_HUB = "PGND_CT", "C_main.2"                # ... and where it meets the rest: the reservoir's minus pad
+CT_WIDTHS = (2.5, 2.0)                                # mm, tried in turn before the class width (the run is on 0.5 oz inner copper)
+
+def _pads(board):
+    return {f"{fp.GetReference()}.{p.GetNumber()}": p for fp in board.GetFootprints() for p in fp.Pads()}
+
+def split_ct(board, pcb):
+    """Before routing: put the rectifier's power-ground pads on a net of their own
+    (PGND_CT) and lay its one run from the transformer centre tap to the reservoir, locked.
+
+    PGND is one net, and an autorouter joins the pads of a net in whatever order is
+    shortest. Twice out of three routings on 2026-11-12 it hung the star link, or the
+    LM1875's ground pin, on the trace that carries the reservoir's charging pulses from
+    the centre tap -- 36 to 51 mohm of shared copper. As built that is harmless (the star
+    is still one point). It is what turns a punctured heatsink insulator from a fault
+    worth 80 uV of hum into one worth 20 mV: the tab is then a second ground at a place
+    that moves by tens of millivolts with every charging pulse.
+
+    With two nets the routers cannot share anything. The run stops one clearance short
+    of the reservoir pad; join_ct() adds the last 2 mm and makes it PGND again, so the
+    finished board has the netlist of the schematic and a power ground that is a star AT
+    the reservoir: charging pulses on one arm, everything else on the others.
+    Returns (pads moved, run length mm, width mm) or None if the board has no such group."""
+    pads = _pads(board); hub, src = pads.get(CT_HUB), pads.get(CT_GROUP[0])
+    if hub is None or src is None or hub.GetNetname() != "PGND" or src.GetNetname() != "PGND":
+        return None
+    ni = pcbnew.NETINFO_ITEM(board, CT_NET); board.Add(ni); n = 0
+    for k in CT_GROUP:
+        if k in pads and pads[k].GetNetname() == "PGND": pads[k].SetNet(ni); n += 1
+    # Nothing is routed yet, so no through-hole pad has copper on the inner layers (errata #31) --
+    # but any of them may get it back once a router connects there. The run has to clear the
+    # PADS, not the holes: show every pad at full size while the grid is read. The two ends of
+    # the run keep their copper on every layer for good.
+    bare = [p for p in pads.values() if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH and p.GetRemoveUnconnected()]
+    for p in bare: p.SetRemoveUnconnected(False)
+    rules = fr.Rules(pcb); fr.configure(board); grid = fr.Grid(board, rules)
+    for p in bare:
+        if p not in (hub, src): p.SetRemoveUnconnected(True); p.SetKeepTopBottom(True)
+    for p in (hub, src): p.SetRemoveUnconnected(False)
+    inner = [l for l in fr.ROUTE_LAYERS if l.startswith("In")]
+    layer = inner[0] if inner else fr.ROUTE_LAYERS[0]
+    sx, sy = fr.to_mm(src.GetPosition().x), fr.to_mm(src.GetPosition().y)
+    for w in [w for w in CT_WIDTHS if w > rules.width(CT_NET)] + [rules.width(CT_NET)]:
+        blk = grid.blocked(CT_NET, w)[layer]
+        halo = np.zeros((grid.H, grid.W), bool)
+        grid.pad_shape(halo, hub, w / 2 + rules.clearance(CT_NET, "PGND", False) + fr.SAFETY + fr.PAINT + 2 * fr.RES)
+        dst = {(int(y), int(x)) for y, x in zip(*np.nonzero(halo & ~blk))}
+        if not dst: continue
+        full = np.ones((grid.H, grid.W), bool)
+        path = fr.astar(grid, {l: (blk if l == layer else full) for l in fr.ROUTE_LAYERS}, full, {grid.cell(sx, sy)}, [layer], dst, [layer])
+        if not path: continue
+        before = {id(t) for t in board.GetTracks()}
+        fr.add_path(board, grid, rules, CT_NET, w, path, (sx, sy), grid.pos(*path[-1][1:]))
+        length = 0.0
+        for t in board.GetTracks():
+            if t.GetClass() == "PCB_TRACK" and t.GetNetname() == CT_NET: t.SetLocked(True); length += fr.to_mm(t.GetLength())
+        return n, round(length, 1), w
+    print(f"  split_ct: no way from {CT_GROUP[0]} to {CT_HUB} on {layer} -- the rectifier group stays on PGND")
+    pg = board.FindNet("PGND")
+    for k in CT_GROUP:
+        if k in pads and pads[k].GetNetname() == CT_NET: pads[k].SetNet(pg)
+    board.Remove(ni)
+    return None
+
+def join_ct(pcb):
+    """After routing: the last stretch of the centre-tap run, into the centre of the
+    reservoir pad, and PGND_CT becomes PGND again. The stretch is as wide as the run if
+    KiCad's DRC lets it be -- a trace that hugs the waist between the run's end and the pad
+    can be a few 0.01 mm too close to a 2.5 mm stretch -- else the next narrower width
+    (3 mm of it: 1 mm wide is still under 3 mohm). Returns a line for the log, or None if the
+    board has no split."""
+    if pcbnew.LoadBoard(pcb).FindNet(CT_NET) is None: return None
+    keep = open(pcb, "rb").read(); _, errs0 = fr.unconnected(pcb); last = None
+    for k in range(4):
+        board = pcbnew.LoadBoard(pcb); ni = board.FindNet(CT_NET)
+        pg = board.FindNet("PGND"); hub = _pads(board)[CT_HUB]
+        hx, hy = fr.to_mm(hub.GetPosition().x), fr.to_mm(hub.GetPosition().y)
+        ends = [(math.dist((fr.to_mm(q.x), fr.to_mm(q.y)), (hx, hy)), t, q) for t in board.GetTracks()
+                if t.GetClass() == "PCB_TRACK" and t.GetNetname() == CT_NET and t.IsLocked() for q in (t.GetStart(), t.GetEnd())]
+        if not ends:
+            raise SystemExit(f"join_ct: {CT_NET} has no pre-routed run -- the board was not generated with split_ct()")
+        d, t, q = min(ends, key=lambda e: e[0])
+        reach = fr.to_mm(max(hub.GetSize().x, hub.GetSize().y)) / 2 + fr.to_mm(t.GetWidth()) + 1.5
+        if d > reach:
+            raise SystemExit(f"join_ct: the {CT_NET} run ends {d:.1f} mm from {CT_HUB} (expected within {reach:.1f} mm)")
+        widths = [fr.to_mm(t.GetWidth())] + [w for w in (2.0, 1.5, 1.0) if w < fr.to_mm(t.GetWidth())]
+        if k >= len(widths): break
+        w = widths[k]
+        s = pcbnew.PCB_TRACK(board); s.SetStart(pcbnew.VECTOR2I(q.x, q.y)); s.SetEnd(hub.GetPosition())
+        s.SetWidth(fr.mm(w)); s.SetLayer(t.GetLayer()); s.SetNet(ni); s.SetLocked(True); board.Add(s)
+        n = 0
+        for it in list(board.GetTracks()) + [p for fp in board.GetFootprints() for p in fp.Pads()]:
+            if it.GetNetname() == CT_NET: it.SetNet(pg); n += 1
+        board.Remove(ni)
+        fr.refill(board); pcbnew.SaveBoard(pcb, board)
+        todo, errs = fr.unconnected(pcb)
+        last = f"centre-tap return joined to PGND at {CT_HUB}: the last {d:.1f} mm, {w:g} mm wide ({n} items back on PGND)"
+        if not todo and len(errs) <= len(errs0): return last
+        if k + 1 < len(widths): open(pcb, "wb").write(keep)
+    return (last or "join_ct: nothing done") + " -- DRC still objects, see below"
+
+def fanout_taps(board, pcb):
+    """A via escape for every SMD pad of a small part that only TAPS a high-current net.
+
+    The LM1875's bias divider hangs on +33V5, the feedback resistor on PA_OUT, the star link
+    on the speaker return, the bridge snubbers on the secondary: 0805 pads on nets the
+    routers treat as 1.5 mm traces with 0.4 mm of clearance. The autorouter leaves several
+    of them for last, and twice in three runs it had by then run a fat trace round the bias
+    divider's +33V5 pad -- no way in on the component side, and none through the board
+    because nothing may put a via beside an SMD pad afterwards (2026-11-12). With the via
+    and a 0.5 mm stub in place BEFORE routing the pad is reachable from the inner layer
+    whatever happens around it. Returns the number of pads fanned out."""
+    rules = fr.Rules(pcb); fr.configure(board)
+    n = 0
+    nets = sorted({p.GetNetname() for fp in board.GetFootprints() for p in fp.Pads()
+                   if p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD and p.GetNetname() and rules.klass(p.GetNetname()) == "HighCurrent" and fr.light_ref(fp.GetReference())})
+    for net in nets:
+        only = {fp.GetReference() for fp in board.GetFootprints() if fr.light_ref(fp.GetReference())}
+        n += fanout(board, pcb, only=only, net=net)
+    return n
+
+def fanout(board, pcb, only=None, net="GND"):
+    """A via to the planes for every SMD ground pad (or just the refs in `only`); with
+    `net`, the same via + stub for the SMD pads of another net (see fanout_taps)."""
+    if board.FindNet(net) is None:
         return 0
     rules = fr.Rules(pcb); fr.configure(board); grid = fr.Grid(board, rules)
-    code = board.FindNet("GND").GetNetCode()
+    code = board.FindNet(net).GetNetCode()
     pads = [(fp.GetReference(), p) for fp in board.GetFootprints() for p in fp.Pads()
-            if p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD and p.GetNetname() == "GND" and (only is None or fp.GetReference() in only)]
+            if p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD and p.GetNetname() == net and (only is None or fp.GetReference() in only)]
     if not pads:
         return 0
-    w = min(rules.width("GND"), 0.5)
-    vb = grid.via_blocked("GND", None); blk = grid.blocked("GND", w)["F.Cu"]
+    w = min(rules.width(net), 0.5)
+    vb = grid.via_blocked(net, None); blk = grid.blocked(net, w)["F.Cu"]
     placed = []; n = 0
     for ref, p in pads:
         c = p.GetPosition(); px, py = fr.to_mm(c.x), fr.to_mm(c.y); start = grid.cell(px, py)

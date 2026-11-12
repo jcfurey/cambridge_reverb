@@ -76,7 +76,9 @@ half-winding through a bridge diode.
 | 60 Hz hum (steady) | Ground loop or missing ground | Check star ground, all ground returns |
 | 120 Hz buzz (harsh) | Rectifier noise or failed filter cap | Check snubbing caps C101–104, test C_main |
 | Hum varies with volume | Preamp picking up noise | Shield input wiring, check preamp ground |
-| Hum only with reverb on | Reverb pan cable unshielded | Use shielded cable for pan connections |
+| Hum only with reverb on | Reverb pan cable unshielded — or BOTH shields grounded with a both-grounded tank (a loop) | Use shielded cable for pan connections; ground-loop rule 6 below |
+| Hum that changes when you touch a jack, pot or the footswitch cable | A second ground path through the chassis | Ground-loop rules 1–7 below |
+| Thump when the tremolo starts / click from the mid-cut switch | A node floating on a capacitor | `R_tb`, `R_midb` fitted? (errata #38, #39) |
 | Buzz with tremolo on | LFO coupling into audio path | Separate LFO wiring from signal wiring |
 
 ## Troubleshooting — oscillation (recovered verbatim)
@@ -109,3 +111,43 @@ buzz at the speaker at idle; now it is under 0.1 mV (`kicad/reports/ground-*.md`
   test point on the THT board) to the chassis lug. The mains safety earth goes to
   the chassis, never to the board.
 - Before first power-up: 0 Ω between test points `GND` and `PGND`.
+
+## Ground loops — eight wiring rules (errata #40, #41)
+
+The board has one ground link by design. Every rule below keeps a second one from
+appearing through the hardware or the wiring; `kicad/gen/loop_audit.py` simulates what
+each mistake costs (`kicad/reports/loops-*.md`).
+
+1. **One chassis bond.** Metal (non-insulated) input jacks ARE that bond — then leave
+   `J_CHS` empty. With insulated jacks: one wire from `J_CHS` (SMD board; the
+   power-supply `GND` test point on the THT board) to the chassis lug.
+2. **Insulate both TO-220 tabs.** The LM1875's tab is its pin 3 = power ground; bare on
+   a chassis that is also signal ground it bridges the star (simulated: hum ×100 with
+   the hot preamp, and the speaker current fed back into the input within 6 dB of
+   oscillation). Mica + shoulder bushing; the LM317's tab is +17 V. Meter check before
+   power: tab to chassis open circuit.
+3. **Transformer centre tap to the board's `CT` pad only**, never to a chassis lug
+   (simulated: 16 mV of buzz, 300 mV with the hot preamp). An electrostatic screen, if
+   the transformer has one, goes to the chassis.
+4. **Speaker: both wires to the `LS1` pads.** If you add a speaker jack it must be an
+   insulated one — its sleeve is the star point, not chassis.
+5. **Input jacks on a metal panel: ONE sleeve wire to the board** (the panel joins the
+   three sleeves; three wires would be three loops in series with the input). Insulated
+   jacks: all three sleeve wires. Keep tip and sleeve wires twisted together.
+6. **Reverb tank** (the 4FB2A1C grounds BOTH its connectors to the tank chassis, so two
+   soldered shields close a loop — the largest in the amplifier). *SMD board:* solder
+   both; the input shield's pad returns through `R_tg` (10 Ω), which opens the loop.
+   *THT board:* solder only the OUTPUT cable's shield (pad 4, `G`) and leave the input
+   cable's shield unconnected at the board end. Either way run the two cables together
+   and away from the transformer.
+7. **Pots and footswitch:** do not solder pot lugs to pot cases (the panel already
+   grounds the cases), and do not tie DIN pins 4–6 to the connector shell.
+8. **Mounting hardware** may be metal or nylon: the board has no copper within 3.8 mm
+   of a hole centre on either face.
+
+**THT board only — two resistors on the parts themselves** (that board has no room for
+them; the SMD board carries them as `R_jb` and `R_midb`, errata #39):
+- 10 MΩ across the tip and sleeve lugs of input jack 1 (DC return for the jack side of
+  `C_in_pre`: no thump when a guitar is plugged in);
+- 1 MΩ across the two lugs of the mid-cut toggle switch (keeps `C_res` charged while the
+  switch is open: no click when it closes).

@@ -4,11 +4,11 @@ verify [tht]  kicad/cambridge_reverb.kicad_pcb  (kicad/gen/verify.py)
 [ok] DRC           0 errors 
 [ok] DRC           0 silkscreen / text warnings 
 [ok] DRC           0 other warnings 
-[ok] parity        181 schematic parts, 181 board footprints
+[ok] parity        182 schematic parts, 182 board footprints
 [ok] parity        0 footprint mismatches 
 [ok] parity        87 schematic nets, 87 board nets, 0 differ
-[ok] parity        384 connected pins in the schematic, 384 netted pads on the board
-[ok] pin map       86 pads checked against their datasheet function
+[ok] parity        386 connected pins in the schematic, 386 netted pads on the board
+[ok] pin map       85 pads checked against their datasheet function
 [ok] pin map       SOT-23 (MMBT3904) and VTL5C1 pad geometry match their package drawings
 [ok] electrical    D1 clamps the output to V+: cathode +33V5, anode PA_OUT
 [ok] electrical    D2 clamps the output to power ground: cathode PA_OUT, anode PGND
@@ -17,7 +17,7 @@ verify [tht]  kicad/cambridge_reverb.kicad_pcb  (kicad/gen/verify.py)
 [ok] electrical    rectifier: T1 centre tap on PGND, bridge '-' on BR_NEG (not both hard-wired to ground)
 [ok] electrical    JP_BR is the only path from the bridge '-' pin to power ground
 [ok] electrical    bridge: + on VRAW, ~ on the two secondary ends
-[ok] electrical    20 electrolytics: '+' pad on the more positive net
+[ok] electrical    19 electrolytics: '+' pad on the more positive net
 [ok] electrical    IC supply pins
 [ok] electrical    JFETs: pad 1 drain -> load -> +17V_PRE, pad 2 source -> Rs -> GND, pad 3 gate
 [ok] electrical    tremolo driver: base on FS_TREM, emitter on R_e, collector on the vactrol LED cathode
@@ -35,28 +35,39 @@ verify [tht]  kicad/cambridge_reverb.kicad_pcb  (kicad/gen/verify.py)
 [ok] grounding     the heavy returns are on power ground: transformer centre tap, reservoir, LM1875 pin 3 with its decoupling, Zobel and clamp
 [ok] grounding     the planes and the pour are signal ground only (zones on: GND)
 [ok] grounding     LM1875 feedback is resistive (parts across PA_INV / PA_OUT: ['R_fb']): noise gain 23 at every frequency; the 7.5 kHz roll-off is R_lp / C_lp at the + input
-[ok] grounding     charge-CT: ground-return hum at the speaker at idle 31.24 uV rms (0.0 uV from the charging pulses + 31.24 uV from the pre-filter's ripple current; 82.15 uV with the source bypass caps fitted) -- limit 100 uV
-[ok] grounding     charge-BR: ground-return hum at the speaker at idle 31.24 uV rms (0.0 uV from the charging pulses + 31.24 uV from the pre-filter's ripple current; 82.15 uV with the source bypass caps fitted) -- limit 100 uV
-[ok] grounding     loudspeaker return: no speaker current in the planes (limit -80 dB), 12.81 mohm in series with the speaker
+[ok] grounding     charge-CT: ground-return hum at the speaker at idle 27.2 uV rms (0.0 uV from the charging pulses + 27.2 uV from the pre-filter's ripple current; 76.1 uV with the source bypass caps fitted) -- limit 100 uV
+[ok] grounding     charge-BR: ground-return hum at the speaker at idle 27.2 uV rms (0.0 uV from the charging pulses + 27.2 uV from the pre-filter's ripple current; 76.1 uV with the source bypass caps fitted) -- limit 100 uV
+[ok] grounding     loudspeaker return: no speaker current in the planes (limit -80 dB), 13.17 mohm in series with the speaker
 [ok] grounding     LM1875 decoupling and Zobel within 32 mm of its pins (C_byp1 24.8, C_byp2 29.6, R_zobel 25.2, C_zobel 20.0 mm)
+[ok] ground loops  no closed loop in the routed copper of any of the 86 routed nets
+[ok] ground loops  mounting holes: ground copper on the outer layers stays 3.8 mm from each hole centre (>= 3.5: clear of a 7 mm washer -- no accidental chassis bond through the solder mask)
+[ok] ground loops  current loops traced through the copper: reservoir charging loop 11.4 cm2 = 0.0487 uT at 10 cm at idle (limit 0.2; the transformer itself makes 1 uT and up), loudspeaker loop 10.7 cm2
+[ok] ground loops  power ground is a star at the reservoir: the charging pulses share at most 0 mohm of copper with the LM1875's return, its decoupling or the star link (limit 2; their own run from the centre tap is 37.1 mohm) -- errata #43
+[ok] ground loops  wiring mistakes simulated against the board as built (hum with the hot preamp / speaker feedback): LM1875 tab bare on the chassis 1859 uV / -6.8 dB; metal speaker jack on the chassis 1374 uV / -13.7 dB; transformer centre tap also to the chassis 407883 uV / -12.1 dB -- as built 72 uV / none
+[ok] ground loops  reverb-tank shield loop, IF both shields are soldered: 902.8 uV at the speaker for the reference field -- this board has no room for the loop breaker: solder the OUTPUT cable's shield only (docs/03)
+[ok] ground loops  input-jack sleeve loop, IF closed: 331.07 uV (8280.31 hot) at the speaker for the reference field -- one sleeve wire with a metal panel (docs/03)
+[ok] offsets       every track end that lands in a pad or via lands on its centre (591 pad ends, 235 via ends)
+[ok] offsets       every track-to-track joint is on the centre line (2402 ends)
+[ok] offsets       87 nets; 3 get their DC return off the board (this board is full): GUITAR_IN -- 10 M across the lugs of input jack 1; MIDSW -- 1 M across the mid-cut switch; MRB_OUT -- none: do not rest a meter on TP MRB with the amplifier turned up
+[ok] offsets       supply-trace drops at the operating point: +17 V rail at most 3.04 mV down at any consumer; reservoir to the LM1875 20.1 / 27.6 mohm (supply / return)
 [ok] RF rules      stack is signal / GND / signal / GND and nothing is routed on a plane: F.Cu signal, In1.Cu GND plane, In2.Cu signal, B.Cu GND plane
-[ok] RF rules      In1.Cu plane: one piece, 93.6 % copper, 3 openings over 5 mm, longest 10.05 mm at REV1 (limit 12 mm, 6)
-[ok] RF rules      B.Cu plane: one piece, 89.3 % copper, 13 openings over 5 mm, longest 15.15 mm at FS1 (limit 16 mm, 16)
+[ok] RF rules      In1.Cu plane: one piece, 93.5 % copper, 3 openings over 5 mm, longest 10.05 mm at REV1 (limit 12 mm, 6)
+[ok] RF rules      B.Cu plane: one piece, 88.6 % copper, 13 openings over 5 mm, longest 15.15 mm at FS1 (limit 16 mm, 16)
 [ok] RF rules      copper to board edge >= 0.5 mm on every layer (measured F.Cu 0.55, In1.Cu 0.55, In2.Cu 2.18, B.Cu 0.55)
-[ok] RF rules      top pour keeps 0.41 mm from the nearest trace and 0.91 mm from HiZ traces (rules 0.5 / 1.0 mm; DRC is the exact check)
+[ok] RF rules      top pour keeps 0.4 mm from the nearest trace and 0.91 mm from HiZ traces (rules 0.5 / 1.0 mm; DRC is the exact check)
 [ok] RF rules      perimeter fence: 106 ground vias, median pitch 5 mm, largest gap 25.2 mm
-[ok] RF rules      stitching: 370 ground vias, no point further than 13.2 mm from one (mean 3.5 mm)
+[ok] RF rules      stitching: 376 ground vias, no point further than 14.1 mm from one (mean 3.4 mm)
 [ok] RF rules      0 SMD ground pads, each with a via to the planes
-[ok] RF rules      stray capacitance: lowest corner TONE_OUT 27 pF -> 94 kHz; all 29 sensitive nets above 80 kHz (< 0.3 dB at 20 kHz)
-[ok] RF rules      summing node SUMJ (20 pF of copper) is compensated: C_mixfb across R_mixfb
-[ok] RF rules      all 443 vias are through vias (no blind or buried vias: the standard 4-layer process)
+[ok] RF rules      stray capacitance: lowest corner TONE_OUT 25 pF -> 102 kHz; all 29 sensitive nets above 80 kHz (< 0.3 dB at 20 kHz)
+[ok] RF rules      summing node SUMJ (14 pF of copper) is compensated: C_mixfb across R_mixfb
+[ok] RF rules      all 462 vias are through vias (no blind or buried vias: the standard 4-layer process)
 [ok] RF rules      unused inner-layer pad copper removed on every through-hole pad (plane openings follow the holes)
-[ok] SPICE         82 schematic parts appear by name in the netlists with the schematic's value (9 documented exceptions)
+[ok] SPICE         87 schematic parts appear by name in the netlists with the schematic's value (12 documented exceptions)
 [ok] SPICE         spice/run_all.sh: every netlist ran
-[ok] SPICE         tremolo depth 14.1 dB (>= 12)
+[ok] SPICE         tremolo depth 13.8 dB (>= 12)
 [ok] SPICE         footswitch closed: depth 0.02 dB (<= 0.5)
 [ok] SPICE         MRB engaged: 29 dB between the peak and 100 Hz (>= 20)
-[ok] SPICE         MRB bypassed: -1.4 .. -1.0 dB, 100 Hz - 5 kHz (flat within 1.5)
+[ok] SPICE         MRB bypassed: -1.5 .. -1.1 dB, 100 Hz - 5 kHz (flat within 1.5)
 [ok] SPICE         preamp as built (no source bypass): 0.501688 % THD at 0.1 V pk, 1.06266 % at 0.2 V
 [ok] SPICE         ...and the reason the bypass caps are optional: 34.7436 % at 0.1 V with both fitted
 [ok] SPICE         reverb summer with C_mixfb: 0.00 dB of peaking for 5-25 pF on the summing node, -0.7 dB at 20 kHz (without it: 5.3 dB at 10 pF)
@@ -65,4 +76,6 @@ verify [tht]  kicad/cambridge_reverb.kicad_pcb  (kicad/gen/verify.py)
 [ok] SPICE         power amp: 26.7 dB, HF -3 dB at 7.7 kHz from the input low-pass (6.5 .. 8.5)
 [ok] SPICE         LM1875 phase margin with resistive feedback: 68 / 76 deg (amplifier modelled with 45 / 60 deg at the data sheet's minimum gain of 10); >= 60
 [ok] SPICE         ...and why the 1 nF across R_fb had to go: -9 / -1 deg with it
-66 of 66 checks passed
+[ok] SPICE         tremolo with no signal: LFO at the speaker 8.2 mV pp, footswitch thump 5.1 mV pp, thump on engaging after a long pause 38 mV pp (limits 20 / 20 / 100)
+[ok] SPICE         ...as drawn until errata #37 / #38: 0.37 V pp of LFO, 2.5 V pp footswitch thump, 8.2 V pp on engaging
+79 of 79 checks passed

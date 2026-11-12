@@ -53,6 +53,7 @@
 | C_treble | Vox "chime" cap — bright cap across the top of the volume pot | 470pF | |
 | R_pre, C_pre | `+17V_PRE` rail decoupling for Q1/Q2/Q_rec | 100R, 220µF/25V | errata #21: the JFET stages have ~0 dB PSRR; 7 Hz corner keeps the LM317's noise and ripple out |
 | R_rf1, C_rf1 | RF stopper at Q1's gate (guitar cable = antenna) | 1K, 100pF C0G | errata #24: 1.6 MHz corner; also R_rf2/C_rf2 at the recovery JFET (tank cable) |
+| R_jb | Input-jack bleeder, tip → ground | 10MΩ | errata #39: with nothing plugged in the tips floated on `C_in_pre`; plugging in then popped through the whole gain chain. **On the SMD board; on the THT board solder it across the lugs of input jack 1** (Part 3) |
 
 ### Tone stack — Bass / Treble + MID CUT `[DESIGNED — errata #20]`
 
@@ -75,6 +76,7 @@ output buffer (`IC3`, own mid-rail `VBIAS_3`). Swept in `spice/sweep_tonestack.c
 | R_mid | Series resistor ahead of the mid shunt | 10K | sets the cut depth with R_gL |
 | SW_MID | **MID CUT** toggle, SPST, panel | — | in the original line-reverse switch hole |
 | C_res | Resonating cap | 22nF | f₀ = 1/(2π√(L·C)) ≈ 790 Hz |
+| R_midb | Bleeder across `SW_MID` | 1MΩ | errata #39: keeps the open side of `C_res` at mid-rail so closing the switch does not click. **On the SMD board; on the THT board solder it across the toggle's lugs** (Part 3) |
 | R_gL, C_gg, R_gg | Gyrator (simulated inductor) | 4K7, 2.2nF, 180K | L = R_gL·R_gg·C_gg = 1.86 H (E24 values, errata #23) |
 | C_tout | Output buffer → volume pot | 1µF film | |
 | POT_VOL | Volume (reused) | 250K log | C_treble across pins 1–2 |
@@ -119,6 +121,7 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 | C_mrb3 | 750 Hz position (optional) | 47nF/50V film | ≈ 734 Hz |
 | C_mrb_in | Input coupling | 100nF/50V film | |
 | C_mrb_out | Output coupling | 100nF/50V film | |
+| R_mrb_b | Bleeder, `MRB_OUT` → ground | 1MΩ | errata #39: the node sat between two capacitors with no DC path. SMD board only (the THT board is full: do not probe `TP MRB` with the volume up) |
 
 ## ASCII schematics
 
@@ -167,6 +170,13 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 > `Q_trem` 2N3904 emitter follower AC-coupled from the depth pot (`C_drv` 100 µF,
 > 180 k/10 k bias, `R_e` 470 Ω) driving the vactrol LED from +17 V via `R_c` 100 Ω —
 > 15 dB depth, 0.8 dB insertion loss (14 dB with the footswitch isolation resistor `R_qb`, errata #27).
+>
+> **2026-11-12, errata #37 / #38 — two DC faults, neither visible with a signal generator:**
+> the output buffer's bias resistor `R_obuf_b` returns to **`VBIAS_R`**, not the LFO's
+> own reference (0.37 V pp of LFO at the speaker, 2.5 V pp from the footswitch);
+> `C_dc_blk` is **2.2 µF ceramic or film, never an electrolytic**, with **`R_tb` 220 k**
+> from the vactrol node to ground (leakage charged the node while the LED was dark:
+> an 8–19 V pp thump on re-engaging). Depth 13.8 dB.
 ```
 #   IC_TREM   TL072CP    LFO oscillator (uses half)
 #   VTL1      VTL5C1     LED/LDR optocoupler

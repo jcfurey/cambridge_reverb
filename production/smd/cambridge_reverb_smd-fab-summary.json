@@ -1,5 +1,5 @@
 {
- "bom_lines": 26,
+ "bom_lines": 28,
  "drc_errors": 0,
  "gerber_files": [
   "cambridge_reverb_smd-B_Cu.gbl",
@@ -23,10 +23,10 @@
  "min_via_dia": 0.8,
  "min_via_drill": 0.4,
  "npth": 4,
- "placements": 99,
- "pth": 189,
+ "placements": 105,
+ "pth": 187,
  "unconnected": 0,
- "vias": 429,
+ "vias": 458,
  "w": 170.15,
  "x0": -0.075,
  "y0": -0.075

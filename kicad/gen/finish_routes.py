@@ -141,7 +141,7 @@ class Grid:
             self.rect(g, cx, cy, sx / 2, sy / 2, grow)
     def collect(self):
         """Lists of copper items per routing layer: (kind, net, is_track, painter)."""
-        b = self.b; self.items = {l: [] for l in ROUTE_LAYERS}; self.holes = []; self.smd_pads = []; self.gnd_tht = []
+        b = self.b; self.items = {l: [] for l in ROUTE_LAYERS}; self.holes = []; self.smd_pads = []; self.gnd_tht = []; self.tht_pads = []
         lid = {l: b.GetLayerID(l) for l in ROUTE_LAYERS}
         for fp in b.GetFootprints():
             for p in fp.Pads():
@@ -154,8 +154,9 @@ class Grid:
                     continue
                 if p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD:
                     self.smd_pads.append(p)
-                elif net == "GND":
-                    self.gnd_tht.append(p)
+                else:
+                    self.tht_pads.append(p)
+                    if net == "GND": self.gnd_tht.append(p)
                 for l in ROUTE_LAYERS:
                     if not p.IsOnLayer(lid[l]):
                         continue
@@ -197,7 +198,14 @@ class Grid:
             groups = {}
             for kind, onet, is_track, paint in self.items[l]:
                 if onet == net and kind not in ("npth", "hole"): continue
-                c = 0.2 if kind == "npth" else self.r.hole_clear if kind == "hole" else self.r.clearance(net, onet, is_track)
+                # the hole of a pad that is not flashed on this layer: KiCad checks the HOLE against the
+                # hole clearance AND against the copper clearance of the two nets (the .kicad_dru
+                # class rules included -- a 1.5 mm PA_OUT track 0.43 mm from the hole of a signal
+                # pad is an hc_to_signal error, found on a candidate on 2026-11-12). The same net
+                # only has to keep the drill clear.
+                c = (0.2 if kind == "npth" else
+                     (self.r.hole_clear if onet == net else max(self.r.hole_clear, self.r.clearance(net, onet, False))) if kind == "hole" else
+                     self.r.clearance(net, onet, is_track))
                 groups.setdefault(round(c, 3), []).append(paint)
             blk = edge.copy()
             for c, painters in groups.items():
@@ -225,6 +233,9 @@ class Grid:
         g = np.zeros((self.H, self.W), bool)
         for p in self.gnd_tht: self.pad_shape(g, p)     # keep the In1 plane's thermal spokes whole
         vb |= ndimage.distance_transform_edt(~g) * RES < (vr + 1.0)
+        g = np.zeros((self.H, self.W), bool)
+        for p in self.tht_pads: self.pad_shape(g, p)    # a through-hole pad IS a via: none beside it. A via that
+        vb |= ndimage.distance_transform_edt(~g) * RES < (vr + 0.2)   # overlaps its own net's pad leaves a sliver between the two
         return vb
 
 def astar(grid, blk, vb, src, src_layers, dst, dst_layers, max_nodes=3_000_000):
@@ -439,6 +450,11 @@ def main():
     n = clean_stubs(a.src)
     if n:
         print(f"removed {n} redundant stub segment(s) (shorter than their own width, inside the copper they joined)")
+    todo, errors = unconnected(a.src)
+    if not todo and not errors:                     # both power-ground nets are whole: make them one again
+        import stitch
+        line = stitch.join_ct(a.src)
+        if line: print(line)
     todo, errors = unconnected(a.src)
     print(f"result: {len(todo)} open connection(s), {len(errors)} DRC error(s)")
     for e in errors:

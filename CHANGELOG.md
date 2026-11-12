@@ -3,6 +3,52 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Ground loops and offsets (2026-11-12)
+- **Errata #37 (high) — output buffer on the tremolo's bias rail.** New
+  `spice/tran_tremolo_thump.cir` (the real DC levels, no audio): the LFO pulled
+  0.7–1 V pp on `VBIAS_T` and the buffer followed — **0.37 V pp of LFO at the speaker at
+  any depth, 2.5 V pp when the footswitch was pressed.** `R_obuf_b` now returns to
+  `VBIAS_R`: 8 mV / 5 mV.
+- **Errata #38 (high) — vactrol node floating on an electrolytic.** `C_dc_blk`'s leakage
+  charged `TREM_S` while the LED was dark; re-engaging the tremolo thumped **8–19 V pp**.
+  Now a 2.2 µF ceramic with a 220 k bleeder `R_tb`: 38 mV pp worst case.
+- **Errata #39 — three nodes with no DC path** (`MIDSW`, `GUITAR_IN`, `MRB_OUT`), found by
+  the new DC-path scan in `kicad/gen/offset_audit.py`: bleeders `R_midb`, `R_jb`,
+  `R_mrb_b` on the SMD board; on the (full) THT board two resistors on the parts.
+- **Errata #40 (high) — ground loops through the hardware.** New
+  `kicad/gen/loop_audit.py`: no closed loop in any routed net; ground copper ran to
+  0.55 mm from every mounting hole on both faces — now a 3.8 mm copper-free land; the
+  LM1875's tab is power ground since #32 and the silkscreen says so. Wiring mistakes
+  simulated with the ground solver (bare tab, metal speaker jack, centre tap on the
+  chassis): hum up to a thousand times higher and speaker current in the input ground.
+- **Errata #41 — loops that close off the board**, priced for a reference stray field.
+  The reverb tank's two shields are the largest; SMD board: `R_tg` 10 Ω in the input
+  shield's return opens the loop (7 µV (7 hot) against 903 µV (902 hot)). Part 3
+  has eight wiring rules.
+- **Errata #42 — geometric offsets.** New `kicad/gen/tidy_tracks.py`: every track end now
+  lands on the centre of its pad or via (15 / 25 pad ends were off-centre by up to
+  0.93 / 1.28 mm), unused via escapes are removed, closed rings opened, sub-0.2 mm necks in the
+  ground plane closed. `min_connection` 0.2 mm is a board constraint.
+  Placement-file centroids checked: 0.000 mm.
+- **Errata #43 — power ground a star by construction.** Inside `PGND` the autorouter
+  decided the tree: on three boards out of four the star link or the LM1875's ground pin
+  hung on the trace that carries the charging pulses (36–51 mΩ shared). Harmless
+  as built (hum 13 µV either way); it turns a shorted heatsink insulator from 84 µV
+  of hum into 22.6 mV. `stitch.split_ct` / `join_ct`: the rectifier's ground pads are a
+  net of their own while the routers work, with a locked run from the centre tap to the
+  reservoir pad. Now 0 mΩ (SMD) / 0 mΩ (THT) shared, checked by `verify.py`.
+- **`finish_routes.py`: two faults fixed** — copper clearance to a pad that is not flashed
+  on the inner layer (it kept only the hole clearance), and vias beside through-hole pads.
+  **`stitch.fanout_taps`:** small parts that tap a high-current net get a via escape
+  before routing (the autorouter kept boxing the bias divider's `+33V5` pad in).
+- **`verify.py`:** new "ground loops" and "offsets" groups — **90 / 90** (SMD),
+  **79 / 79** (THT). `ground_audit.Net` takes other nets and hypothetical off-board
+  links, and draws thin tracks so that they always conduct; `rf_audit` no longer counts
+  the mounting-hole lands as plane slots, and takes a fence via up to 4.5 mm from the edge
+  (3.5 before: the vias beside the input jacks' pads sit at 3.5 and 4.1 mm).
+- JLCPCB BOM: 28 lines (21 basic, 4 preferred, 3 extended), 105 placed parts; one
+  hand-soldered electrolytic fewer.
+
 ### Optimisation pass: hum, stability, cost, build quality (2026-11-12)
 - **Errata #35 (high) — LM1875 stability.** `C_fb_hf` (1 nF across `R_fb`) took the
   amplifier's noise gain to 1 above ~160 kHz; the LM1875 is compensated for gains ≥ 10.

@@ -73,9 +73,10 @@ PROFILES = {
   # silkscreen labels cost no board area there (the SMD board keeps 0.4 mm of clear silk).
   # GAP 1.5 / ZONE_GAP 3.0 / BOT_GAP 4.0 (were 1.6 / 3.5 / 4.5) since the axial VTL5C1 footprint
   # (2026-11): with the old numbers the narrowest fitting columns needed 167 mm of 159.5.
-  # ZONE_GAP 2.5 (was 3.0) since the star ground and the PA input filter (2026-11-12, +3 parts):
-  # the narrowest fitting columns need 161.7 mm; 3.0 mm channels left 161.0.
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=2.5, BOT_GAP=4.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
+  # ZONE_GAP 2.25 (was 3.0, then 2.5): the star ground, the PA input filter and the vactrol
+  # bleeder added four parts in 2026-11; the narrowest fitting columns now need 163.2 mm
+  # and 3.0 mm channels left 161.0. This board is FULL: the next part needs a bigger board.
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=2.25, BOT_GAP=4.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
   # SMD board 170x100 since the 4-layer / keepout regime (was 155x90, Part 7's "safe bet"):
   # at a 0.5 mm part gap no via fits next to an SMD ground or rail pad, and 30 of 52 open
   # links were exactly those. 170x100 still fits any chassis the 190x115 original did.
@@ -213,6 +214,10 @@ PAD_LABELS = {
 }
 # a second silk line under a part where the reference alone is not enough
 NOTE = {"F1": "T1.6A 250V"}
+# printed under a heat-sinked part's reference, inside its keep-out (no placement change):
+# both tabs are LIVE. The LM1875's is its pin 3 = power ground: bolted bare to a chassis
+# that is also bonded to signal ground it bridges the star (errata #40).
+TAB_NOTE = {"IC_PA": "TAB = PGND: MICA + BUSHING", "U1": "TAB = +17V: INSULATE"}
 LEFT_LABEL = 2.4           # extra room right of the left-edge jack pads for their labels (SMD board)
 
 def label_mode(fp, c):
@@ -532,6 +537,28 @@ def keepouts(board, w, h, edge=2.0, hole_inset=5.0, hole_r=3.6):
             sps.Append(mm(px), mm(py))
         board.Add(z)
 
+def hole_lands(board, w, h, hole_inset=5.0, land_r=3.8):
+    """A copper-free land on both outer layers round each M3 hole. The ground pour and the
+    bottom plane used to run to 0.55 mm from the hole: a screw head (5.5-6 mm), a metal
+    standoff or a washer (7 mm) then sits on solder mask over GROUND copper, and mask is
+    not insulation -- up to four accidental chassis bonds beside the one that is meant
+    (errata #40). 3.8 mm radius clears a 7 mm washer; the inner plane is not touched."""
+    n = 0
+    for k, (cx, cy) in enumerate([(hole_inset, hole_inset), (w - hole_inset, hole_inset),
+                                  (hole_inset, h - hole_inset), (w - hole_inset, h - hole_inset)]):
+        z = pcbnew.ZONE(board)
+        z.SetIsRuleArea(True); z.SetZoneName(f"land_H{k + 1}")
+        z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True); z.SetDoNotAllowCopperPour(True)
+        z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+        ls = pcbnew.LSET(); ls.addLayer(pcbnew.F_Cu); ls.addLayer(pcbnew.B_Cu)
+        z.SetLayerSet(ls)
+        sps = z.Outline(); sps.NewOutline()
+        for i in range(48):
+            a = 2 * math.pi * i / 48
+            sps.Append(mm(cx + land_r * math.cos(a)), mm(cy + land_r * math.sin(a)))
+        board.Add(z); n += 1
+    return n
+
 def fiducials(board, w, h):
     """Three 1 mm copper / 2 mm mask fiducials for the pick-and-place camera (JLCPCB asks
     for >= 3 on the assembled side; a non-symmetric set so orientation is unambiguous).
@@ -594,6 +621,8 @@ def place_labels(board, fps):
             t.SetPosition(V(cx, cy - h / 2 - LBL_OFF))
         elif mode == "below":
             t.SetPosition(V(cx, cy + h / 2 + STRIP - LBL_OFF + 0.1))
+            if ref in TAB_NOTE:
+                silk_text(fp, board, TAB_NOTE[ref], cx, cy + h / 2 + 2 * STRIP - LBL_OFF + 0.1)
         else:                                   # inside the outline, clear of the pads
             name = c["fp"].split(":")[-1]
             pads = list(fp.Pads())
@@ -868,6 +897,7 @@ def main():
     outline(board, BW, BH)
     mounting_holes(board, BW, BH)
     keepouts(board, BW, BH)
+    hole_lands(board, BW, BH)
     nkp = footprint_keepouts(board)
     if PROFILE == "smd":                      # the assembled board: JLCPCB fiducials
         fiducials(board, BW, BH)
@@ -875,12 +905,14 @@ def main():
     gnd_pour(board, netmap, BW, BH)           # B.Cu: solid GND plane (4-layer) -- nothing is routed on it
     if TOP_POUR:
         gnd_pour(board, netmap, BW, BH, layer=pcbnew.F_Cu)
-    nst = nfo = 0
+    nst = nfo = ntap = 0; ct = None
     if LAYERS == 4:
         planes(board, netmap, BW, BH)
         nst = stitching_vias(board, netmap, BW, BH)
         import stitch
+        ct = stitch.split_ct(board, OUT)      # the charging pulses' own run to the reservoir, on a net of its own until routed
         nfo = stitch.fanout(board, OUT)       # every SMD ground pad: a locked via to the planes, before the router runs
+        ntap = stitch.fanout_taps(board, OUT) # ... and a via escape for the small parts that tap a high-current net
     pcbnew.SaveBoard(OUT, board)
     # fill with the project's rules, in a FRESH process: the saved file is reloaded there (so
     # every net has its class) and route_board.refill() initialises the rule engine before
@@ -888,7 +920,9 @@ def main():
     from route_board import refill_file
     refill_file(OUT)
     print(f"  {LAYERS} copper layers (F.Cu signal + pour / In1 GND / In2 signal / B.Cu GND); {nkp} footprint keepout areas; "
-          f"{nst} perimeter fence vias; {nfo} SMD ground pads fanned out to the planes")
+          f"{nst} perimeter fence vias; {nfo} SMD ground pads fanned out to the planes"
+          + (f"; {ntap} high-current tap pads given a via escape" if LAYERS == 4 and ntap else "")
+          + (f"; centre-tap return pre-routed: {ct[1]} mm x {ct[2]} mm on its own net ({ct[0]} pads) until stitch.join_ct()" if ct else ""))
 
     # chassis-fit packing-density check (bounding boxes, as before)
     areas_all = [raw_bbox_mm(fp)[0] * raw_bbox_mm(fp)[1] for _, fp in fps.values()]

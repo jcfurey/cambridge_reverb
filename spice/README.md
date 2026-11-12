@@ -26,6 +26,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | **`noise_frontend.cir`** | whole front end | `.noise` 20 Hz–20 kHz incl. the LM317's rail noise; EIN, SNR at 12 W, per supply fix (Part 6c) |
 | **`ac_hum_psrr.cir`** | PSU → PA / preamp | Rail-ripple paths to the speaker (bias divider, LM317 → JFETs), before / after errata #21 |
 | **`tran_tremolo_depth.cir`** | Tremolo | LFO → LED driver → behavioural VTL5C1 → audio: depth in dB, as drawn vs errata #22, and with the **footswitch closed** (errata #27) |
+| **`tran_tremolo_thump.cir`** | Tremolo → speaker | **No audio, real DC levels**: LFO feed-through, footswitch thump and the thump on re-engaging after a pause — as drawn vs errata #37 / #38 (capacitor leakage, LDR dark resistance, footswitch as a switch) |
 | **`tran_thermal_lm1875.cir`** | Power amp | Electro-thermal RC ladder: Tj vs heatsink / ambient, heatsink saturation time |
 | `models/opamp_noise.sub` | shared | Op-amp macromodel with an en source and noiseless internals, for `.noise` |
 | **`sweep_preamp_bias.cir`** | Preamp | **Vd vs R_s for LO / TYP / HI JFET corners** (datasheet Idss 1–5 mA) |
@@ -62,7 +63,8 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | Class-A stage AB → A | THD 1.05 % → 0.0025 %, idle 0.11 → 0.49 A | crossover removed | ✅ |
 | Front-end noise, as drawn → errata #21 | EIN **37 µV → 2.7 µV** rms; SNR at 12 W **34 → 57 dB** | LM317 noise was 23 dB above the JFET floor | ✅ fixed |
 | Hum at the speaker (0.25 Vrms rail ripple), as drawn → #21 | **408 mV → 0.3 mV** rms (−28 → −90 dB re 12 W) | unbypassed PA bias divider | ✅ fixed |
-| Tremolo depth, as drawn → errata #22 / #27 | **1.7 dB → 14.1 dB** (15.1 before `R_qb`); insertion loss −19.5 → −0.8 dB; footswitch closed **0.02 dB** | vactrol LED was 7 mA DC | ✅ fixed |
+| Tremolo depth, as drawn → errata #22 / #27 / #38 | **1.7 dB → 13.8 dB** (15.1 before `R_qb`, 14.1 before `R_tb`); insertion loss −19.5 → −0.8 dB; footswitch closed **0.02 dB** | vactrol LED was 7 mA DC | ✅ fixed |
+| Tremolo with **no signal**, at the speaker, as drawn → errata #37 / #38 | LFO feed-through **0.37 V pp → 8 mV pp**; footswitch **2.5 V pp → 5 mV pp**; re-engaging after a pause **8.2 V pp → 38 mV pp** | output buffer was biased from the LFO's reference; `C_dc_blk`'s leakage charged a floating node | ✅ fixed |
 | LM1875 Tj, 2.5 K/W sink, worst sine, Ta 40 °C | **97 °C** (4 K/W: 111; 8 K/W: 149) | < 150 °C | ✅ Part 5 spec confirmed |
 
 ## Sweeps

@@ -14,7 +14,7 @@
 > `gen/gen_kicad.py` generates the wired schematic. Verified with kicad-cli:
 > the hierarchy netlists with **146 components + 28 test points and 0 unconnected
 > pins** (94 at first generation; 102 after the VBIAS mid-rail + footswitch-pulldown
-> additions; 138 with the errata #19 tremolo and #20 Bass/Treble/mid-cut tone stack; 146 after errata #21-#22; 153 on the THT build and 157 + 29 test points on the SMD build after errata #25–#36). See
+> additions; 138 with the errata #19 tremolo and #20 Bass/Treble/mid-cut tone stack; 146 after errata #21-#22; 153 on the THT build and 157 + 29 test points on the SMD build after errata #25–#36; 154 and 162 + 29 after errata #38–#41: the tremolo bleeder on both, four more bleeders / the tank loop breaker where there is room). See
 > `../kicad/SCHEMATIC-BUILD.md` for connectivity method, the verified results,
 > and the known simplifications (op-amp single-supply biasing, TBD tone stack).
 

@@ -6,7 +6,7 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  181 components (153 + 28 test points) · 87 nets · 0 unconnected pins   (SMD build: 157 + 29 · 88 nets)
+kicad-cli sch export netlist ->  182 components (154 + 28 test points) · 87 nets · 0 unconnected pins   (SMD build: 162 + 29 · 89 nets)
 GND (signal ground) spans 55 pins; power ground PGND and the speaker return SPK_N are separate nets, joined to it by R_spk_rtn / R_gnd (errata #32) · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 
@@ -71,6 +71,9 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
   node (replaces the unbuffered `R_painput` 1 M).
 - **Split bias:** `VBIAS_R` (reverb) and `VBIAS_T` (tremolo) are independent
   100 k/100 k + 47 µF dividers — no shared reference, so no LFO→reverb bleed.
+  `VBIAS_T` carries 0.7–1 V pp of LFO, so **only the LFO uses it**: the output buffer's
+  bias resistor `R_obuf_b` returns to `VBIAS_R` (errata #37 — on `VBIAS_T` it put
+  0.37 V pp of LFO on the loudspeaker).
 - **Verified rail-aware** (`spice/tran_reverb_mixer.cir`): mid-rail bias 8.50 V,
   unity sum, ±7 V headroom before clipping. ERC 0.
 

@@ -30,6 +30,7 @@ R_x FS_MRBX 0 1e12
 C_mrb_out MRB_T N2 100n
 * load: C_obuf_in 1u into R_obuf_b 100k (IC2-B buffer input bias)
 C_obuf_in N2 OBUF_IN 1u
+R_mrb_b N2 0 1Meg                     ; DC return for MRB_OUT (errata #39)
 R_obuf_b OBUF_IN 0 100k
 
 .control

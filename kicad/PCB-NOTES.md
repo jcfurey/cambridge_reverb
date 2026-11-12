@@ -27,9 +27,14 @@
    under `xvfb-run`, imports the SES and refills the pours.
 3. **`gen/finish_routes.py` — the last links.** A grid maze router that closes the
    connections Freerouting leaves open, with the project's rules as written (below).
+   When every link is closed it also joins the charging pulses' own ground run to the
+   reservoir pad (`stitch.join_ct`, errata #43).
+4. **`gen/stitch.py`** — the ground stitching grid, then **`gen/tidy_tracks.py`** — the
+   geometric clean-up (track ends onto pad / via centres, unused via escapes, closed
+   rings, plane necks; errata #42). See "Ground loops and offsets" below.
 
-Rebuild: **`kicad/gen/build.sh tht`** (or `smd`) — generate, route, finish, reports,
-order package, verify; about ten minutes. Needs Java + `kicad/gen/freerouting.jar`
+Rebuild: **`kicad/gen/build.sh tht`** (or `smd`) — generate, route, finish, stitch, tidy,
+reports, order package, verify; about fifteen minutes. Needs Java + `kicad/gen/freerouting.jar`
 (freerouting-1.9.0.jar, git-ignored), `xvfb`, `python3-numpy`, `python3-scipy`, ngspice.
 **Verify an existing build:** `kicad/gen/verify.py tht` (or `smd`); `kicad/gen/check.sh
 <profile> --no-regen` rewrites the ERC / DRC reports in **`kicad/reports/`**, the
@@ -42,33 +47,38 @@ routes again with the next via cost until KiCad's DRC counts no open connection,
 `verify.py` / `fab_jlcpcb.py` refuse anything less: the outcome is complete and clean
 every time, the copper is not the same copper every time.
 
-## Status — both boards fully routed, 0 DRC errors, 0 warnings (2026-11-12, errata #32–#36)
+## Status — both boards fully routed, 0 DRC errors, 0 warnings (2026-11-12, errata #32–#43)
 
 `kicad/gen/build.sh <smd|tht>` runs the whole chain; `kicad/gen/verify.py <profile>` is
-the gate (`kicad/reports/verify-*.txt`: **75 / 75** checks on the SMD board, **66 / 66**
+the gate (`kicad/reports/verify-*.txt`: **90 / 90** checks on the SMD board, **79 / 79**
 on the THT board). Numbers from `kicad-cli 8.0.9 pcb drc --severity-all`, reports in
 `kicad/reports/`.
 
 | | SMD / THT board (`smd/`, the JLCPCB one) | THT board |
 |---|---:|---:|
 | Outline | **170 × 105 mm** | 190 × 115 mm |
-| Parts / nets / connections | 186 / 88 / 251 | 181 / 87 / 245 |
+| Parts / nets / connections | 191 / 89 / 256 | 182 / 87 / 245 |
 | Stack | F.Cu signal + pour / In1 GND / In2 signal / B.Cu GND | same |
-| Ground nets | `GND` (planes) · `PGND` · `SPK_N`, joined by `R_spk_rtn` and `R_gnd` | same |
-| Routed by Freerouting 1.9.0 (150 passes, 2 signal layers) | 241 | 236 |
-| Closed by `finish_routes.py` | 10 | 9 |
+| Ground nets | `GND` (planes) · `PGND` · `SPK_N`, joined by `R_spk_rtn` and `R_gnd`; tank input shield through `R_tg` | `GND` · `PGND` · `SPK_N` |
+| Routed by Freerouting 1.9.0 (150 passes, 2 signal layers) | 248 | 236 |
+| Closed by `finish_routes.py` | 8 | 9 |
 | **Open connections** | **0** | **0** |
-| DRC (JLCPCB limits, `.kicad_dru` rules, keepouts) | **0 errors, 0 warnings** | **0 errors, 0 warnings** |
-| Track segments | 1 332 — F.Cu 2 765 mm, In2 2 543 mm, **B.Cu 0** | 1 458 — F.Cu 2 829 mm, In2 3 800 mm, **B.Cu 0** |
-| Vias (all through) | 92 signal + 337 ground | 73 signal + 370 ground |
-| Ground planes: openings over 5 mm (In1 / B.Cu) | 3 / 12, longest 10 / 15 mm | 3 / 13, longest 10 / 15 mm |
-| Furthest point from a ground via | 13.3 mm (mean 3.2) | 13.2 mm (mean 3.5) |
-| Ground-return hum at the speaker, idle (`reports/ground-*.md`) | **13 µV** (was 4.4 mV) | **31 µV** (was 7.4 mV) |
-| LM1875 decoupling / Zobel from its pins | 20 / 15 mm (was 66 / 62) | 25 / 25 mm (was 71 / 62) |
-| Lowest stray-capacitance corner | `TONE_OUT` 25 pF → 101 kHz | `TONE_OUT` 27 pF → 94 kHz |
-| Footprint keepout areas | 149 | 154 |
-| Worst crosstalk pair (`reports/crosstalk-*.md`) | `R_DRVO` → `SUMJ` −84 dB | `TKDRV` → `FS_MRB` −78 dB |
-| Router settings | via cost 50 | via cost 60 |
+| DRC (JLCPCB limits, `.kicad_dru` rules, keepouts, 0.2 mm minimum connection) | **0 errors, 0 warnings** | **0 errors, 0 warnings** |
+| Track segments | 1 513 — F.Cu 2 819 mm, In2 2 712 mm, **B.Cu 0** | 1 614 — F.Cu 2 983 mm, In2 3 667 mm, **B.Cu 0** |
+| Vias (all through) | 118 signal + 340 ground | 86 signal + 376 ground |
+| Track ends off the centre of their pad / via / joint (`reports/offsets-*.md`) | **0 of 3026** | **0 of 3228** |
+| Closed loops in routed copper · ground copper to a mounting-hole centre | **0** · 3.8 mm | **0** · 3.8 mm |
+| Reservoir charging loop (`reports/loops-*.md`) | 5.2 cm² | 11.4 cm² |
+| Power-ground copper the charging pulses share with the LM1875's return or the star link (errata #43) | **0 mΩ** | **0 mΩ** |
+| Ground planes: openings over 5 mm (In1 / B.Cu) | 2 / 11, longest 10 / 15 mm | 3 / 13, longest 10 / 15 mm |
+| Furthest point from a ground via | 15.2 mm (mean 3.1) | 14.1 mm (mean 3.4) |
+| Ground-return hum at the speaker, idle (`reports/ground-*.md`) | **13 µV** | **27 µV** |
+| Reverb-tank shield loop, reference field (1 µT, 100 cm²) | **7 µV (7 hot)** | 903 µV (902 hot) if both shields are soldered |
+| LM1875 decoupling / Zobel from its pins | 20 / 15 mm | 25 / 25 mm |
+| Lowest stray-capacitance corner | `TONE_OUT` 25 pF → 103 kHz | `TONE_OUT` 25 pF → 102 kHz |
+| Footprint keepout areas | 155 | 156 |
+| Worst crosstalk pair (`reports/crosstalk-*.md`) | `TANK_IN` → `TANK_OUT` −75 dB | `R_DRVO` → `SUMJ` −83 dB |
+| Router settings | via cost 60 | via cost 60 |
 
 ### How the last links get closed — `gen/finish_routes.py`
 Freerouting takes each net class as one width and one clearance, so on every run the
@@ -216,10 +226,10 @@ Part 2's set-up notes and the ngspice suite (`spice/README.md`).
 | `QRD` | TP_QRD | QRD | Reverb | 8–9 V target (recovery JFET drain; trim R_rec2 like R_s1) | errata #15 |
 | `BLEND` | TP_BLEND | BLEND | Reverb | ~8.5 V DC (summer output about VBIAS_R) + dry/wet mix AC, unity | spice (tran_reverb_mixer) |
 | `GND` | TP_GND_REV | GND | Reverb | probe ground | — |
-| `VB_T` | TP_VBIAS_T | VBIAS_T | Tremolo | ~8.5 V (mid-rail reference for IC2) | spice |
+| `VB_T` | TP_VBIAS_T | VBIAS_T | Tremolo | ~8.5 V (mid-rail reference of the LFO; **0.7–1 V pp of LFO on it is normal** — that is why nothing in the audio path is biased from it, errata #37) | spice (tran_tremolo_thump) |
 | `LFO` | TP_LFO | LFO_OUT | Tremolo | AC: the LFO — **10.6 Hz** with the speed pot at min, **0.60 Hz** at max, ~0.48 V amplitude (0.96 Vpp), sine-ish | spice (tran_tremolo_lfo, sweep_lfo_speed) |
 | `TREM` | TP_TREM_OUT | TREM_OUT | Tremolo | AC: post-LDR signal, amplitude pumping at the LFO rate when tremolo is on | Part 1 §5 |
-| `PA_IN` | TP_PA_IN | PA_IN | Tremolo | ~8.5 V DC (IC2-B buffer about VBIAS_T) + the full effects-chain signal | roast R3 |
+| `PA_IN` | TP_PA_IN | PA_IN | Tremolo | ~8.5 V DC (IC2-B buffer about `VBIAS_R`, errata #37) + the full effects-chain signal; **no LFO with the guitar silent** (≤ 10 mV pp) | roast R3, spice (tran_tremolo_thump) |
 | `GND` | TP_GND_TREM | GND | Tremolo | probe ground | — |
 | `MRB` | TP_MRB_OUT | MRB_OUT | MRB | AC: mid-boosted signal, peak ~580–600 Hz | spice (ac_mrb) |
 | `PA_B` | TP_PA_BIAS | PA_BIAS | Power amp | ~16.75 V (V+/2 from the 22 k/22 k divider) | Part 2 |
@@ -319,8 +329,8 @@ nothing may run under them — so the numbers above are the ones the geometry al
 power-only parts (bridge, filter cans, clamp diodes, transformer / speaker pads) are
 exempt from the keepouts. On the current copper (`kicad/reports/crosstalk-{tht,smd}.md`,
 h = 0.21 mm, and since errata #31 with the tank driver's own output `R_DRVO` / `TKDRV`
-counted as aggressors, not just `TANK_IN`): SMD worst pair `R_DRVO` → `SUMJ`
-**−84 dB**; THT worst pair `TKDRV` → `FS_MRB` **−78 dB** (re-routed 2026-11-12; the 2026-11-11 copper had −61 / −75 dB).
+counted as aggressors, not just `TANK_IN`): SMD worst pair `TANK_IN` → `TANK_OUT`
+**−75 dB**; THT worst pair `R_DRVO` → `SUMJ` **−83 dB** (re-routed 2026-11-12; the 2026-11-11 copper had −61 / −75 dB).
 The two-layer boards started at −37 dB. The earlier four-layer figures (−66 / −74 dB)
 left out the driver output, and assumed a plane between In2 and B.Cu that was not
 there.
@@ -360,6 +370,57 @@ input-filter parts, the LM317's set resistor and capacitors, the reverb op-amp's
 feedback network, and the JFET rail filter `R_pre` / `C_pre` (to the preamp).
 Limits: a DC sheet model with simulated gains — good for comparing layouts and for an
 order of magnitude; transformer stray field and chassis loops are outside it.
+
+## Ground loops and offsets (errata #37–#43, 2026-11-12)
+
+Three tools look at the finished board for what DRC does not ask about; `verify.py`
+runs them and writes their reports.
+
+**`gen/loop_audit.py` → `reports/loops-*.md`.** (1) Closed loops in the copper of every
+routed net — none on either board (a ring counts when it encloses more than 1 mm² of
+bare laminate). (2) The big current loops walked through the actual tracks and parts:
+the reservoir charging loop encloses 5.2 cm² (SMD) / 11.4 cm² (THT), under 0.1 µT
+at 10 cm at idle, against the 1 µT and more of the mains transformer itself. (3) Ground
+copper near the mounting holes: 3.8 mm from each centre on the outer layers
+(`gen_pcb.hole_lands`), so a screw head or a 7 mm washer never sits on ground copper.
+(4) Wiring mistakes simulated with `ground_audit`'s solver: a bare LM1875 tab on the
+chassis, a metal speaker jack, the centre tap also on the chassis — each bridges the
+star and shows up as hum up to a thousand times higher and as speaker current in the
+input ground. (5) Loops that close off the board — two jack sleeves on a metal panel, the
+tank's two shields, a second chassis bond — each priced for a reference stray field.
+The tank loop is the big one; on the SMD board `R_tg` (10 Ω in the input shield's
+return) opens it: 7 µV (7 hot) against 903 µV (902 hot) on the THT board, where
+the rule is to solder the output shield only. Part 3 lists the eight wiring rules.
+
+**`gen/tidy_tracks.py`** runs after stitching: removes via escapes the routers did not
+use, opens any closed ring by taking out its higher-resistance branch, adds a short
+segment from every track end that reached a pad or via off-centre to the centre, and
+closes any neck of plane copper narrower than the 0.2 mm minimum connection (a 0.6 mm
+no-pour dot between the two openings). KiCad's DRC vetoes each change. Before it, 15 / 25 pad ends (SMD / THT) were off-centre by
+up to 0.93 / 1.28 mm, some touching their pad with the end cap alone.
+
+**`gen/offset_audit.py` → `reports/offsets-*.md`**: what the tidy pass left (nothing);
+the placement file's centroids (every SMD footprint origin is the centre of its pads);
+the nets with no DC path of their own (errata #39 — three bleeders on the SMD board,
+two resistors on the parts themselves for the THT board); and the voltage drop along
+every supply trace at the DC operating point (+17 V rail: 3.22 mV at the worst
+consumer; reservoir to the LM1875: 24.6 / 29.7 mΩ supply / return).
+
+**Power ground is a star at the reservoir by construction (errata #43).** Before
+routing, `stitch.split_ct` moves the rectifier's ground pads (centre tap, bridge link,
+its two snubbers) to a temporary net `PGND_CT` and lays one locked 2.5 mm run on In2
+from the centre tap to within a clearance of the reservoir's minus pad; the routers then
+cannot hang the amplifier's return or the star link on the charging path. After
+`finish_routes.py` has closed every link, `stitch.join_ct` adds the last stretch into the
+pad and renames the net back. Shared copper: 0 mΩ (SMD) / 0 mΩ (THT),
+against 36–51 mΩ when the autorouter chose.
+
+![Power ground before and after](../docs/power-ground-star-before-after.png)
+
+Before routing, `stitch.fanout_taps` gives every small part that only taps a
+high-current net (bias divider, feedback resistor, star link, bridge snubbers) a via
+and a 0.5 mm stub: twice in three runs the autorouter had boxed the bias divider's
+`+33V5` pad in with a `PA_OUT` trace.
 
 ## What the autorouter does NOT know — review by hand before fab
 - **Audio layout.** It routes by cost, not by ear: the JFET gate inputs

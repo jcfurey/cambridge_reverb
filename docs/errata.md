@@ -703,3 +703,204 @@ The THT board keeps one 68 nF film capacitor and one 3 k resistor (and has no `J
 or `PGND` test point): it is full — the three parts this pass adds there fit only with
 2.5 mm instead of 3.0 mm channels between the columns.
 **Severity:** LOW — money, and two parts that could have held an order up.
+
+## Issue 37 — The output buffer was biased from the tremolo oscillator's own reference (2026-11-12) — HIGH
+Roast R6 split the mid-rail reference into `VBIAS_R` (reverb, mixer) and `VBIAS_T`
+(tremolo) "so LFO current on the tremolo reference cannot modulate the reverb stage" —
+and left the **output buffer**, the last stage of the audio path, on `VBIAS_T`. The LFO
+pulls its own frequency on that node through `R_lfo_fb2`, the Wien shunt arm and the
+depth pot: **0.7–1.0 V pp** on a 100 k / 100 k / 47 µF divider. The buffer followed it.
+New `spice/tran_tremolo_thump.cir` — the whole chain to the loudspeaker at its real DC
+levels, with **no audio signal**:
+
+| | as drawn | as built |
+|---|---:|---:|
+| LFO at the loudspeaker, tremolo running (any depth, including zero) | **0.37 V pp** | 8 mV pp |
+| Footswitch pressed, depth at minimum (`C_drv` dumps 0.9 V into the rail) | **2.5 V pp** | 5 mV pp |
+
+**Resolution:** `R_obuf_b` returns to `VBIAS_R`. No part added.
+**Severity:** HIGH — sub-audio, so not heard as a tone, but it is cone movement and
+headroom at any setting with the tremolo merely switched on, and an audible thump from
+the footswitch.
+
+## Issue 38 — The vactrol's DC-blocking capacitor charged its own node while the tremolo was off (2026-11-12) — HIGH
+`C_dc_blk` (10 µF electrolytic) holds off the 8.5 V of the mixer output; behind it,
+`TREM_S` is tied to ground by the vactrol's LDR and nothing else. With the LED dark the
+LDR is 50 MΩ, the capacitor's leakage has nowhere to go, and `TREM_S` creeps up with a
+500 s time constant — to 3 V with a typical capacitor (0.1 µA), 7 V with one at its
+data-sheet limit. The next time the LED lights, the LDR drops to 2 kΩ in milliseconds and
+that charge goes through `R_trem1` into the audio:
+
+| engaging the tremolo after a few minutes' pause | thump at the loudspeaker |
+|---|---:|
+| as drawn, typical capacitor (0.1 µA) | **8.2 V pp** |
+| as drawn, leaky capacitor (1 µA) | **19 V pp** (rail to rail) |
+| as built, ceramic at its worst-case insulation resistance | 38 mV pp |
+
+**Resolution:** `C_dc_blk` = **2.2 µF 50 V X7R** (JLCPCB basic `C50254`; THT board: a
+radial ceramic or box film — not an electrolytic), and **`R_tb` 220 k** from `TREM_S` to
+ground. Depth 14.1 → 13.8 dB.
+**Severity:** HIGH — a full-power thump from a footswitch.
+
+## Issue 39 — Three nodes with no DC path (2026-11-12) — MEDIUM
+New `kicad/gen/offset_audit.py` walks the netlist for nets that reach a defined DC level
+only through capacitors. Such a node drifts, and the first switch, plug or meter probe
+that pins it sends the difference through the amplifier.
+
+| node | between | what pinned it | fix |
+|---|---|---|---|
+| `MIDSW` | the open mid-cut switch and `C_res` | closing the switch: up to a 5.8 V, 0.3 ms click at the tone output | `R_midb` 1 M across the switch |
+| `GUITAR_IN` | the jack tips and `C_in_pre` (nothing plugged in) | plugging in a guitar, ahead of ×210 … ×5250 of gain | `R_jb` 10 M to ground (input impedance 0.9 M) |
+| `MRB_OUT` | `C_mrb_out` and `C_obuf_in` | a meter on its test point | `R_mrb_b` 1 M to ground |
+
+Part 2 said of the mid-cut switch "an audio shunt sitting at mid-rail DC → no pop"; that
+holds only while something keeps the far plate of `C_res` there. The SMD board has all
+three resistors. **The THT board is full** (0.05 mm of column width left): there `R_jb`
+goes across the lugs of input jack 1 and `R_midb` across the lugs of the toggle switch
+(Part 3), and `TP MRB` should not be probed with the volume up.
+**Severity:** MEDIUM — clicks, not damage.
+
+## Issue 40 — Ground loops through the hardware: copper under the mounting screws, live tabs, wiring that bridges the star (2026-11-12) — HIGH
+New `kicad/gen/loop_audit.py`. On the board itself it finds **no closed loop** in the
+copper of any routed net (the rings the routers do leave now and then — 30 mm² in
+`VBIAS_R`, 37 mm² in `TANK_IN`, 11 mm² at the reverb driver's output on three fresh
+routings — are opened by the new ring step in `tidy_tracks.py`), and the big current
+loops are small:
+reservoir charging 5.2 cm² on the SMD board (11.4 on the THT board) =
+0.02 µT at 10 cm, against the 1 µT and more of the mains transformer itself.
+The loops are in the **hardware and the wiring**:
+
+- **Ground copper ran to 0.55 mm from every mounting hole, on both outer layers.** A
+  screw head, a metal standoff or a washer then bears on solder mask over ground copper
+  — up to four chassis bonds nobody planned. Now a copper-free land of 3.8 mm radius
+  round each hole on `F.Cu` and `B.Cu` (the inner plane is not touched).
+- **The LM1875's tab is its pin 3, and since errata #32 pin 3 is power ground.** Bolted
+  bare to a chassis that the input jacks also ground, it bridges the star. The silkscreen
+  now says `TAB = PGND: MICA + BUSHING` under the IC (and `TAB = +17V: INSULATE` under the
+  LM317).
+- The solver puts numbers on the mistakes — one off-board connection added to the board
+  as built, same charging pulses, same speaker current (SMD board as it is now, with the
+  power-ground star of errata #43; hum at the speaker, standard / hot preamp; speaker
+  current fed back through the grounds, hot preamp):
+
+| | hum | feedback loop gain |
+|---|---:|---:|
+| as built | 13 / 21 µV | none |
+| LM1875 tab bare on the chassis | **89 / 2054 µV** | −6.1 dB |
+| metal speaker jack on the chassis | **69 / 1594 µV** | −17.2 dB |
+| transformer centre tap also to the chassis | **10703 / 218598 µV** | −8.2 dB |
+| chassis bonded twice (jacks AND the chassis pad) | **13 / 19 µV** | none |
+
+**Severity:** HIGH for the wiring (hum tens to thousands of times higher, and speaker
+current in the input ground within a few dB of oscillation with the hot preamp option),
+MEDIUM for the mounting holes.
+
+## Issue 41 — Loops that close off the board: the reverb tank's two shields, jack sleeves, a second chassis bond (2026-11-12) — MEDIUM (design change on the SMD board)
+A stray field drives a current round any closed ground loop; where that current shares
+a conductor with a signal, its drop is amplified. `loop_audit.py` solves the board for a
+current between each pair of off-board ground pads and adds the off-board conductor
+that is in series with the signal. For a reference field of 1 µT at 50 Hz through
+100 cm² of loop (3.1 µV; a toroid at 10–15 cm — an EI-core transformer is 10–50 times
+that), at the loudspeaker:
+
+| loop, if it is closed | SMD board | THT board | keep it open by |
+|---|---:|---:|---|
+| two input-jack sleeves joined by a metal panel | 332 µV (8310 hot) | 331 µV (8280 hot) | non-insulated jacks: ONE sleeve wire to the board (the panel joins the sleeves); insulated jacks: all three |
+| input jack 1 and the FX jack sleeves joined by the panel | 336 µV (8363 hot) | 330 µV (8267 hot) | as above |
+| the two reverb-tank cable shields joined at the tank (4FB2A1C: both connectors grounded) | 7 µV (7 hot) | 903 µV (902 hot) | solder only the OUTPUT cable's shield at the board (pad 4) and leave the input shield open at this end; run the two cables together |
+| chassis bonded at the input jacks and again at the chassis pad | 327 µV (8008 hot) | 311 µV (8176 hot) | ONE chassis bond: the jacks if they are not insulated, otherwise the chassis pad |
+| footswitch cable shield / DIN shell on the chassis | 62 µV (1442 hot) | 31 µV (1426 hot) | DIN pins 4-6 are the pedal's commons; do not tie them to the connector shell |
+| volume-pot case soldered to its ground lug (case on the panel) | 54 µV (1434 hot) | 44 µV (1363 hot) | do not solder pot lugs to pot cases; the panel already holds the cases at chassis potential |
+| reverb-pot case soldered to its ground lug | 46 µV (1411 hot) | 13 µV (1385 hot) | as above |
+
+The largest by far is the **reverb tank**: the 4FB2A1C grounds both its connectors to
+the tank chassis (grounding code "A"), so the two cable shields and the board are a
+closed turn, and its current returns along the output cable's shield — in series with
+a millivolt signal ahead of ×575.
+**Resolution (SMD board):** the input-cable shield pad (`REV1` pad 2) returns to ground
+through **`R_tg` 10 Ω** — 250 times the resistance of a shield, so the loop is open for
+hum, while the drive coil keeps its return (through the output shield with an "A" tank,
+through `R_tg` with an insulated-input one). **THT board** (no room): solder only the
+output cable's shield (pad 4). Everything else in the table is a wiring rule; Part 3
+has them in one list.
+**Severity:** MEDIUM — hum that depends on how the cables happen to lie.
+
+## Issue 42 — Geometric offsets: tracks that reached their pads off-centre; two faults in the completion router (2026-11-12) — LOW
+New `kicad/gen/tidy_tracks.py`, run after routing and stitching:
+
+| on the boards as committed on 2026-11-12 (SMD / THT) | before | now |
+|---|---:|---:|
+| track ends that land in a pad but not on its centre | 15 / 25 | 0 |
+| … of those, touching the pad with the rounded end cap only | 2 / 0 | 0 |
+| track ends inside a via, off its centre | 6 / 0 | 0 |
+| largest offset | 0.93 / 1.28 mm | 0 |
+
+KiCad's connectivity and DRC only ask whether copper overlaps, so none of this was an
+error. It is a neck narrower than the trace at the joint, and a trace that stays behind
+unnoticed when a part is moved. The pass adds a short segment from each such end to the
+centre (never wider than what it lands on), removes via escapes the router did not use,
+opens closed rings, and lets KiCad's DRC veto every change. `min_connection` 0.2 mm is
+now a board constraint (no copper neck narrower than that anywhere).
+Placement file: all 107 SMD footprint origins are the centre of their pads
+(0.000 mm) and every part sits at a multiple of 90°; the rotation offsets applied for
+JLCPCB (SOT-23 +180°, everything else 0°) are the usual ones and still need the
+placement preview.
+
+Found on the way, in `finish_routes.py`:
+- it kept only the 0.35 mm *hole* clearance from a pad that is not flashed on the inner
+  layer, where KiCad also applies the copper clearance of the two nets (a 1.5 mm
+  `PA_OUT` track 0.43 mm from a signal pad's hole: an `hc_to_signal` error on one
+  candidate, caught by the DRC gate);
+- it could put a via right beside a through-hole pad of its own net, leaving a sliver
+  between the two. A through-hole pad is a via: none within 0.2 mm now.
+
+And in the routing: twice in three runs the autorouter boxed the bias divider's `+33V5`
+pad in with a `PA_OUT` trace. Small parts that only tap a high-current net (the bias
+divider, the feedback resistor, the star link, the bridge snubbers — 11 pads) now get
+a via and a 0.5 mm stub **before** routing (`stitch.fanout_taps`); unused ones are
+removed afterwards.
+
+Supply-trace voltage drops at the DC operating point (`reports/offsets-*.md`): +17 V
+rail at most 3.22 mV down at any consumer (SMD), reservoir to the LM1875
+24.6 / 29.7 mΩ supply / return. The power traces on the inner layer are 0.5 oz copper:
+order 1 oz inner copper if the amplifier is to run at full power continuously.
+**Severity:** LOW.
+
+## Issue 43 — Power ground was a star only by luck: the charging pulses shared a trace with the amplifier's return (2026-11-12) — MEDIUM
+Errata #32 made power ground (`PGND`) a net of its own, joined to signal ground at one
+point. *Inside* that net nothing was decided: an autorouter joins the pads of a net in
+whatever order is shortest. `loop_audit.py` now drives 1 A of charging current from the
+transformer's centre tap to the reservoir's minus pad and reads how far the other
+power-ground pads move against that pad — the copper they share with the pulses:
+
+| board | shared with the LM1875's pin 3 | shared with the star link | hum if the tab touches the chassis (standard / hot preamp) |
+|---|---:|---:|---:|
+| SMD as committed on 2026-11-12 | 0.1 mΩ | 0.1 mΩ | 84 µV / 2.0 mV |
+| THT as committed on 2026-11-12 | 0.09 mΩ | 35.66 mΩ | 5.5 mV / 295 mV |
+| SMD, routed again | 14.84 mΩ | 51.34 mΩ | 22.6 mV / 464 mV |
+| THT, routed again | 0.09 mΩ | 46.58 mΩ | 7.3 mV / 360 mV |
+| **now, SMD** | **0 mΩ** | **0 mΩ** | **89 µV / 2.1 mV** |
+| **now, THT** | **0 mΩ** | **0 mΩ** | **61 µV / 1.9 mV** |
+
+As built none of this is audible — the star link is still the one connection, and the hum
+figure is the same 13 µV on every board in the table. It decides how bad a *fault* is: a
+punctured mica washer, or the bare tab of errata #40, makes the tab a second ground at a
+place that moves by tens of millivolts with every charging pulse. One board in four had
+come out right by chance.
+
+![Power ground before and after](power-ground-star-before-after.png)
+
+**Resolution:** `stitch.split_ct()` — while the routers work, the rectifier's side of
+power ground (centre tap, bridge link, the two snubbers on it) is a net of its own,
+`PGND_CT`, with one locked 2.5 mm run on the inner layer to the reservoir's minus pad
+(49.8 mm on the SMD board, 74.9 mm on the THT board), laid before anything else.
+Two nets cannot share copper. `stitch.join_ct()` then adds the last 3 mm into the pad and
+makes it `PGND` again: the finished board has the schematic's netlist and a power ground
+that is a star **at the reservoir** by construction. `verify.py` holds it there (at most
+2 mΩ shared).
+Also new in the tidy pass: the inner ground plane could be left with a strip of copper
+0.14 mm wide between the clearances of two vias (KiCad's `connection_width` warning names
+the zone, not the place). `tidy_tracks.close_necks` finds such necks and joins the two
+openings with a 0.6 mm no-pour dot.
+**Severity:** MEDIUM — fault tolerance, not as-built performance.
+

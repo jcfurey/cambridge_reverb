@@ -59,6 +59,12 @@ DESC = {
  "C_mrb_600b":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)","C_mrb_600c":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)",
  "C_mrb_600":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)",
  "C_treble":"Bright cap across the volume pot (voicing part, hand-fitted)",
+ "R_tg":"Reverb-tank input-shield return (ground-loop breaker: the tank joins both shields)",
+ "R_jb":"Input DC return: keeps the jack side of C_in_pre at 0 V with nothing plugged in",
+ "R_midb":"Bleeder across the mid-cut switch: keeps C_res charged to mid-rail while the switch is open (no click)",
+ "R_mrb_b":"DC return for MRB_OUT (a node between two capacitors)",
+ "R_tb":"Bleeder across the vactrol LDR: holds TREM_S at 0 V while the LED is dark (no thump when the tremolo starts)",
+ "C_dc_blk":"Tremolo shunt DC block -- CERAMIC or film, not an electrolytic (leakage: errata #38)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference
@@ -97,6 +103,9 @@ CUR = {
  "C102":dict(dk="", mou="", notes="bridge snubber, see C101"),
  "C103":dict(dk="", mou="", notes="bridge snubber, see C101"),
  "C104":dict(dk="", mou="", notes="bridge snubber, see C101"),
+ "C_dc_blk":dict(dk="", mou="", notes="2.2 uF 50 V X7R (THT board: radial MLCC or box film, 5 mm pitch). NOT an electrolytic: its leakage charges the vactrol node while the tremolo is off and the next start thumps (errata #38)"),
+ "R_tb":dict(dk="", mou="", notes="220k; with C_dc_blk's leakage in nanoamps TREM_S stays within millivolts of ground"),
+ "R_jb":dict(dk="", mou="", notes="10M (4.7M-22M is fine): a DC return, not a load"),
  "R_gnd":dict(dk="", mou="", notes="0R (THT board: a wire link). Without it the planes float: check 0 ohm between TP GND and TP PGND before first power-up. The ONLY ground link -- do not add others (errata #32)"),
  "R_spk_rtn":dict(dk="", mou="", notes="0R: a bare wire link of 1 mm copper (or a 0R 1 W jumper); carries the speaker current from the LS1 '-' pad to power ground"),
  "J_CHS":dict(dk="", mou="", notes="no part. Bond the chassis to circuit ground in ONE place: either through the (non-insulated) input jacks -- then leave these pads empty -- or, with insulated jacks, by one wire from here to the chassis lug. The second pad takes a scope ground clip"),

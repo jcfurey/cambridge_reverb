@@ -83,6 +83,7 @@ R_d1,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F
 R_d2,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F1002T5E -- 10k 1% 0805
 R_g1,Resistor,1M,R_0805_2012Metric,,,1,JLCPCB C17514 (basic): UNI-ROYAL 0805W8F1004T5E -- 1M 1% 0805
 R_g2,Resistor,1M,R_0805_2012Metric,,,1,JLCPCB C17514 (basic): UNI-ROYAL 0805W8F1004T5E -- 1M 1% 0805
+R_jb,Input DC return: keeps the jack side of C_in_pre at 0 V with nothing plugged in,10M,R_0805_2012Metric,,,1,"JLCPCB C26108 (preferred): UNI-ROYAL 0805W8F1005T5E -- 10M 1% 0805; was: 10M (4.7M-22M is fine): a DC return, not a load"
 R_rf1,"RF stopper, guitar input (with C_rf1: 1.6 MHz)",1k,R_0805_2012Metric,,,1,JLCPCB C17513 (basic): UNI-ROYAL 0805W8F1001T5E -- 1k 1% 0805
 R_s1,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,"2K2 biases Vd~12V; ~1-1.2k -> 8-9V target (errata #15), trim per device"
 R_s2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,see R_s1 (errata #15)
@@ -113,6 +114,7 @@ R_rec1,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W
 R_rec2,Resistor,2.2k,R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical,,,1,
 R_rec_bias,Resistor,1M,R_0805_2012Metric,,,1,JLCPCB C17514 (basic): UNI-ROYAL 0805W8F1004T5E -- 1M 1% 0805
 R_rf2,"RF stopper, reverb tank return (with C_rf2)",1k,R_0805_2012Metric,,,1,JLCPCB C17513 (basic): UNI-ROYAL 0805W8F1001T5E -- 1k 1% 0805
+R_tg,Reverb-tank input-shield return (ground-loop breaker: the tank joins both shields),10R,R_0805_2012Metric,,,1,JLCPCB C17415 (basic): UNI-ROYAL 0805W8F100JT5E -- 10R 1% 0805
 R_wetmix,Resistor,100k,R_0805_2012Metric,,,1,JLCPCB C149504 (basic): UNI-ROYAL 0805W8F1003T5E -- 100k 1% 0805
 TP_BLEND,Test point (header pin or wire loop),BLEND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_GND_REV,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
@@ -150,6 +152,7 @@ R_j2,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F
 R_j3,Resistor,68k,R_0805_2012Metric,,,1,JLCPCB C17801 (basic): UNI-ROYAL 0805W8F6802T5E -- 68k 1% 0805
 R_j4,Resistor,1k,R_0805_2012Metric,,,1,JLCPCB C17513 (basic): UNI-ROYAL 0805W8F1001T5E -- 1k 1% 0805
 R_mid,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F1002T5E -- 10k 1% 0805
+R_midb,Bleeder across the mid-cut switch: keeps C_res charged to mid-rail while the switch is open (no click),1M,R_0805_2012Metric,,,1,JLCPCB C17514 (basic): UNI-ROYAL 0805W8F1004T5E -- 1M 1% 0805
 R_mk1,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F1002T5E -- 10k 1% 0805
 R_mk2,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F1002T5E -- 10k 1% 0805
 R_vb31,Resistor,100k,R_0805_2012Metric,,,1,JLCPCB C149504 (basic): UNI-ROYAL 0805W8F1003T5E -- 100k 1% 0805
@@ -158,7 +161,7 @@ SW_MID,"Mid-cut toggle (panel, line-reverse switch hole)",MID CUT,WirePad_1x02_P
 TP_MK_OUT,Test point (header pin or wire loop),TMK,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_TONE_OUT,Test point (header pin or wire loop),TONE,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_VBIAS_3,Test point (header pin or wire loop),VB_3,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
-C_dc_blk,Capacitor (electrolytic),10uF,CP_Radial_D5.0mm_P2.00mm,,,1,
+C_dc_blk,"Tremolo shunt DC block -- CERAMIC or film, not an electrolytic (leakage: errata #38)",2.2uF,C_1206_3216Metric,,,1,"JLCPCB C50254 (basic): Samsung CL31B225KBHNNNE -- 2.2uF 50V X7R 10% 1206; was: 2.2 uF 50 V X7R (THT board: radial MLCC or box film, 5 mm pitch). NOT an electrolytic: its leakage charges the vactrol node while the tremolo is off and the next start thumps (errata #38)"
 C_drv,LED-driver coupling (LFO -> base),100uF/25V,CP_Radial_D6.3mm_P2.50mm,,,1,"100 uF/25 V electrolytic, + to the depth-pot wiper (8.5 V) side; with R_b1||R_b2 sets the 0.17 Hz LFO coupling corner"
 C_lfo1,Capacitor (film/ceramic),1uF,C_1206_3216Metric,,,1,JLCPCB C1848 (basic): Samsung CL31B105KBHNNNE -- 1uF 50V X7R 10% 1206
 C_lfo2,Capacitor (film/ceramic),1uF,C_1206_3216Metric,,,1,JLCPCB C1848 (basic): Samsung CL31B105KBHNNNE -- 1uF 50V X7R 10% 1206
@@ -178,8 +181,10 @@ R_lfo_fb1,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 08
 R_lfo_fb2,Resistor,4.7k,R_0805_2012Metric,,,1,JLCPCB C17673 (basic): UNI-ROYAL 0805W8F4701T5E -- 4.7k 1% 0805
 R_lfo_ser,Resistor,15k,R_0805_2012Metric,,,1,JLCPCB C17475 (basic): UNI-ROYAL 0805W8F1502T5E -- 15k 1% 0805
 R_lfo_sh,Resistor,15k,R_0805_2012Metric,,,1,JLCPCB C17475 (basic): UNI-ROYAL 0805W8F1502T5E -- 15k 1% 0805
+R_mrb_b,DC return for MRB_OUT (a node between two capacitors),1M,R_0805_2012Metric,,,1,JLCPCB C17514 (basic): UNI-ROYAL 0805W8F1004T5E -- 1M 1% 0805
 R_obuf_b,Resistor,100k,R_0805_2012Metric,,,1,JLCPCB C149504 (basic): UNI-ROYAL 0805W8F1003T5E -- 100k 1% 0805
 R_qb,Tremolo driver base series resistor (isolates the LFO from the footswitch short),1k,R_0805_2012Metric,,,1,JLCPCB C17513 (basic): UNI-ROYAL 0805W8F1001T5E -- 1k 1% 0805; was: 1k; the footswitch's tremolo switch shorts the driver base (FS_TREM) to GND -- without R_qb that short would load the LFO through C_drv (errata #27)
+R_tb,Bleeder across the vactrol LDR: holds TREM_S at 0 V while the LED is dark (no thump when the tremolo starts),220k,R_0805_2012Metric,,,1,JLCPCB C17556 (basic): UNI-ROYAL 0805W8F2203T5E -- 220k 1% 0805; was: 220k; with C_dc_blk's leakage in nanoamps TREM_S stays within millivolts of ground
 R_trem1,Resistor,10k,R_0805_2012Metric,,,1,JLCPCB C17414 (basic): UNI-ROYAL 0805W8F1002T5E -- 10k 1% 0805
 TP_GND_TREM,Test point (header pin or wire loop),GND,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net
 TP_LFO,Test point (header pin or wire loop),LFO,TestPoint_THT_D2.0mm_Label,,,1,bench test point: fit a header pin or a bare 0.6 mm wire loop; silk shows the net

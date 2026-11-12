@@ -27,6 +27,13 @@ kicad/reports/verify-<profile>.txt (committed evidence).
                 joined by two 0R links and nothing else; kicad/gen/ground_audit.py solves the
                 routed copper for the hum and the feedback the return currents cause; the
                 LM1875's decoupling and Zobel sit at the IC and its feedback is resistive
+  ground loops  kicad/gen/loop_audit.py: no closed loop in any routed net, no ground copper
+                under the mounting hardware, the big current loops traced and measured,
+                four wiring mistakes simulated, every loop that can close off the board
+                priced for a reference stray field
+  offsets       kicad/gen/offset_audit.py: every track end on the centre of its pad / via /
+                joint, placement-file centroids on the pad centres, a DC path for every
+                net, supply-trace voltage drops at the operating point
   RF rules      kicad/gen/rf_audit.py on the finished copper: signal / GND / signal / GND
                 with nothing routed on a plane, no slot in a plane beyond the unavoidable
                 ones, edge pull-back, pour gaps, the ground fence and stitching density,
@@ -255,6 +262,9 @@ def check_ground(rep, pcbnew, b, pcb, profile):
     A(not wrong, "the heavy returns are on power ground: transformer centre tap, reservoir, LM1875 pin 3 with its decoupling, Zobel and clamp" + ("" if not wrong else ": " + ", ".join(wrong)))
     zones = sorted({z.GetNetname() for z in b.Zones() if not z.GetIsRuleArea()})
     A(zones == ["GND"], f"the planes and the pour are signal ground only (zones on: {', '.join(zones)})")
+    if profile == "smd":
+        A(net.get("REV1", {}).get("2") == "TANK_G" and ends("R_tg") == {"TANK_G", "GND"},
+          "reverb tank: the input-cable shield returns through R_tg (10 ohm), the output shield straight to ground -- the two shields do not close a loop")
     fb = sorted(r for r, d in net.items() if set(d.values()) == {"PA_INV", "PA_OUT"})
     A(fb == ["R_fb"] and ends("R_lp") == {"PA_LP", "PA_BIAS"} and ends("C_lp") == {"PA_BIAS", "GND"},
       f"LM1875 feedback is resistive (parts across PA_INV / PA_OUT: {fb}): noise gain 23 at every frequency; the 7.5 kHz roll-off is R_lp / C_lp at the + input")
@@ -274,6 +284,70 @@ def check_ground(rep, pcbnew, b, pcb, profile):
       f"R_zobel {d['R_zobel to pin 4']}, C_zobel {d['C_zobel ground to pin 3']} mm)" if not far else f"too far from the LM1875: {far}")
     json.dump(R, open(os.path.join(ROOT, "kicad", "reports", f"ground-{profile}.json"), "w"), indent=1)
     open(os.path.join(ROOT, "kicad", "reports", f"ground-{profile}.md"), "w").write(ground_audit.report(R))
+
+def check_loops(rep, pcbnew, b, pcb, profile):
+    """Ground loops (errata #40, #41): on the board, through the hardware, through the wiring."""
+    import loop_audit
+    R = loop_audit.audit(pcb); A = lambda ok, text: rep.add("ground loops", ok, text)
+    A(not R["rings"], f"no closed loop in the routed copper of any of the {R['nets_checked']} routed nets" if not R["rings"]
+      else "closed copper loops: " + ", ".join(f"{n} {a} mm2" for n, a, _ in R["rings"][:6]))
+    hc = R["hole_copper_mm"]; outer = min(hc.get("F.Cu", 99.0), hc.get("B.Cu", 99.0))
+    A(outer >= loop_audit.LAND_MIN, f"mounting holes: ground copper on the outer layers stays {outer:g} mm from each hole centre "
+      f"(>= {loop_audit.LAND_MIN}: clear of a 7 mm washer -- no accidental chassis bond through the solder mask)")
+    hv = [h for h in R["heavy"] if not h.get("missing")]
+    chg = max((h["area_cm2"] for h in hv if h["name"].startswith("reservoir")), default=99.0)
+    fld = max((h.get("field_uT_10cm", 9.0) for h in hv if h["name"].startswith("reservoir")), default=9.0)
+    spk = max((h["area_cm2"] for h in hv if h["name"].startswith("loudspeaker")), default=99.0)
+    A(len(hv) == len(R["heavy"]) and chg <= 30.0 and fld <= 0.2,
+      f"current loops traced through the copper: reservoir charging loop {chg:g} cm2 = {fld:g} uT at 10 cm at idle (limit 0.2; the transformer itself makes 1 uT and up), loudspeaker loop {spk:g} cm2")
+    st = R.get("pgnd_star")
+    A(st is not None and st["worst_mohm"] <= loop_audit.STAR_MAX,
+      f"power ground is a star at the reservoir: the charging pulses share at most {st['worst_mohm']:g} mohm of copper with the LM1875's return, its decoupling "
+      f"or the star link (limit {loop_audit.STAR_MAX:g}; their own run from the centre tap is {st['run_mohm']:g} mohm) -- errata #43" if st else "power-ground star not measured")
+    ab = R["as_built"]; worst = min(m["hum_hot_uV"] for m in R["mistakes"][:3])
+    fbs = lambda v: "none" if v < -200 else f"{v:g} dB"
+    A(ab["hum_hot_uV"] < worst and ab["feedback_hot_dB"] < -200,
+      "wiring mistakes simulated against the board as built (hum with the hot preamp / speaker feedback): "
+      + "; ".join(f"{m['name']} {m['hum_hot_uV']:.0f} uV / {fbs(m['feedback_hot_dB'])}" for m in R["mistakes"][:3])
+      + f" -- as built {ab['hum_hot_uV']:.0f} uV / {fbs(ab['feedback_hot_dB'])}")
+    tank = next((e for e in R["external"] if "tank" in e["name"] and not e.get("missing")), None)
+    if profile == "smd":
+        A(tank is not None and tank["ref_uV"] <= 50.0,
+          f"reverb-tank shield loop: {tank['loop_mohm'] / 1e3:.1f} ohm round the loop (R_tg), {tank['ref_uV']:g} uV at the speaker for the reference field (limit 50)"
+          if tank else "reverb-tank shield loop not found")
+    else:
+        A(tank is not None, f"reverb-tank shield loop, IF both shields are soldered: {tank['ref_uV']:g} uV at the speaker for the reference field -- "
+          "this board has no room for the loop breaker: solder the OUTPUT cable's shield only (docs/03)" if tank else "reverb-tank shield loop not found")
+    jack = next((e for e in R["external"] if "input-jack" in e["name"] and not e.get("missing")), None)
+    A(jack is not None, f"input-jack sleeve loop, IF closed: {jack['ref_uV']:g} uV ({jack['ref_hot_uV']:g} hot) at the speaker for the reference field -- one sleeve wire with a metal panel (docs/03)"
+      if jack else "input-jack loop not found")
+    json.dump(R, open(os.path.join(ROOT, "kicad", "reports", f"loops-{profile}.json"), "w"), indent=1)
+    open(os.path.join(ROOT, "kicad", "reports", f"loops-{profile}.md"), "w").write(loop_audit.report(R))
+
+def check_offsets(rep, pcbnew, b, pcb, profile):
+    """Offsets (errata #37-#39 and the tidy pass): millimetres and millivolts."""
+    import offset_audit
+    R = offset_audit.audit(profile, pcb); A = lambda ok, text: rep.add("offsets", ok, text)
+    te = R["track_ends"]
+    A(te["pad"]["off_centre"] == 0 and te["via"]["off_centre"] == 0,
+      f"every track end that lands in a pad or via lands on its centre ({te['pad']['ends']} pad ends, {te['via']['ends']} via ends)"
+      if te["pad"]["off_centre"] == 0 and te["via"]["off_centre"] == 0 else
+      f"off-centre: {te['pad']['off_centre']} pad ends (max {te['pad']['max_off']} mm, worst {te['pad']['worst'][:3]}), {te['via']['off_centre']} via ends (max {te['via']['max_off']} mm)")
+    A(te["track"]["off_centre"] == 0, f"every track-to-track joint is on the centre line ({te['track']['ends']} ends)"
+      if te["track"]["off_centre"] == 0 else f"{te['track']['off_centre']} joints off the centre line, max {te['track']['max_off']} mm")
+    p = R["placement"]
+    if p["parts"]:
+        A(p["max_offset_mm"] <= 0.01 and not p["off_axis"], f"placement file: all {p['parts']} SMD footprint origins are the centre of their pads (max {p['max_offset_mm']:g} mm), every part at a multiple of 90 degrees")
+    d = R["dc"]
+    A(not d["unexplained"], (f"every one of the {d['nets']} nets has a DC path on the board" if not d["floating"] else
+      f"{d['nets']} nets; {len(d['floating'])} get their DC return off the board (this board is full): " + "; ".join(f"{n} -- {how}" for n, how in d["offboard_return"].items()))
+      if not d["unexplained"] else f"nets without a DC path: {d['unexplained']}")
+    worst17 = max((l["mV"] for r in R["rails"] if r["rail"] == "+17V" for l in r["loads"] if not l.get("missing")), default=99.0)
+    pa = [l["mohm"] for r in R["rails"] if r["rail"] in ("+33V5", "PGND") for l in r["loads"] if l["pad"].startswith("IC_PA") and not l.get("missing")]
+    A(worst17 <= 25.0 and pa and max(pa) <= 80.0, f"supply-trace drops at the operating point: +17 V rail at most {worst17:g} mV down at any consumer; "
+      f"reservoir to the LM1875 {' / '.join(f'{x:g}' for x in pa)} mohm (supply / return)")
+    json.dump(R, open(os.path.join(ROOT, "kicad", "reports", f"offsets-{profile}.json"), "w"), indent=1)
+    open(os.path.join(ROOT, "kicad", "reports", f"offsets-{profile}.md"), "w").write(offset_audit.report(R))
 
 def check_silk(rep, pcbnew, b):
     missing, small = [], []
@@ -405,7 +479,9 @@ SPICE_EXEMPT = {("ac_hum_psrr.cir", "R_s1"): "trimmed 1.2 k (errata #15)", ("ac_
                 ("ac_power_amp_lm1875.cir", "R_e"): "speaker model element, not the tremolo R_e",
                 ("ac_power_amp_lm1875.cir", "C_res"): "speaker model element, not the tone C_res",
                 ("sweep_pa_headroom.cir", "R_b1"): "local name for the PA bias divider", ("sweep_pa_headroom.cir", "R_b2"): "local name for the PA bias divider",
-                ("ac_mrb.cir", "C_mrb_600"): "SMD board: 3 x 22 nF; THT board: one 68 nF film capacitor (within 3 %)"}
+                ("ac_mrb.cir", "C_mrb_600"): "SMD board: 3 x 22 nF; THT board: one 68 nF film capacitor (within 3 %)",
+                ("ac_tonestack.cir", "R_tb"): "treble pot, lower half -- not the tremolo bleeder", ("noise_frontend.cir", "R_tb"): "treble pot, lower half",
+                ("sweep_tonestack.cir", "R_tb"): "treble pot, lower half"}
 def check_spice(rep, vals, run):
     sch = {}
     for ref, v in vals.items():
@@ -461,6 +537,14 @@ def check_spice(rep, vals, run):
     lim.append((min(pm[("1", "2")], pm[("2", "2")]) >= 60, f"LM1875 phase margin with resistive feedback: {pm[('1', '2')]:.0f} / {pm[('2', '2')]:.0f} deg "
                 f"(amplifier modelled with 45 / 60 deg at the data sheet's minimum gain of 10); >= 60"))
     lim.append((max(pm[("1", "1")], pm[("2", "1")]) < 20, f"...and why the 1 nF across R_fb had to go: {pm[('1', '1')]:.0f} / {pm[('2', '1')]:.0f} deg with it"))
+    t = res("tran_tremolo_thump.txt")
+    def tt(c, key): return [float(x) for x in re.findall(rf"cfg={c} running [^\n]*{key}=([-\d.eE+]+)", t)]
+    eng = {c: num(t, rf"cfg={c} engage [^\n]*thump=([-\d.eE+]+)") for c in "01"}
+    lim.append((max(tt(1, "LFO at the speaker")) <= 0.02 and max(tt(1, "thump")) <= 0.02 and eng["1"] <= 0.1,
+                f"tremolo with no signal: LFO at the speaker {max(tt(1, 'LFO at the speaker')) * 1e3:.1f} mV pp, footswitch thump {max(tt(1, 'thump')) * 1e3:.1f} mV pp, "
+                f"thump on engaging after a long pause {eng['1'] * 1e3:.0f} mV pp (limits 20 / 20 / 100)"))
+    lim.append((max(tt(0, "LFO at the speaker")) > 0.1 and eng["0"] > 1.0,
+                f"...as drawn until errata #37 / #38: {max(tt(0, 'LFO at the speaker')):.2f} V pp of LFO, {max(tt(0, 'thump')):.1f} V pp footswitch thump, {eng['0']:.1f} V pp on engaging"))
     for ok, text in lim: rep.add("SPICE", ok, text)
 
 def main():
@@ -483,6 +567,8 @@ def main():
     check_silk(rep, pcbnew, b)
     check_jlc(rep, pcb)
     check_ground(rep, pcbnew, b, pcb, a.profile)
+    check_loops(rep, pcbnew, b, pcb, a.profile)
+    check_offsets(rep, pcbnew, b, pcb, a.profile)
     check_rf(rep, pcbnew, b, pcb, a.profile)
     if a.profile == "smd":
         check_package(rep, pcbnew, b)

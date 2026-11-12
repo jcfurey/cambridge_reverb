@@ -9,8 +9,8 @@ Rebuild everything with `kicad/gen/build.sh smd`.
 | File | What it is | Where it goes |
 |------|------------|---------------|
 | `cambridge_reverb_smd-gerbers.zip` | 13 files: `F_Cu` (signal + ground pour) / `In1_Cu` (ground plane) / `In2_Cu` (signal) / `B_Cu` (ground plane), mask, paste, silk (top + bottom), `Edge_Cuts`, plated and unplated Excellon drill | "Add gerber file" |
-| `bom-jlcpcb.csv` | Assembly BOM: 26 lines, 99 parts, **an LCSC part number on every line** (Comment, Designator, Footprint, LCSC Part # + manufacturer, MPN and library class for reference) | PCB Assembly → "Add BOM File" |
-| `cambridge_reverb_smd-cpl.csv` | Pick-and-place: Designator, Mid X, Mid Y, Layer, Rotation — top side, 99 placements, DNP parts excluded, SOT-23 rotations already offset for JLCPCB's library | PCB Assembly → "Add CPL File" |
+| `bom-jlcpcb.csv` | Assembly BOM: 28 lines, 105 parts, **an LCSC part number on every line** (Comment, Designator, Footprint, LCSC Part # + manufacturer, MPN and library class for reference) | PCB Assembly → "Add BOM File" |
+| `cambridge_reverb_smd-cpl.csv` | Pick-and-place: Designator, Mid X, Mid Y, Layer, Rotation — top side, 105 placements, DNP parts excluded, SOT-23 rotations already offset for JLCPCB's library | PCB Assembly → "Add CPL File" |
 | `cambridge_reverb_smd-assembly.pdf` | Assembly drawing (part outlines + references) for hand-soldering the through-hole side | print it |
 | `cambridge_reverb_smd-top.svg` | Top-side preview (copper, mask, silk) | compare with JLCPCB's Gerber viewer |
 | `cambridge_reverb_smd-fab-summary.json` | Sizes, hole / via / track minima, counts at export time | — |
@@ -22,7 +22,7 @@ ground rules are built on its 0.21 mm prepreg — do not pick the 3313 stack-up)
 order as named in the files: F_Cu, In1_Cu, In2_Cu, B_Cu · outer copper 1 oz, inner 0.5 oz ·
 via covering **tented** · surface finish HASL lead-free (or ENIG) · "Remove order number"
 → **Specify a location** (the text `JLCJLCJLCJLC` is on the bottom silk for it). No
-impedance control, no blind or buried vias (all 429 are through vias), no castellations,
+impedance control, no blind or buried vias (all 458 are through vias), no castellations,
 no via-in-pad, no edge plating.
 
 **Assembly:** Economic PCBA · **top side** · tooling holes "added by JLCPCB" · the three
@@ -39,26 +39,35 @@ surcharge, and room for JLCPCB's ±0.2 mm on the routed edge.
    of the single pad). Their engineers also flag rotation doubts during DFM — answer
    them from this list.
 2. **Stock.** `python3 kicad/gen/jlc_parts.py --check` re-reads stock and class for all
-   26 lines. On 2026-11-12 everything was in stock; the thinnest line is the 22 nF C0G
+   28 lines. On 2026-11-12 everything was in stock; the thinnest line is the 22 nF C0G
    (`C7500389`, about 11 000 pieces — a five-board order uses 40).
 3. **The chassis.** 170 × 105 mm is smaller than the 190 × 115 original board, but
    nobody has measured the actual chassis yet (errata #9).
 
 ## What JLCPCB places, and what you solder
 
-- **Placed (99):** every 0805 resistor (including the star link `R_gnd`, 0 Ω), the
-  0805 and 1206 capacitors, D1 / D2 (M7 = 1N4007 in SMA), Q1 / Q2 / Q_rec (MMBF5457) and
-  Q_trem (MMBT3904). 3 of the 26 lines are "extended" parts ($3.07 loading fee per type
-  per order): the 22 nF and 100 nF C0G capacitors and the JFET — fees ≈ $21 for five
-  boards, ≈ $45 with the parts (`python3 kicad/gen/jlc_cost.py`).
+- **Placed (105):** every 0805 resistor (including the star link `R_gnd`, 0 Ω, the tank loop
+  breaker `R_tg` and the bleeders `R_tb`, `R_jb`, `R_midb`, `R_mrb_b`), the 0805 and 1206
+  capacitors (including the tremolo's `C_dc_blk`, now a 2.2 µF ceramic), D1 / D2 (M7 =
+  1N4007 in SMA), Q1 / Q2 / Q_rec (MMBF5457) and Q_trem (MMBT3904). 3 of the 28 lines are
+  "extended" parts ($3.07 loading fee per type per order): the 22 nF and 100 nF C0G
+  capacitors and the JFET — fees ≈ $21 for five boards, ≈ $45 with the parts
+  (`python3 kicad/gen/jlc_cost.py`).
 - **Not placed, on purpose (DNP):** `C_mrb_450`, `C_mrb_750` (alternative MRB tunings).
-- **By hand afterwards — 37 parts:** 18 electrolytics, the bright cap `C_treble`
+- **By hand afterwards — 36 parts:** 17 electrolytics, the bright cap `C_treble`
   (470 pF C0G or mica — or your own value), 7 leaded resistors (`R_s1`,
   `R_s2`, `R_rec2` are trimmed on the bench; `R_zobel`, `R_spk_rtn`, `R_27V`,
   `R_bleed` are power parts), the bridge, the fuse clips, LM317, LM1875, three DIP
   sockets, two LEDs, the vactrol (**pad 1 = LED cathode, the marked lead**), the toroid;
   then the off-board wiring to the labelled pads and, if you want them, header pins in
   the 29 test points. Full list: `bom/bom-smd.csv`.
+- **Insulate both TO-220 tabs** (silkscreen: `TAB = PGND: MICA + BUSHING`, `TAB = +17V:
+  INSULATE`) and follow the eight ground-loop rules in `docs/03-wiring-harness.md`: one
+  chassis bond, centre tap to the `CT` pad only, insulated speaker jack, one sleeve wire
+  with a metal jack panel (errata #40, #41).
+- **Inner copper:** the default 0.5 oz carries the power traces with about 20 °C of rise
+  at continuous full sine power; tick 1 oz inner copper if the amplifier will be run
+  flat out for long periods.
 - **Both ground links are required:** `R_gnd` (placed by JLCPCB) and `R_spk_rtn` (a
   wire link you solder). With the power off there must be 0 Ω between the `GND` and
   `PGND` test points. Never add another ground link (errata #32).

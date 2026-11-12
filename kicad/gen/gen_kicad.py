@@ -592,6 +592,13 @@ def build():
     s=Sheet("Preamp","preamp.kicad_sch"); sheets.append(s)
     s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15). C_s1 / C_s2 are a VOICING option, default NOT fitted: none = 21 dB, clean to ~0.3 V pk; C_s1 only = 33 dB, breaks up above ~0.1 V; both = 45 dB, 8 % THD at 20 mV (spice/tran_preamp_headroom.cir, errata #28)",50,20)
     s.comp("C","C_in_pre","100nF",40,60,{"1":"GUITAR_IN","2":"RF1"})
+    # DC path for the jack side of C_in_pre: with nothing plugged in GUITAR_IN was a node
+    # between a capacitor and two open jack tips, free to drift -- and whatever it had
+    # drifted to went through the full gain as a thump when a guitar pulled it to 0 V
+    # (errata #39). 10 M: the input impedance stays 0.9 M. SMD board; the THT board is full --
+    # there the resistor goes across the lugs of input jack 1 (docs/03).
+    if PROFILE == "smd":
+        s.comp("R","R_jb","10M",15,40,{"1":"GUITAR_IN","2":"GND"})
     # RF stopper at the gate (the guitar cable is the antenna): 1k + 100 pF = 1.6 MHz corner,
     # nothing at audio; 1k adds 4 nV/rtHz against the pickup's own 10 (2026-09-08)
     s.comp("R","R_rf1","1k",15,75,{"1":"RF1","2":"Q1G"})
@@ -644,6 +651,13 @@ def build():
     # C_res 22 nF -> f0 ~790 Hz; depth ~10 dB (R_gL vs R_mid), Q ~0.6 (broad 'honk' band). Off = flat.
     s.comp("R","R_mid","10k",180,185,{"1":"MK_OUT","2":"MID"})
     s.comp("SW_SPST","SW_MID","MID CUT",215,185,{"1":"MID","2":"MIDSW"})
+    # 1 M across the switch: with the switch OPEN its far side (MIDSW) was a floating plate
+    # of C_res. "Sitting at mid-rail, no pop" only holds while that node is kept there; left
+    # to leak towards 0 V it gave a 5.8 V, 0.3 ms click on closing (errata #39). 1 M against
+    # the 10 k of R_mid leaves 0.09 dB of the notch in the "off" position. SMD board; on the
+    # THT board it is soldered across the two lugs of the toggle switch (docs/03).
+    if PROFILE == "smd":
+        s.comp("R","R_midb","1M",215,160,{"1":"MID","2":"MIDSW"})
     s.comp("C","C_res","22nF",250,185,{"1":"MIDSW","2":"GYA"})
     s.comp("R","R_gL","4.7k",285,185,{"1":"GYA","2":"GYO"})
     s.comp("C","C_gg","2.2nF",285,215,{"1":"GYA","2":"GYP"})
@@ -666,8 +680,19 @@ def build():
     s.comp("R","R_drv2","10k",150,110,{"1":"R_INV","2":"VBIAS_R"})     # AC gnd via VBIAS_R
     s.comp("CP","C_rev1","1uF",160,80,{"1":"R_DRVO","2":"TKDRV"})
     s.comp("R","R_drv3","10R",195,80,{"1":"TKDRV","2":"TANK_IN"})
+    # The 4FB2A1C grounds BOTH its connectors to the tank chassis ("A"), so the two cable
+    # shields and the board make a closed loop -- the largest hum loop in the amplifier: a
+    # stray field through the area between the cables drives a current round it, and its
+    # drop along the OUTPUT shield is in series with a millivolt signal ahead of x575 of
+    # gain (loop_audit.py: 23 mV at the speaker per mA). SMD board: the input-cable shield
+    # pad returns through R_tg, 10 ohm -- 250 times the shield's own resistance, so the
+    # loop is open for hum while the drive coil still has its return (through the output
+    # shield with an "A" tank, through R_tg with an insulated-input one). THT board (full):
+    # pad 2 stays on ground; solder only the output cable's shield there (docs/03).
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
-            {"1":"TANK_IN","2":"GND","3":"TANK_OUT","4":"GND"})
+            {"1":"TANK_IN","2":"TANK_G" if PROFILE == "smd" else "GND","3":"TANK_OUT","4":"GND"})
+    if PROFILE == "smd":
+        s.comp("R","R_tg","10R",235,125,{"1":"TANK_G","2":"GND"})
     s.comp("C","C_rev2","22nF",60,120,{"1":"TANK_OUT","2":"RF2"})
     s.comp("R","R_rf2","1k",30,135,{"1":"RF2","2":"QRG"})            # RF stopper: the tank cable is the other antenna
     s.comp("C","C_rf2","100pF",30,105,{"1":"QRG","2":"GND"})
@@ -700,7 +725,16 @@ def build():
     s.comp("OPAMP8","IC2","TL072CP",110,90,{"3":"LFO_P","2":"LFO_N","1":"LFO_OUT",
             "8":"+17V","4":"GND","5":"OBUF_IN","6":"PA_IN","7":"PA_IN"})
     s.comp("C","C_obuf_in","1uF",30,40,{"1":"MRB_OUT","2":"OBUF_IN"})  # post-MRB into buffer
-    s.comp("R","R_obuf_b","100k",75,40,{"1":"OBUF_IN","2":"VBIAS_T"})  # bias buffer mid-rail
+    # The output buffer is in the AUDIO path: it is biased from the reverb / mixer reference
+    # VBIAS_R, not from the tremolo's VBIAS_T. The LFO pulls 0.7-1 V pp of its own frequency
+    # on VBIAS_T (R_lfo_fb2, the Wien shunt arm, the depth pot), and through this resistor
+    # that was 0.35 V pp of sub-audio at the loudspeaker with the depth at zero, and a 2.5 V
+    # thump when the footswitch dumped C_drv into the rail (errata #37, tran_tremolo_thump.cir).
+    s.comp("R","R_obuf_b","100k",75,40,{"1":"OBUF_IN","2":"VBIAS_R"})
+    # MRB_OUT sits between two capacitors (C_mrb_out, C_obuf_in): give it a DC level, so that
+    # the test point reads 0 V and a meter probe does not jerk the node (errata #39; SMD board)
+    if PROFILE == "smd":
+        s.comp("R","R_mrb_b","1M",30,70,{"1":"MRB_OUT","2":"GND"})
     # Wien network -- SYMMETRIC, dual-gang speed pot (errata #19). The recovered
     # single-arm pot (10k+500k vs a fixed 33k) only oscillates for ~5 % of the pot
     # travel, at 45-80 Hz (spice/sweep_lfo_speed_recovered.cir). With one gang in
@@ -732,7 +766,14 @@ def build():
     s.comp("R","R_c","100R",240,150,{"1":"+17V","2":"VLED"})
     s.comp("VTL5C1","VTL1","VTL5C1",200,150,{"2":"VLED","1":"QC","3":"TREM_S","4":"GND"})   # PerkinElmer numbering: 1 = LED cathode, 2 = LED anode (errata #25)
     s.comp("R","R_trem1","10k",60,150,{"1":"BLEND","2":"TREM_OUT"})  # series; VTL1 LDR shunts to GND
-    s.comp("CP","C_dc_blk","10uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
+    # C_dc_blk holds off the 8.5 V of the summer output. As a 10 uF electrolytic its leakage
+    # had nowhere to go while the vactrol was dark (50 M): TREM_S crept up to 3-7 V over
+    # minutes, and the next time the LED lit that charge was dumped into the audio --
+    # 8 V pp at the loudspeaker with a typical capacitor, rail to rail with a leaky one
+    # (errata #38). Now a ceramic (2.2 uF X7R: leakage in nanoamps) and a bleeder that pins
+    # TREM_S to ground: 220 k costs 0.4 dB of depth.
+    s.comp("C","C_dc_blk","2.2uF",60,180,{"1":"TREM_OUT","2":"TREM_S"})
+    s.comp("R","R_tb","220k",95,180,{"1":"TREM_S","2":"GND"})
     # (removed dead C_trem_out/R_trem_pass MRB_FEED branch -- TREM_OUT feeds MRB directly)
     # (R_fs_trem removed: R_b2 is the base node's return)
 

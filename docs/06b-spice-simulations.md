@@ -35,6 +35,7 @@ Measured vs. documented:
 | Reverb-driver gain | 20.83 dB (11.0×) | 11× ✅ |
 | MRB peak | 590 Hz (3 × 22 nF; 577 Hz with one 68 nF) | ~610 Hz ✅ |
 | Tremolo LFO | 10.6 Hz (pot 0) … 0.60 Hz (pot max), 1/(2πRC) with the errata #19 network | RC-set ✅ (swept) |
+| Tremolo, no signal, at the speaker (`tran_tremolo_thump.cir`) | LFO feed-through 8 mV pp (was 0.37 V pp); footswitch 5 mV pp (was 2.5 V pp); re-engage after a pause 38 mV pp (was 8.2 V pp) | silent ✅ errata #37 / #38 |
 | Preamp drain | 12.1 V (Rs 2.2 k) | 8–9 V — see below ⚠️ |
 | Tone stack (errata #20) | noon flat −0.2 dB; bass −7.5…+4.9 dB @ 100 Hz; treble −16.5…+5.6 dB @ 10 kHz; MID CUT −9.6 dB @ 796 Hz | James network + gyrator notch ✅ (swept) |
 

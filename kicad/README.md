@@ -28,8 +28,8 @@ KiCad project files.
 - `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
   `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
   They open in KiCad 7/8, **pass ERC with 0 violations** (KiCad 8.0.9), and
-  netlist cleanly (153 components + 28 test points, 87 nets, 0 unconnected pins; the
-  SMD build in `smd/` has 157 + 29 and 88 nets — errata #36).
+  netlist cleanly (154 components + 28 test points, 87 nets, 0 unconnected pins; the
+  SMD build in `smd/` has 162 + 29 and 89 nets — errata #36, #38–#41).
 - `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
   the generated sheets.
 - `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).
@@ -60,6 +60,20 @@ KiCad project files.
   `production/smd/` and the looked-up LCSC part for every assembly line.
 - `gen/stitch.py` — **ground vias**: a via beside every SMD ground pad before routing,
   a 7.5 mm stitching grid after it, unused inner-layer pad copper removed (errata #31).
+  Also the via escapes for small parts on high-current nets (`fanout_taps`) and the
+  charging pulses' own power-ground run (`split_ct` / `join_ct`, errata #43).
+- `gen/tidy_tracks.py` — **geometric clean-up after routing**: every track end onto the
+  centre of its pad or via, unused via escapes out, closed copper rings opened, plane
+  necks under 0.2 mm closed; KiCad's DRC vetoes each change (errata #42).
+- `gen/loop_audit.py` — **ground-loop audit** (`reports/loops-*.md`): closed loops in
+  the routed copper, the area of the big current loops, copper under the mounting
+  hardware, the power-ground star, wiring mistakes simulated, and the loops that close
+  off the board priced for a reference stray field (errata #40, #41, #43).
+- `gen/offset_audit.py` — **offsets audit** (`reports/offsets-*.md`): track ends,
+  placement centroids and rotations, nets with no DC path, supply-trace voltage drops
+  (errata #39, #42).
+- `gen/ground_audit.py` — the **ground-return solver** behind both (`reports/ground-*.md`,
+  errata #32).
 - `gen/rf_audit.py` — **ground and parasitics audit** of the finished copper: plane
   openings, edge pull-back, pour gaps, fence and stitching density, and the stray
   capacitance of every sensitive net with the corner it makes (`reports/rf-*.md`).

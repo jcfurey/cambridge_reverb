@@ -81,7 +81,8 @@ B_r RLDR 0 V = { min(50e6, (V(LIGHT) < 10e-3) ? 20e3*pow(max(V(LIGHT),1e-6)/1e-3
 * ---- audio: 1 kHz carrier from the summer (BLEND) through R_trem1, LDR shunt via C_dc_blk
 V_aud BLEND 0 SIN(0 1 1000)
 R_trem1 BLEND TREM_OUT 10k
-C_dc_blk TREM_OUT TREM_S 10u
+C_dc_blk TREM_OUT TREM_S 2.2u
+R_tb TREM_S 0 220k                    ; bleeder (errata #38)
 R_ldr TREM_S 0 R = { V(RLDR) }
 R_ts TREM_S 0 1e9
 R_load TREM_OUT 0 100k

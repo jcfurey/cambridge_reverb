@@ -50,8 +50,9 @@ PLATING = 18e-6           # m, barrel plating
 # The ground SYSTEM: the signal ground (planes), the power ground and the speaker return,
 # joined by the 0R links below (ohms: a soldered wire link; a 0805 "0R" chip is <= 50 mohm,
 # typically 20). Boards before errata #32 have no PGND: everything is on GND.
-GROUND_NETS = ["GND", "PGND", "SPK_N"]
-LINK_OHM = {"R_spk_rtn": 0.003, "R_gnd": 0.02}
+GROUND_NETS = ["GND", "PGND", "SPK_N", "TANK_G"]
+LINK_OHM = {"R_spk_rtn": 0.003, "R_gnd": 0.02,
+            "R_tg": 10.0}      # the reverb tank's input-shield return (SMD board): a 10 ohm loop breaker, errata #41
 
 # ---- the current loops in the ground copper: (name, into the copper at, out of it at, what)
 LOOPS = [
@@ -132,14 +133,17 @@ def rectifier_harmonics(i_load, nharm=40):
 
 class Net:
     """The ground copper of one board as a resistor network: one sheet per (net, layer)."""
-    def __init__(self, path, px=PX):
+    def __init__(self, path, px=PX, nets=None, extra_links=None):
+        """nets: the nets to solve as one network (default: the ground system).
+        extra_links: [(pad a, pad b, ohm)] -- connections that are NOT on the board, e.g. a
+        chassis that touches two of its grounds, to ask what a wiring mistake would cost."""
         self.px = px
         b = self.board = pcbnew.LoadBoard(path)
         bb = b.GetBoardEdgesBoundingBox()
         self.x0, self.y0, self.bw, self.bh = mm(bb.GetLeft()), mm(bb.GetTop()), mm(bb.GetWidth()), mm(bb.GetHeight())
         self.W, self.H = int(round(self.bw / px)) + 1, int(round(self.bh / px)) + 1
         fw, fh, fpx = self.W * SUB, self.H * SUB, px / SUB
-        self.nets = [n for n in GROUND_NETS if b.FindNet(n) is not None]
+        self.nets = [n for n in (nets or GROUND_NETS) if b.FindNet(n) is not None]
         code = {b.FindNet(n).GetNetCode(): n for n in self.nets}
         cu = [l for l in STACK if b.IsLayerEnabled(b.GetLayerID(l))]
         imgs, draws = {}, {}
@@ -186,7 +190,7 @@ class Net:
                     sheet(net, "F.Cu").rectangle([(mm(bbx.GetLeft()) - self.x0) / fpx, (mm(bbx.GetTop()) - self.y0) / fpx,
                                                   (mm(bbx.GetRight()) - self.x0) / fpx, (mm(bbx.GetBottom()) - self.y0) / fpx], fill=1)
                     self.pads[key] = (net, x, y, ["F.Cu"], 0)
-        self.vias = []
+        self.vias = []; thin = []
         for t in b.GetTracks():
             if t.GetNetCode() not in code: continue
             net = code[t.GetNetCode()]
@@ -203,11 +207,22 @@ class Net:
                 sheet(net, l).line([((mm(a.x) - self.x0) / fpx, (mm(a.y) - self.y0) / fpx), ((mm(e.x) - self.x0) / fpx, (mm(e.y) - self.y0) / fpx)],
                                    fill=1, width=max(1, int(round(w / fpx))))
                 for pt in (a, e): disc(net, l, mm(pt.x), mm(pt.y), w / 2)
+                if w < 2 * px: thin.append((net, l, mm(a.x), mm(a.y), mm(e.x), mm(e.y)))
         self.sheets = sorted(imgs, key=lambda k: (self.nets.index(k[0]), STACK.index(k[1])))
         self.cu = {}
         for k in self.sheets:
             a = np.array(imgs[k], dtype=np.float32).reshape(self.H, SUB, self.W, SUB).mean(axis=(1, 3))
             self.cu[k] = a >= 0.5
+        # a track narrower than two cells can fall between the cells and come out as a dotted
+        # line (a 0.5 mm trace on a 0.5 mm grid: TANK_G, the ground stubs of small parts).
+        # Walk its centre line cell by cell, 4-connected, so that it always conducts.
+        for net, l, x1, y1, x2, y2 in thin:
+            n = max(1, int(math.hypot(x2 - x1, y2 - y1) / (px / 4))); prev = None; g = self.cu[(net, l)]
+            for i in range(n + 1):
+                c = self.cell(x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n)
+                if not (0 <= c[0] < self.H and 0 <= c[1] < self.W): continue
+                if prev is not None and c[0] != prev[0] and c[1] != prev[1]: g[prev[0], c[1]] = True
+                g[c] = True; prev = c
         self.links = []                   # 0R links between two ground nets: (ref, pad a, pad b, ohm)
         for fp in b.GetFootprints():
             ref = fp.GetReference()
@@ -215,6 +230,10 @@ class Net:
                 ps = [f"{ref}.{p.GetNumber()}" for p in fp.Pads()]
                 if len(ps) == 2 and all(self.pads[k][0] for k in ps):
                     self.links.append((ref, ps[0], ps[1], LINK_OHM[ref]))
+        self.board_links = list(self.links)
+        for a, b_, ohm in (extra_links or []):
+            if self.pads.get(a, (None,))[0] and self.pads.get(b_, (None,))[0]:
+                self.links.append(("(off-board)", a, b_, ohm))
         self.layers = sorted(set(zone_layer.get("GND", [])), key=STACK.index)      # the layers that carry signal-ground planes / pours
         self._build()
 
@@ -307,11 +326,11 @@ class Net:
         out[m] = np.where(r >= 0, phi[np.maximum(r, 0)], np.nan)
         return out
 
-def audit(path, px=PX, png=None):
-    net = Net(path, px)
+def audit(path, px=PX, png=None, extra_links=None):
+    net = Net(path, px, extra_links=extra_links)
     R = {"board": os.path.relpath(path, ROOT), "size": (round(net.bw, 1), round(net.bh, 1)), "layers": net.layers,
          "cell_mm": px, "nodes": net.m, "ground_vias": len(net.vias), "floating_copper_pieces": net.islands,
-         "nets": net.nets, "links": [(ref, f"{net.pads[a][0]} - {net.pads[b_][0]}", ohm) for ref, a, b_, ohm in net.links],
+         "nets": net.nets, "links": [(ref, f"{net.pads[a][0]} - {net.pads[b_][0]}", ohm) for ref, a, b_, ohm in net.board_links],
          "star": "PGND" in net.nets}
     pos = {k: (round(v[1] - net.x0, 1), round(v[2] - net.y0, 1)) for k, v in net.pads.items()}
     R["net_of"] = {k: v[0] for k, v in net.pads.items() if v[0]}
@@ -439,7 +458,7 @@ def report(R):
     o.append(f"Board {R['size'][0]} x {R['size'][1]} mm; signal-ground copper on {', '.join(R['layers'])}, joined by {R['ground_vias']} ground vias; "
              f"solved on a {R['cell_mm']} mm grid ({R['nodes']} nodes).\n")
     if R.get("star"):
-        o.append("Ground system: " + ", ".join(R["nets"]) + " -- three nets, joined only by "
+        o.append("Ground system: " + ", ".join(R["nets"]) + f" -- {len(R['nets'])} nets, joined only by "
                  + " and ".join(f"{ref} ({nets})" for ref, nets, _ in R["links"]) + ". The planes carry signal ground only.\n")
     else:
         o.append("Ground system: one net. Every return current shares the planes.\n")

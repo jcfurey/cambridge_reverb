@@ -5,7 +5,7 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 
 ## Checked by the tools (run `kicad/gen/build.sh smd`, or `kicad/gen/verify.py smd` on an existing build)
 
-`kicad/reports/verify-smd.txt` is the last result — 75 of 75 on the committed board.
+`kicad/reports/verify-smd.txt` is the last result — 90 of 90 on the committed board.
 
 - [x] ERC: 0 violations
 - [x] DRC with JLCPCB's limits and the project rules: 0 errors, 0 warnings, **0 open
@@ -19,6 +19,12 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
       by `R_spk_rtn` and `R_gnd` only; return-current hum and feedback solved on the
       routed copper (`kicad/reports/ground-smd.md`); LM1875 feedback resistive, its
       decoupling and Zobel at the IC
+- [x] Ground loops: no closed loop in any routed net, no ground copper under the mounting
+      hardware, the tank shield loop opened by `R_tg`, wiring mistakes simulated
+      (`kicad/reports/loops-smd.md`)
+- [x] Offsets: every track end on the centre of its pad / via, placement-file centroids
+      on the pad centres, a DC path for every net, supply-trace drops
+      (`kicad/reports/offsets-smd.md`)
 - [x] Every part labelled on the silkscreen at a legal size; wiring pads labelled
 - [x] Project constraints at or above JLCPCB's published limits (re-read 2026-11-11)
 - [x] Ground system: signal / ground / signal / ground with nothing routed on a plane,
@@ -39,6 +45,11 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 - [ ] **Fuse F1 is a T1.6A** time-lag 5 × 20 mm (errata #33), and the bright cap
       `C_treble` is on your parts order (hand-fitted, errata #36)
 - [ ] After soldering: **0 Ω between test points `GND` and `PGND`** before first power-up
+- [ ] **Both TO-220 tabs insulated** — meter: LM1875 tab to chassis open, LM317 tab to
+      chassis open (errata #40)
+- [ ] **Wiring follows the eight ground-loop rules** in `docs/03-wiring-harness.md`: one
+      chassis bond, centre tap to `CT` only, insulated speaker jack, one sleeve wire with
+      a metal jack panel
 - [ ] JLCPCB's Gerber viewer matches `smd/cambridge_reverb_smd-top.svg`, every layer
 - [ ] JLCPCB's placement preview: D1 / D2 cathodes, Q1 / Q2 / Q_rec / Q_trem orientation
 - [ ] Mains side: fused IEC inlet (T800 mA at 120 V), earth bonded to the chassis —

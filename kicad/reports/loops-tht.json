@@ -1,0 +1,237 @@
+{
+ "board": "kicad/cambridge_reverb.kicad_pcb",
+ "chassis_pad": "TP_GND_PSU.1",
+ "rings": [],
+ "nets_checked": 86,
+ "heavy": [
+  {
+   "name": "reservoir charging, half-cycle 1",
+   "area_cm2": 11.4,
+   "copper_mm": 158,
+   "copper_mohm": 88.1,
+   "i_rms": 0.213,
+   "field_uT_10cm": 0.0487
+  },
+  {
+   "name": "reservoir charging, half-cycle 2",
+   "area_cm2": 10.1,
+   "copper_mm": 156,
+   "copper_mohm": 80.3,
+   "i_rms": 0.213,
+   "field_uT_10cm": 0.0428
+  },
+  {
+   "name": "loudspeaker, positive half (reservoir -> IC -> speaker -> reservoir)",
+   "area_cm2": 10.7,
+   "copper_mm": 253,
+   "copper_mohm": 130.7,
+   "i_rms": 1.2,
+   "field_uT_10cm": 0.257
+  },
+  {
+   "name": "loudspeaker, negative half (C_out -> IC -> speaker)",
+   "area_cm2": 7.5,
+   "copper_mm": 263,
+   "copper_mohm": 138.2,
+   "i_rms": 1.2,
+   "field_uT_10cm": 0.1809
+  },
+  {
+   "name": "LM1875 decoupling (C_byp1)",
+   "area_cm2": 12.4,
+   "copper_mm": 171,
+   "copper_mohm": 94.6
+  },
+  {
+   "name": "Zobel (R_zobel + C_zobel)",
+   "area_cm2": 0.8,
+   "copper_mm": 59,
+   "copper_mohm": 34.1
+  }
+ ],
+ "hole_copper_mm": {
+  "F.Cu": 3.8000000000000003,
+  "In1.Cu": 2.15,
+  "B.Cu": 3.8000000000000003
+ },
+ "as_built": {
+  "hum_uV": 25.51,
+  "hum_hot_uV": 71.93,
+  "feedback_dB": -300.0,
+  "feedback_hot_dB": -300.0
+ },
+ "mistakes": [
+  {
+   "name": "LM1875 tab bare on the chassis",
+   "why": "the tab is pin 3 = power ground; with the chassis also on signal ground at the jacks it bridges the star",
+   "link": [
+    "IC_PA.3 - J_IN1.2 (10 mohm)"
+   ],
+   "hum_uV": 60.75,
+   "hum_hot_uV": 1858.81,
+   "feedback_dB": -42.7,
+   "feedback_hot_dB": -6.8
+  },
+  {
+   "name": "metal speaker jack on the chassis",
+   "why": "the speaker's return terminal reaches signal ground a second way",
+   "link": [
+    "LS1.2 - J_IN1.2 (10 mohm)"
+   ],
+   "hum_uV": 54.34,
+   "hum_hot_uV": 1374.38,
+   "feedback_dB": -49.6,
+   "feedback_hot_dB": -13.7
+  },
+  {
+   "name": "transformer centre tap also to the chassis",
+   "why": "the charging pulses get a second way home, through the chassis and the input ground",
+   "link": [
+    "T1.2 - J_IN1.2 (10 mohm)"
+   ],
+   "hum_uV": 8067.23,
+   "hum_hot_uV": 407883.13,
+   "feedback_dB": -48.0,
+   "feedback_hot_dB": -12.1
+  },
+  {
+   "name": "chassis bonded twice (jacks AND the chassis pad)",
+   "why": "no supply current is diverted -- but it is a loop for stray fields, see the table below",
+   "link": [
+    "TP_GND_PSU.1 - J_IN1.2 (5 mohm)"
+   ],
+   "hum_uV": 22.69,
+   "hum_hot_uV": 26.25,
+   "feedback_dB": -300.0,
+   "feedback_hot_dB": -300.0
+  }
+ ],
+ "external": [
+  {
+   "name": "two input-jack sleeves joined by a metal panel",
+   "a": "J_IN1.2",
+   "b": "J_IN2.2",
+   "board_mohm": 1.59,
+   "loop_mohm": 11.6,
+   "uV_per_mA_board": 171.891,
+   "uV_per_mA_board_hot": 4320.444,
+   "uV_per_mA_wire": 1050.0,
+   "uV_per_mA_wire_hot": 26240.0,
+   "i_ref_uA": 270.95,
+   "ref_uV": 331.07,
+   "ref_hot_uV": 8280.31,
+   "series_mohm": 5.0,
+   "rule": "non-insulated jacks: ONE sleeve wire to the board (the panel joins the sleeves); insulated jacks: all three"
+  },
+  {
+   "name": "input jack 1 and the FX jack sleeves joined by the panel",
+   "a": "J_IN1.2",
+   "b": "J_IN3.2",
+   "board_mohm": 1.77,
+   "loop_mohm": 11.8,
+   "uV_per_mA_board": 186.77,
+   "uV_per_mA_board_hot": 4723.006,
+   "uV_per_mA_wire": 1050.0,
+   "uV_per_mA_wire_hot": 26240.0,
+   "i_ref_uA": 267.0,
+   "ref_uV": 330.22,
+   "ref_hot_uV": 8267.14,
+   "series_mohm": 5.0,
+   "rule": "as above"
+  },
+  {
+   "name": "the two reverb-tank cable shields joined at the tank (4FB2A1C: both connectors grounded)",
+   "a": "REV1.2",
+   "b": "REV1.4",
+   "board_mohm": 1.51,
+   "loop_mohm": 81.5,
+   "uV_per_mA_board": 422.93,
+   "uV_per_mA_board_hot": 406.694,
+   "uV_per_mA_wire": 23000.0,
+   "uV_per_mA_wire_hot": 23000.0,
+   "i_ref_uA": 38.54,
+   "ref_uV": 902.8,
+   "ref_hot_uV": 902.18,
+   "series_mohm": 40.0,
+   "rule": "solder only the OUTPUT cable's shield at the board (pad 4) and leave the input shield open at this end; run the two cables together"
+  },
+  {
+   "name": "chassis bonded at the input jacks and again at the chassis pad",
+   "a": "J_IN1.2",
+   "b": "TP_GND_PSU.1",
+   "board_mohm": 2.28,
+   "loop_mohm": 12.3,
+   "uV_per_mA_board": 164.378,
+   "uV_per_mA_board_hot": 5724.723,
+   "uV_per_mA_wire": 1050.0,
+   "uV_per_mA_wire_hot": 26240.0,
+   "i_ref_uA": 255.78,
+   "ref_uV": 310.62,
+   "ref_hot_uV": 8176.02,
+   "series_mohm": 5.0,
+   "rule": "ONE chassis bond: the jacks if they are not insulated, otherwise the chassis pad"
+  },
+  {
+   "name": "footswitch cable shield / DIN shell on the chassis",
+   "a": "FS1.4",
+   "b": "J_IN1.2",
+   "board_mohm": 2.31,
+   "loop_mohm": 12.3,
+   "uV_per_mA_board": 120.012,
+   "uV_per_mA_board_hot": 5588.598,
+   "uV_per_mA_wire": 0.0,
+   "uV_per_mA_wire_hot": 0.0,
+   "i_ref_uA": 255.11,
+   "ref_uV": 30.62,
+   "ref_hot_uV": 1425.72,
+   "series_mohm": 0.0,
+   "rule": "DIN pins 4-6 are the pedal's commons; do not tie them to the connector shell"
+  },
+  {
+   "name": "volume-pot case soldered to its ground lug (case on the panel)",
+   "a": "POT_VOL.1",
+   "b": "J_IN1.2",
+   "board_mohm": 2.22,
+   "loop_mohm": 12.2,
+   "uV_per_mA_board": 169.831,
+   "uV_per_mA_board_hot": 5301.054,
+   "uV_per_mA_wire": 0.0,
+   "uV_per_mA_wire_hot": 0.0,
+   "i_ref_uA": 257.12,
+   "ref_uV": 43.67,
+   "ref_hot_uV": 1362.99,
+   "series_mohm": 0.0,
+   "rule": "do not solder pot lugs to pot cases; the panel already holds the cases at chassis potential"
+  },
+  {
+   "name": "reverb-pot case soldered to its ground lug",
+   "a": "POT_REV.1",
+   "b": "J_IN1.2",
+   "board_mohm": 2.45,
+   "loop_mohm": 12.5,
+   "uV_per_mA_board": 51.655,
+   "uV_per_mA_board_hot": 5488.508,
+   "uV_per_mA_wire": 0.0,
+   "uV_per_mA_wire_hot": 0.0,
+   "i_ref_uA": 252.27,
+   "ref_uV": 13.03,
+   "ref_hot_uV": 1384.57,
+   "series_mohm": 0.0,
+   "rule": "as above"
+  }
+ ],
+ "emf_ref_uV": 3.14,
+ "pgnd_star": {
+  "run_mohm": 37.1,
+  "shared_mohm": {
+   "IC_PA.3": -0.0,
+   "R_spk_rtn.2": -0.0,
+   "C_byp1.2": -0.0,
+   "C_byp2.2": -0.0,
+   "C_zobel.2": -0.0,
+   "D2.2": -0.0
+  },
+  "worst_mohm": 0.0,
+  "tab_vs_star_mohm": 0.0
+ }
+}

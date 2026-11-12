@@ -1,0 +1,249 @@
+{
+ "board": "kicad/smd/cambridge_reverb_smd.kicad_pcb",
+ "profile": "smd",
+ "track_ends": {
+  "pad": {
+   "ends": 593,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "via": {
+   "ends": 389,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "track": {
+   "ends": 2044,
+   "off_centre": 0,
+   "max_off": 0.0,
+   "graze": 0,
+   "worst": []
+  },
+  "free_ends": 0
+ },
+ "placement": {
+  "parts": 107,
+  "max_offset_mm": 0.0,
+  "off_centre": [],
+  "off_axis": [],
+  "rotation_offsets": [
+   [
+    "C_0805_2012Metric",
+    0,
+    15
+   ],
+   [
+    "C_1206_3216Metric",
+    0,
+    25
+   ],
+   [
+    "D_SMA",
+    0,
+    2
+   ],
+   [
+    "R_0805_2012Metric",
+    0,
+    61
+   ],
+   [
+    "SOT-23",
+    180,
+    3
+   ],
+   [
+    "SOT-23_MMBT3904_as_EBC",
+    180,
+    1
+   ]
+  ]
+ },
+ "dc": {
+  "nets": 89,
+  "floating": [],
+  "only_through_the_tank": [
+   "TANK_IN",
+   "TANK_OUT",
+   "TKDRV"
+  ],
+  "offboard_return": {},
+  "unexplained": []
+ },
+ "rails": [
+  {
+   "rail": "+33V5",
+   "source": "C_main.1",
+   "loads": [
+    {
+     "pad": "IC_PA.5",
+     "what": "LM1875 at full sine power (70 mA idle, 2 A peaks)",
+     "mA": 640.0,
+     "mohm": 24.6,
+     "mV": 15.73
+    },
+    {
+     "pad": "R_27V.1",
+     "what": "regulator pre-filter",
+     "mA": 32.0,
+     "mohm": 17.9,
+     "mV": 0.61
+    },
+    {
+     "pad": "R_bleed.1",
+     "what": "bleeder",
+     "mA": 3.4,
+     "mohm": 12.5,
+     "mV": 0.44
+    },
+    {
+     "pad": "R_bias1.1",
+     "what": "PA bias divider",
+     "mA": 0.8,
+     "mohm": 58.9,
+     "mV": 10.41
+    }
+   ]
+  },
+  {
+   "rail": "PGND",
+   "source": "C_main.2",
+   "loads": [
+    {
+     "pad": "IC_PA.3",
+     "what": "LM1875 return",
+     "mA": -640.0,
+     "mohm": 29.7,
+     "mV": -19.22
+    },
+    {
+     "pad": "R_spk_rtn.2",
+     "what": "signal-ground return through the star",
+     "mA": -32.0,
+     "mohm": 59.6,
+     "mV": -6.82
+    }
+   ]
+  },
+  {
+   "rail": "VREG_IN",
+   "source": "R_27V.2",
+   "loads": [
+    {
+     "pad": "U1.3",
+     "what": "LM317 input",
+     "mA": 32.0,
+     "mohm": 196.0,
+     "mV": 6.27
+    }
+   ]
+  },
+  {
+   "rail": "+17V",
+   "source": "U1.2",
+   "loads": [
+    {
+     "pad": "IC1.8",
+     "what": "reverb driver / mixer TL072",
+     "mA": 3.0,
+     "mohm": 199.4,
+     "mV": 3.07
+    },
+    {
+     "pad": "IC2.8",
+     "what": "LFO / output buffer TL072",
+     "mA": 3.0,
+     "mohm": 83.8,
+     "mV": 1.62
+    },
+    {
+     "pad": "IC3.4",
+     "what": "tone TL074",
+     "mA": 5.6,
+     "mohm": 231.2,
+     "mV": 3.22
+    },
+    {
+     "pad": "R_c.1",
+     "what": "vactrol LED (average with the tremolo on)",
+     "mA": 4.0,
+     "mohm": 208.3,
+     "mV": 3.12
+    },
+    {
+     "pad": "R_pre.1",
+     "what": "JFET rail",
+     "mA": 2.4,
+     "mohm": 145.6,
+     "mV": 2.56
+    },
+    {
+     "pad": "R_reg1.1",
+     "what": "LM317 divider",
+     "mA": 5.2,
+     "mohm": 33.5,
+     "mV": 0.79
+    },
+    {
+     "pad": "R_vbr1.1",
+     "what": "VBIAS_R divider",
+     "mA": 0.09,
+     "mohm": 252.1,
+     "mV": 3.12
+    },
+    {
+     "pad": "R_vbt1.1",
+     "what": "VBIAS_T divider",
+     "mA": 0.09,
+     "mohm": 167.8,
+     "mV": 2.86
+    },
+    {
+     "pad": "R_vb31.1",
+     "what": "VBIAS_3 divider",
+     "mA": 0.09,
+     "mohm": 184.4,
+     "mV": 2.89
+    },
+    {
+     "pad": "R_b1.1",
+     "what": "LED driver bias",
+     "mA": 0.09,
+     "mohm": 230.9,
+     "mV": 3.12
+    }
+   ]
+  },
+  {
+   "rail": "+17V_PRE",
+   "source": "R_pre.2",
+   "loads": [
+    {
+     "pad": "R_d1.1",
+     "what": "Q1",
+     "mA": 0.8,
+     "mohm": 49.4,
+     "mV": 0.06
+    },
+    {
+     "pad": "R_d2.1",
+     "what": "Q2",
+     "mA": 0.8,
+     "mohm": 16.6,
+     "mV": 0.04
+    },
+    {
+     "pad": "R_rec1.1",
+     "what": "Q_rec (reverb recovery)",
+     "mA": 0.8,
+     "mohm": 128.0,
+     "mV": 0.13
+    }
+   ]
+  }
+ ]
+}
