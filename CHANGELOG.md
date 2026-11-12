@@ -36,6 +36,11 @@ deliverables produced during the design phase.
   6 mm from a ground via (337 / 370 ground vias; worst point 13.3 / 13.2 mm).
 - **`verify.py`:** new "grounding" group and the stability / roll-off limits —
   **75 / 75** (SMD), **66 / 66** (THT). Board ID REV C.
+- **`gen_pcb.py` fills its zones in a fresh process** (`route_board.refill_file()`): the
+  from-scratch rebuild showed the in-process fill logging thousands of coordinate-overflow
+  assertions and dying on a breakpoint trap about every second run (KiCad 8.0.9) — the
+  same file filled in a new interpreter is clean every time. The committed boards were
+  not affected (their fills come from `stitch.py`, already a process of its own).
 - THT board: keeps one 68 nF film cap and one 3 k resistor, 2.5 mm channels between
   columns (it had 2.8 mm of width to spare before the three parts this pass adds).
 

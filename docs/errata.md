@@ -607,6 +607,12 @@ in the power-supply corner although a resistor-loaded JFET stage has no supply r
 | Loop gain through the ground copper | none dB | none dB |
 | `C_byp1` / `R_zobel` from the IC | 20 / 15 mm | 25 / 25 mm |
 
+![Signal-ground potential for 1 A of charging current, before and after](ground-return-before-after.png)
+
+*The signal-ground plane under 1 A of reservoir charging current, colour = microvolts
+against the power amp's feedback ground. Before: a gradient across the whole board.
+After: the current stays on the power-ground traces (pink); the plane is flat.*
+
 `verify.py` has a new "grounding" group: the three nets are bridged by exactly the two
 0 Ω links, the heavy returns are on `PGND`, no plane carries anything but `GND`, the
 audit's hum and loop-gain figures are inside limits, the decoupling is at the IC.

@@ -76,6 +76,25 @@ def refill(board):
         if os.path.exists(tmp): os.remove(tmp)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 
+def refill_file(pcb, tries=3):
+    """Fill the zones of a board FILE in a fresh interpreter, and save it.
+
+    gen_pcb.py used to reload its own output and fill it in the same process. After a few
+    thousand placement trials that process is not a clean slate: about every second run the
+    filler then logged thousands of "Overflow converting value ..." assertions and
+    sometimes died on a breakpoint trap (KiCad 8.0.9; found by the from-scratch rebuild
+    of 2026-11-12). The same file filled in a new process is clean every time, so that is
+    what happens here -- checked, and repeated if the filler complains."""
+    code = ("import sys; sys.path.insert(0, %r); import pcbnew, route_board; "
+            "b = pcbnew.LoadBoard(%r); route_board.refill(b); pcbnew.SaveBoard(%r, b)") % (HERE, pcb, pcb)
+    out = ""
+    for k in range(tries):
+        r = subprocess.run([sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        out = r.stdout or ""
+        if r.returncode == 0 and "Overflow converting" not in out:
+            return k + 1
+    sys.exit("zone fill failed %d times (exit %s): %s" % (tries, r.returncode, out[-400:]))
+
 def freerouting_settings(work, passes, threads, job_timeout):
     """Minimal freerouting.json: headless, no telemetry, bounded job.
     Freerouting 2.1.0 ignores max_passes (CLI -mp and JSON alike) and keeps

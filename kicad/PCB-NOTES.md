@@ -271,7 +271,9 @@ pour those traces left.
   ordinary pad.
 - *Fills use the project's rules.* Every script fills through `route_board.refill()`,
   which initialises pcbnew's rule engine first; without that a scripted fill honours
-  only each zone's own clearance (errata #31).
+  only each zone's own clearance (errata #31). `gen_pcb.py` does it in a fresh
+  interpreter (`refill_file()`): filled inside the placement process, the filler
+  intermittently logged coordinate-overflow assertions and crashed (2026-11-12).
 
 **Stray capacitance.** `rf_audit.py` sums, for each sensitive net, the trace over its
 plane (microstrip on F.Cu, offset stripline on In2), its pads and its vias, and gives
@@ -334,6 +336,8 @@ peaks at idle, 3 A at full power).
 | Buzz at the speaker at idle, SMD / THT | 4.4 / 7.4 mV | **13 / 31 µV** |
 | … with `C_s1` / `C_s2` fitted | 6.9 / 23.9 mV | 22 / 82 µV |
 | Speaker current fed back through the ground, loop gain | -49 / -42 dB | none: it does not enter the planes |
+
+Picture: `docs/ground-return-before-after.png`.
 
 How: the planes are **signal ground only**. `PGND` — transformer centre tap, `JP_BR`,
 reservoir negative, the bridge snubbers to ground, LM1875 pin 3 with `C_byp1`, `C_byp2`,

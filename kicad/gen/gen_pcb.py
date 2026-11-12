@@ -882,12 +882,11 @@ def main():
         import stitch
         nfo = stitch.fanout(board, OUT)       # every SMD ground pad: a locked via to the planes, before the router runs
     pcbnew.SaveBoard(OUT, board)
-    # fill with the project's rules: reload (so every net has its class) and let
-    # route_board.refill() initialise the rule engine before the filler runs
-    from route_board import refill
-    board = pcbnew.LoadBoard(OUT)
-    refill(board)
-    pcbnew.SaveBoard(OUT, board)
+    # fill with the project's rules, in a FRESH process: the saved file is reloaded there (so
+    # every net has its class) and route_board.refill() initialises the rule engine before
+    # the filler runs -- see refill_file() for why not in this one
+    from route_board import refill_file
+    refill_file(OUT)
     print(f"  {LAYERS} copper layers (F.Cu signal + pour / In1 GND / In2 signal / B.Cu GND); {nkp} footprint keepout areas; "
           f"{nst} perimeter fence vias; {nfo} SMD ground pads fanned out to the planes")
 
