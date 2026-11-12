@@ -371,8 +371,12 @@ FP_BY_REF = {
 #  * the three JFET source resistors that are TRIMMED on the bench (errata #15)
 #  * the diagnostic LED, test points, vactrol, toroid, fuse clip, wire pads
 SMD_KEEP_THT = {"R_s1", "R_s2", "R_rec2",          # bench-trimmed (errata #15)
-                "R_zobel", "R_spk_rtn"}            # speaker-current parts
-SMD_R_1206 = {"R_reg2"}                            # ~85 mW: 1206 (0.25 W) not 0805
+                "R_zobel", "R_spk_rtn",            # speaker-current parts
+                "C_treble"}                        # the bright cap: a voicing part, fitted (and swapped) by hand
+SMD_R_1206 = set()                                 # (R_reg2 was a 1206 for its 85 mW; it is two 0805 in series now)
+# capacitor values that are JLCPCB BASIC parts in 0805 (and not in 1206): C0G 33 pF / 100 pF /
+# 2.2 nF, and the 100 nF 100 V X7R -- see jlc_parts.py. Everything else stays 1206.
+SMD_C_0805 = {"33pF", "100pF", "2.2nF", "100nF/100V"}
 SMD_C_1210 = set()                                 # (1210 no longer used: every SMD C is 1206, JLC basic library)
 def _nf(value):
     m = _re.match(r'(\d+(?:\.\d+)?)\s*(pF|nF|uF)', value)
@@ -385,8 +389,9 @@ def footprint_smd(libsym, ref, value):
         return ("Resistor_SMD:R_1206_3216Metric" if ref in SMD_R_1206
                 else "Resistor_SMD:R_0805_2012Metric")
     if libsym == "C":
-        nf = _nf(value) or 0
-        return "Capacitor_SMD:C_1206_3216Metric"   # all values incl. 1 uF: 1206 X7R 50 V is a JLC basic part (C0G/NP0 for <= 10 nF signal caps); the former 1210 line was an extended-part fee for nothing
+        if value in SMD_C_0805:
+            return "Capacitor_SMD:C_0805_2012Metric"
+        return "Capacitor_SMD:C_1206_3216Metric"   # 1 uF X7R 50 V (JLC basic) and the 22 nF / 100 nF C0G
     if libsym == "D":
         return "Diode_SMD:D_SMA" if "4007" in value else "Diode_SMD:D_SOD-123"      # S1M / 1N4148W
     if libsym == "NJFET":
@@ -451,7 +456,7 @@ def load_custom():
         SYMS.setdefault(name, dict(pins=pins))
 
 GLOBAL_NETS = {
- "+33V5","VREG_IN","+17V","+17V_PRE","GND","SPK_P","SPK_N",
+ "+33V5","VREG_IN","+17V","+17V_PRE","GND","PGND","SPK_P","SPK_N",
  "GUITAR_IN","PREAMP_OUT","TONE_OUT","BLEND","TREM_OUT","PA_IN",
  "MRB_OUT","FX_RET","VBIAS_R","VBIAS_T","FS_REV","FS_TREM","FS_MRB",
 }
@@ -496,10 +501,11 @@ TEST_POINTS = [
   ("Power Amp",      "TP_PA_OUT",   "PA_OUT", "PA_OUT"),
   ("Power Amp",      "TP_SPK",      "SPK",    "SPK_P"),
   ("Power Amp",      "TP_GND_PA",   "GND",    "GND"),
+  ("Power Amp",      "TP_PGND",     "PGND",   "PGND"),        # power ground: must read 0 ohm to GND (through the two 0R links only). SMD board only -- on the THT board probe the T1 "CT" pad
 ]
 def add_test_points(s, y=250):
     """Drop this sheet's test points in a row along the bottom of the sheet."""
-    tps = [t for t in TEST_POINTS if t[0] == s.title]
+    tps = [t for t in TEST_POINTS if t[0] == s.title and not (t[1] == "TP_PGND" and PROFILE != "smd")]
     if not tps:
         return
     s.note("TEST POINTS -- header pin or wire loop; silk label = net alias (see PCB-NOTES.md for expected values)", 40, y - 12)
@@ -513,37 +519,59 @@ def build():
     # ---- Sheet 1: Power Supply ----
     s=Sheet("Power Supply","power_supply.kicad_sch"); sheets.append(s)
     s.note("POWER SUPPLY  -- T1 centre tap = GND, BR1 as a 2-diode full-wave (JP_BR OPEN) -> 33.5V main, LM317 17V rail. Single 24 V winding without a tap: fit JP_BR, leave the CT pad empty. NEVER both.",50,20)
-    s.comp("XFMR","T1","reuse / AnTek AS-0524",40,60,{"1":"AC1","2":"GND","3":"AC2"})
-    # T1 pad 2 is the secondary CENTRE TAP -> GND. With a centre-tapped transformer (the
+    s.comp("XFMR","T1","reuse / AnTek AS-0524",40,60,{"1":"AC1","2":"PGND","3":"AC2"})
+    # PGND is the POWER ground: the copper the big currents return through -- the reservoir's
+    # charging pulses (T1 centre tap -> C_main-), the loudspeaker (R_spk_rtn -> C_main- and the
+    # LM1875's ground pin) and the LM1875's own decoupling and Zobel. It is routed as traces,
+    # and the signal ground (GND = the planes) hangs off the speaker's return terminal by ONE
+    # 0R link, R_gnd (Switching sheet), so none of those currents flows in the planes the
+    # preamp is referenced to (errata #32; ground_audit.py has the numbers).
+    # T1 pad 2 is the secondary CENTRE TAP -> PGND. With a centre-tapped transformer (the
     # original, 48 V CT; or a 2 x 24 V toroid wired in series) the rectifier is the classic
     # two-diode full wave: only the bridge's two "+" diodes work and its "-" pin must float.
     # Until 2026-11 that pin was tied to GND as well, which shorts each half-winding through
     # a "-" diode on alternate half-cycles (errata #26). It now ends on its own net BR_NEG,
     # and JP_BR links it to GND ONLY for a transformer with a single winding and no tap.
     s.comp("BRIDGE","BR1","KBP410G",80,60,{"1":"VRAW","2":"AC1","3":"AC2","4":"BR_NEG"})  # KBP pin order + ~ ~ -
-    s.comp("LINK","JP_BR","no-CT link (opt)",80,100,{"1":"BR_NEG","2":"GND"})   # OPEN for a centre-tapped T1 (default); fit for a single 24 V winding and leave the CT pad empty
-    s.comp("FUSE","F1","1A SB",120,40,{"1":"VRAW","2":"+33V5"})
-    s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"GND"})
+    s.comp("LINK","JP_BR","no-CT link (opt)",80,100,{"1":"BR_NEG","2":"PGND"})   # OPEN for a centre-tapped T1 (default); fit for a single 24 V winding and leave the CT pad empty
+    # F1 carries the charging PULSES, not the average: 1.1 A rms at full sine power, 1.5 A rms
+    # clipped (ground_audit.py rectifier model) -- a T1A fuse sat above its rating there; T1.6A
+    # carries it and still opens at ~110 % of the transformer's secondary rating (errata #33)
+    s.comp("FUSE","F1","T1.6A",120,40,{"1":"VRAW","2":"+33V5"})
+    s.comp("CP","C_main","4700uF/50V",120,70,{"1":"+33V5","2":"PGND"})
+    if PROFILE == "smd":     # (the 190 x 115 THT board has no room for it: use TP GND in the supply corner there)
+        s.comp("LINK","J_CHS","chassis bond",150,45,{"1":"GND","2":"GND"})   # two 3 mm pads on signal ground: the ONE wire to the chassis (docs/03 "Star grounding"), and a place for the scope's ground clip
     s.comp("R","R_bleed","10k/5W",150,70,{"1":"+33V5","2":"GND"})
     # rectifier snubbers across the four bridge diodes (Part 2 C101-104)
-    s.comp("C","C101","10nF/100V",55,35,{"1":"AC1","2":"VRAW"})
-    s.comp("C","C102","10nF/100V",55,48,{"1":"AC2","2":"VRAW"})
-    s.comp("C","C103","10nF/100V",55,82,{"1":"AC1","2":"GND"})
-    s.comp("C","C104","10nF/100V",55,95,{"1":"AC2","2":"GND"})
+    # (100 nF since 2026-11: the same 100 V X7R as the rail bypass caps -- one JLCPCB basic
+    # part instead of two extended ones; anything from 10 to 100 nF does this job)
+    s.comp("C","C101","100nF/100V",55,35,{"1":"AC1","2":"VRAW"})
+    s.comp("C","C102","100nF/100V",55,48,{"1":"AC2","2":"VRAW"})
+    s.comp("C","C103","100nF/100V",55,82,{"1":"AC1","2":"PGND"})
+    s.comp("C","C104","100nF/100V",55,95,{"1":"AC2","2":"PGND"})
     s.note("VREG_IN: LM317-input RC pre-filter (100R + C_filt1) -- ripple + power-amp decoupling; ~32V under load (not a 27V rail)",40,18)
     s.comp("R","R_27V","100R/1W",120,100,{"1":"+33V5","2":"VREG_IN"})
     s.comp("CP","C_filt1","1000uF/50V",150,100,{"1":"VREG_IN","2":"GND"})
     s.comp("CP","C_filt2","1000uF/50V",180,100,{"1":"VREG_IN","2":"GND"})  # extra pre-filter bulk
     s.comp("LM317","U1","LM317T",90,140,{"3":"VREG_IN","2":"+17V","1":"ADJ17"})
     s.comp("R","R_reg1","240R",130,130,{"1":"+17V","2":"ADJ17"})
-    s.comp("R","R_reg2","3.09k",130,160,{"1":"ADJ17","2":"GND"})
+    # 3.0k. With the LM317's 50 uA adjust current: 1.25 x (1 + 3000/240) + 50 uA x 3k = 17.0 V
+    # typical, 16.4-17.7 V over the reference's 1.20-1.30 V -- the E96 3.09k of errata #10
+    # chased a tolerance the regulator does not have (errata #34). SMD board: two 1.5k in
+    # series (42 mW each in 0805, a JLCPCB basic part; 3.0k x 83 mW would need a 1206, which
+    # is not). THT board: one 3k 0.25 W resistor.
+    if PROFILE == "smd":
+        s.comp("R","R_reg2","1.5k",130,160,{"1":"ADJ17","2":"ADJ_M"})
+        s.comp("R","R_reg2b","1.5k",130,185,{"1":"ADJ_M","2":"GND"})
+    else:
+        s.comp("R","R_reg2","3k",130,160,{"1":"ADJ17","2":"GND"})
     s.comp("CP","C_reg_in","10uF/50V",60,160,{"1":"VREG_IN","2":"GND"})
     s.comp("CP","C_reg_out1","10uF/25V",160,140,{"1":"+17V","2":"GND"})
     s.comp("CP","C_adj","10uF/25V",160,170,{"1":"ADJ17","2":"GND"})        # ripple rejection 65 -> 80 dB, output noise /10 (noise_frontend.cir)
     s.note("+17V_PRE: RC-decoupled rail for the JFET stages (0 dB PSRR): 100R + 220uF, 7 Hz corner -- kills the LM317's 0.5 mV noise + ripple before Q1/Q2/Q_rec",40,235)
     s.comp("R","R_pre","100R",215,140,{"1":"+17V","2":"+17V_PRE"})
     s.comp("CP","C_pre","220uF/25V",245,140,{"1":"+17V_PRE","2":"GND"})
-    s.comp("C","C_reg_out2","100nF",185,140,{"1":"+17V","2":"GND"})
+    s.comp("C","C_reg_out2","100nF/100V",185,140,{"1":"+17V","2":"GND"})
     # Mid-rail references for single-supply op-amps. SPLIT into VBIAS_R (reverb)
     # and VBIAS_T (tremolo) so LFO current on the tremolo ref cannot modulate the
     # reverb stage (roast R6). Each: 100k/100k + 47uF bypass.
@@ -558,11 +586,12 @@ def build():
     s.comp("PWR_FLAG","#FLG2","",70,30,{"1":"VREG_IN"})
     s.comp("PWR_FLAG","#FLG3","",100,30,{"1":"+17V"})
     s.comp("PWR_FLAG","#FLG4","",130,30,{"1":"GND"})
+    s.comp("PWR_FLAG","#FLG5","",160,30,{"1":"PGND"})
 
     # ---- Sheet 2: Preamp ----
     s=Sheet("Preamp","preamp.kicad_sch"); sheets.append(s)
     s.note("PREAMP  -- 2x JFET common-source (MMBF5457). Rs placed 2K2 (recovered); ~1-1.2k for the 8-9V drain target (errata #15). C_s1 / C_s2 are a VOICING option, default NOT fitted: none = 21 dB, clean to ~0.3 V pk; C_s1 only = 33 dB, breaks up above ~0.1 V; both = 45 dB, 8 % THD at 20 mV (spice/tran_preamp_headroom.cir, errata #28)",50,20)
-    s.comp("C","C_in_pre","47nF",40,60,{"1":"GUITAR_IN","2":"RF1"})
+    s.comp("C","C_in_pre","100nF",40,60,{"1":"GUITAR_IN","2":"RF1"})
     # RF stopper at the gate (the guitar cable is the antenna): 1k + 100 pF = 1.6 MHz corner,
     # nothing at audio; 1k adds 4 nV/rtHz against the pickup's own 10 (2026-09-08)
     s.comp("R","R_rf1","1k",15,75,{"1":"RF1","2":"Q1G"})
@@ -588,7 +617,7 @@ def build():
     s.comp("R","R_vb31","100k",40,60,{"1":"+17V","2":"VBIAS_3"})
     s.comp("R","R_vb32","100k",40,90,{"1":"VBIAS_3","2":"GND"})
     s.comp("CP","C_vb3","47uF/25V",70,90,{"1":"VBIAS_3","2":"GND"})
-    s.comp("C","C_byp3","100nF",70,60,{"1":"+17V","2":"GND"})
+    s.comp("C","C_byp3","100nF/100V",70,60,{"1":"+17V","2":"GND"})
     s.comp("OPAMP14","IC3","TL074CN",130,100,{"3":"PREAMP_OUT","2":"BUF","1":"BUF",       # A: input buffer (low-Z drive for the passive network)
                                                "5":"JOUT","6":"MKN","7":"MK_OUT",          # B: make-up gain 1 + R_mk1/R_mk2 = 2
                                                "10":"GYP","9":"GYO","8":"GYO",            # C: gyrator follower (simulated inductor)
@@ -639,7 +668,7 @@ def build():
     s.comp("R","R_drv3","10R",195,80,{"1":"TKDRV","2":"TANK_IN"})
     s.comp("Reverb_Tank_4FB2A1C","REV1","4FB2A1C",235,90,
             {"1":"TANK_IN","2":"GND","3":"TANK_OUT","4":"GND"})
-    s.comp("C","C_rev2","10nF",60,120,{"1":"TANK_OUT","2":"RF2"})
+    s.comp("C","C_rev2","22nF",60,120,{"1":"TANK_OUT","2":"RF2"})
     s.comp("R","R_rf2","1k",30,135,{"1":"RF2","2":"QRG"})            # RF stopper: the tank cable is the other antenna
     s.comp("C","C_rf2","100pF",30,105,{"1":"QRG","2":"GND"})
     s.comp("NJFET","Q_rec","MMBF5457",110,140,{"3":"QRG","1":"QRD","2":"QRS"})
@@ -713,7 +742,15 @@ def build():
     s.comp("C","C_mrb_in","100nF",50,70,{"1":"TREM_OUT","2":"MRB_N"})
     s.comp("R","R_mrb_ser","10k",90,70,{"1":"MRB_N","2":"MRB_T"})
     s.comp("L","L1","1H toroid",130,100,{"1":"MRB_T","2":"FS_MRB"})
-    s.comp("C","C_mrb_600","68nF",170,100,{"1":"MRB_T","2":"FS_MRB"})
+    # 600 Hz position. SMD board: 3 x 22 nF C0G = 66 nF (one 68 nF C0G was an extended part
+    # of its own with 215 in stock at JLCPCB; 22 nF is on the board anyway) -> 620 Hz.
+    # THT board: one 68 nF film capacitor -> 610 Hz.
+    if PROFILE == "smd":
+        s.comp("C","C_mrb_600","22nF",170,100,{"1":"MRB_T","2":"FS_MRB"})
+        s.comp("C","C_mrb_600b","22nF",205,100,{"1":"MRB_T","2":"FS_MRB"})
+        s.comp("C","C_mrb_600c","22nF",240,100,{"1":"MRB_T","2":"FS_MRB"})
+    else:
+        s.comp("C","C_mrb_600","68nF",170,100,{"1":"MRB_T","2":"FS_MRB"})
     s.comp("C","C_mrb_450","120nF (opt)",170,130,{"1":"MRB_T","2":"FS_MRB"})
     s.comp("C","C_mrb_750","47nF (opt)",170,160,{"1":"MRB_T","2":"FS_MRB"})
     s.comp("C","C_mrb_out","100nF",90,130,{"1":"MRB_T","2":"MRB_OUT"})
@@ -721,26 +758,32 @@ def build():
 
     # ---- Sheet 7: Power Amp (netlist-notes sheet 7, verbatim) ----
     s=Sheet("Power Amp","power_amp.kicad_sch"); sheets.append(s)
-    s.note("POWER AMP -- LM1875, gain 23x. Sim: HF -3dB 6.8kHz (C_fb_hf), LF ~17Hz.",40,20)
-    s.comp("C","C_in_pa","1uF film",40,70,{"1":"PA_IN","2":"PA_BIAS"})
+    s.note("POWER AMP -- LM1875, gain 23x, feedback purely resistive (the IC needs a noise gain >= 10 at every frequency). HF -3dB 7.5 kHz from the INPUT low-pass R_lp / C_lp; LF ~17 Hz. Pin 3, decoupling, Zobel and D2 return on PGND.",40,20)
+    # The 7 kHz guitar roll-off is an RC in front of the + input. Until 2026-11 it was C_fb_hf,
+    # 1 nF across R_fb: that takes the amplifier's noise gain from 23 down to 1 above ~160 kHz,
+    # and the LM1875 is only compensated for gains of 10 or more (data sheet, "Stability") --
+    # -9 .. -1 deg of phase margin in ac_pa_stability.cir, +68 .. +76 with the roll-off here. R_lp also is the RF stopper the data sheet
+    # asks for at the input (errata #35).
+    s.comp("C","C_in_pa","1uF film",40,70,{"1":"PA_IN","2":"PA_LP"})
+    s.comp("R","R_lp","1k",75,70,{"1":"PA_LP","2":"PA_BIAS"})
+    s.comp("C","C_lp","22nF",75,95,{"1":"PA_BIAS","2":"GND"})
     # bias divider -> BYPASSED node (C_bref) -> R_bias3 -> the + input. Without C_bref/R_bias3 the
     # divider fed half the rail ripple into the + input: +4 dB ripple->speaker (ac_hum_psrr.cir)
     s.comp("R","R_bias1","22k",15,45,{"1":"+33V5","2":"PA_BREF"})
     s.comp("R","R_bias2","22k",15,95,{"1":"PA_BREF","2":"GND"})
     s.comp("CP","C_bref","100uF/25V",15,125,{"1":"PA_BREF","2":"GND"})
     s.comp("R","R_bias3","22k",60,45,{"1":"PA_BREF","2":"PA_BIAS"})
-    s.comp("LM1875","IC_PA","LM1875T",110,80,{"1":"PA_BIAS","2":"PA_INV","4":"PA_OUT","5":"+33V5","3":"GND"})
+    s.comp("LM1875","IC_PA","LM1875T",110,80,{"1":"PA_BIAS","2":"PA_INV","4":"PA_OUT","5":"+33V5","3":"PGND"})
     s.comp("R","R_fb","22k",150,50,{"1":"PA_INV","2":"PA_OUT"})
-    s.comp("C","C_fb_hf","1nF",150,30,{"1":"PA_INV","2":"PA_OUT"})
     s.comp("R","R_gain","1k",70,120,{"1":"PA_INV","2":"PA_GAIN"})
     s.comp("CP","C_gain","22uF/25V",110,120,{"1":"PA_GAIN","2":"GND"})
     s.comp("R","R_zobel","10R",160,110,{"1":"PA_OUT","2":"ZOB"})
-    s.comp("C","C_zobel","100nF",190,110,{"1":"ZOB","2":"GND"})
+    s.comp("C","C_zobel","100nF/100V",190,110,{"1":"ZOB","2":"PGND"})
     s.comp("CP","C_out","2200uF/35V",160,80,{"1":"PA_OUT","2":"SPK_P"})
     s.comp("D","D1","1N4007",150,150,{"2":"PA_OUT","1":"+33V5"})   # anode (2) on the output, cathode (1) on the rail
-    s.comp("D","D2","1N4007",190,150,{"2":"GND","1":"PA_OUT"})     # anode (2) on GND, cathode (1) on the output
-    s.comp("C","C_byp1","100nF",40,150,{"1":"+33V5","2":"GND"})
-    s.comp("CP","C_byp2","10uF/50V",75,150,{"1":"+33V5","2":"GND"})
+    s.comp("D","D2","1N4007",190,150,{"2":"PGND","1":"PA_OUT"})    # anode (2) on power ground, cathode (1) on the output
+    s.comp("C","C_byp1","100nF/100V",40,150,{"1":"+33V5","2":"PGND"})   # pin 5 to pin 3, at the IC (gen_pcb CLOSE)
+    s.comp("CP","C_byp2","10uF/50V",75,150,{"1":"+33V5","2":"PGND"})
 
     # ---- Sheet 8: Switching / I-O ----
     s=Sheet("Switching / I-O","switching.kicad_sch"); sheets.append(s)
@@ -751,7 +794,14 @@ def build():
     s.comp("Footswitch_DIN6","FS1","DIN-6",150,90,
             {"1":"FS_REV","2":"FS_TREM","3":"FS_MRB","4":"GND","5":"GND","6":"GND"})
     s.comp("SPEAKER","LS1","10in Bulldog",210,150,{"1":"SPK_P","2":"SPK_N"})
-    s.comp("R","R_spk_rtn","0R",170,150,{"1":"SPK_N","2":"GND"})
+    s.comp("R","R_spk_rtn","0R",170,150,{"1":"SPK_N","2":"PGND"})
+    # THE star: the only connection between the signal ground (the planes) and everything
+    # else. It taps SPK_N, the loudspeaker's own return terminal: the power amp then amplifies
+    # exactly "input minus the potential of the speaker's - terminal", and no drop in the 0R
+    # link R_spk_rtn or anywhere on the power ground can appear in series with the signal.
+    # The star is in the NETLIST (three nets), not in the placement: wherever the router
+    # puts these traces, the reservoir's charging pulses have no path through SPK_N or GND.
+    s.comp("R","R_gnd","0R",170,180,{"1":"SPK_N","2":"GND"})
     # (R_painput removed -- IC2-B buffer now drives PA_IN from MRB_OUT, roast R3)
 
     for sh in sheets:

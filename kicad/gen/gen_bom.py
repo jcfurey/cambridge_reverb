@@ -51,6 +51,14 @@ DESC = {
  "R_fs_mrb":"DC return for the footswitched MRB tank",
  "C_s1":"Q1 source bypass (voicing option)","C_s2":"Q2 source bypass (voicing option)",
  "C_mixfb":"Reverb summer feedback capacitor: cancels the summing node's stray capacitance (errata #31)",
+ "R_gnd":"STAR link: the one connection between signal ground (planes) and the speaker return / power ground",
+ "R_spk_rtn":"Speaker return link to power ground (carries the full speaker current)",
+ "J_CHS":"Chassis bond pads (signal ground): ONE wire to the chassis",
+ "R_lp":"Power-amp input low-pass / RF stopper (with C_lp: 7.5 kHz)","C_lp":"Power-amp input low-pass (C0G)",
+ "R_reg2b":"LM317 set resistor, lower half (R_reg2 + R_reg2b = 3.0k)",
+ "C_mrb_600b":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)","C_mrb_600c":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)",
+ "C_mrb_600":"MRB tank capacitor, 600 Hz position (3 x 22 nF in parallel)",
+ "C_treble":"Bright cap across the volume pot (voicing part, hand-fitted)",
  "POT_VOL":"Volume","POT_TONE":"Tone","POT_REV":"Reverb level","POT_SPD_A":"Tremolo speed -- dual-gang pot, gang A (series Wien arm)","POT_SPD_B":"Tremolo speed -- dual-gang pot, gang B (shunt Wien arm); ONE part with POT_SPD_A","POT_DPT":"Tremolo depth",
 }
 # curated part numbers + key notes, keyed by reference
@@ -85,17 +93,24 @@ CUR = {
  "C_main":dict(dk="", mou="667-EEU-FC1H472", notes="low-ESR; or 2x2200uF if PCB-mounted (errata #16)"),
  "C_filt1":dict(dk="", mou="667-EEU-FC1H102", notes="low-ESR pre-filter bulk"),
  "C_filt2":dict(dk="", mou="667-EEU-FC1H102", notes="low-ESR pre-filter bulk"),
- "C101":dict(dk="", mou="594-K104Z15Y5VF5TL2", notes="bridge snubber"),
- "C102":dict(dk="", mou="594-K104Z15Y5VF5TL2", notes="bridge snubber"),
- "C103":dict(dk="", mou="594-K104Z15Y5VF5TL2", notes="bridge snubber"),
- "C104":dict(dk="", mou="594-K104Z15Y5VF5TL2", notes="bridge snubber"),
+ "C101":dict(dk="", mou="", notes="bridge snubber: 100 nF, 100 V minimum (the diode it bridges sees twice the secondary peak), X7R or film"),
+ "C102":dict(dk="", mou="", notes="bridge snubber, see C101"),
+ "C103":dict(dk="", mou="", notes="bridge snubber, see C101"),
+ "C104":dict(dk="", mou="", notes="bridge snubber, see C101"),
+ "R_gnd":dict(dk="", mou="", notes="0R (THT board: a wire link). Without it the planes float: check 0 ohm between TP GND and TP PGND before first power-up. The ONLY ground link -- do not add others (errata #32)"),
+ "R_spk_rtn":dict(dk="", mou="", notes="0R: a bare wire link of 1 mm copper (or a 0R 1 W jumper); carries the speaker current from the LS1 '-' pad to power ground"),
+ "J_CHS":dict(dk="", mou="", notes="no part. Bond the chassis to circuit ground in ONE place: either through the (non-insulated) input jacks -- then leave these pads empty -- or, with insulated jacks, by one wire from here to the chassis lug. The second pad takes a scope ground clip"),
+ "R_lp":dict(dk="", mou="", notes="1k; with C_lp and R_bias3 the 7.5 kHz guitar roll-off, in FRONT of the LM1875 -- the feedback network must stay resistive (errata #35)"),
+ "C_lp":dict(dk="", mou="", notes="22 nF C0G/film at the LM1875 + input (also the input capacitor the data sheet asks for against RF pickup)"),
+ "R_reg2b":dict(dk="", mou="", notes="1.5k, see R_reg2"),
+ "C_treble":dict(dk="", mou="", notes="470 pF C0G / silver mica, 5 mm pitch. The classic Vox bright cap -- 100 pF to 1 nF to taste, or leave it out. Hand-fitted on both boards (JLCPCB has no basic C0G of this value)"),
  "C_out":dict(dk="", mou="", notes="REQUIRED for single-supply (errata #7)"),
  "R_reg1":dict(dk="", mou="603-MFR-25FBF52-240R", notes=""),
- "R_reg2":dict(dk="", mou="", notes="3.09k E96 -> 17.34V (errata #10)"),
+ "R_reg2":dict(dk="", mou="", notes="1.5k; R_reg2 + R_reg2b = 3.0k -> 17.0 V typical incl. the adjust-pin current (16.4-17.7 V over the LM317's reference tolerance; errata #34)"),
  "R_27V":dict(dk="", mou="", notes="LM317-input RC pre-filter w/ C_filt1 (VREG_IN ~32V, roast R2)"),
  "C_reg_in":dict(dk="", mou="581-TAP106K050SCS", notes="tantalum"),
  "C_reg_out1":dict(dk="", mou="581-TAP106K025SCS", notes="tantalum"),
- "F1":   dict(dk="", mou="576-0273001.H", notes="secondary fuse; prefer AC-secondary placement (roast R5)"),
+ "F1":   dict(dk="", mou="576-021801.6MXP", notes="5x20 mm TIME-LAG 1.6 A 250 V (Littelfuse 0218 01.6). Carries the reservoir's charging pulses: 1.1 A rms at full sine power, 1.5 A rms clipped -- a T1A sat above its rating (errata #33)"),
  "R_s1": dict(dk="", mou="", notes="2K2 biases Vd~12V; ~1-1.2k -> 8-9V target (errata #15), trim per device"),
  "R_s2": dict(dk="", mou="", notes="see R_s1 (errata #15)"),
  "L1":   dict(dk="", mou="", notes="reuse original ~1H, or 2x 0.5H Fasel"),
@@ -136,8 +151,7 @@ def smd_note(c):
     if p is None:
         return None
     return f"JLCPCB {p['lcsc']} ({p['cls']}): {p['mfr']} {p['mpn']} -- {p['comment']}"
-JLC_PKG = {"R0805": "0805", "R1206": "1206", "C0G": "1206", "X7R": "1206", "X7R100": "1206",
-           "D_SMA": "SMA", "JFET": "SOT-23", "NPN": "SOT-23"}
+JLC_PKG = jlc_parts.PKG            # footprint column = the package JLCPCB lists for the part
 
 def main(profile="tht", jlc=False):
     g.set_profile(profile)

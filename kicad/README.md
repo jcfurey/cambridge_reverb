@@ -28,7 +28,8 @@ KiCad project files.
 - `cambridge_reverb.kicad_sch` (root) + 8 hierarchical sheets — `power_supply`,
   `preamp`, `tone_stack`, `reverb`, `tremolo`, `mrb`, `power_amp`, `switching`.
   They open in KiCad 7/8, **pass ERC with 0 violations** (KiCad 8.0.9), and
-  netlist cleanly (151 components + 28 test points, 85 nets, 0 unconnected pins).
+  netlist cleanly (153 components + 28 test points, 87 nets, 0 unconnected pins; the
+  SMD build in `smd/` has 157 + 29 and 88 nets — errata #36).
 - `symbols/cr_primitives.kicad_sym` — self-contained primitive symbols used by
   the generated sheets.
 - `gen/gen_kicad.py` — the generator (regenerate: `python3 kicad/gen/gen_kicad.py`).

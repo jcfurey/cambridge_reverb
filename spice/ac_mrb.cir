@@ -20,7 +20,9 @@ R_mrb_ser N1 MRB_T 10k
 * parallel LC tank to the footswitch line
 L1   MRB_T FS_MRB 1
 R_dcr FS_MRB FS_MRBX 0
-C_mrb_600 MRB_T FS_MRB 68n
+C_mrb_600 MRB_T FS_MRB 22n          ; SMD board: 3 x 22 nF C0G = 66 nF (THT board: one 68 nF film)
+C_mrb_600b MRB_T FS_MRB 22n
+C_mrb_600c MRB_T FS_MRB 22n
 R_fs_mrb FS_MRB 0 1meg
 C_cable  FS_MRB 0 1n
 R_fsw    FS_MRB 0 {fs==1 ? 1 : 1e12}

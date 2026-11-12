@@ -28,11 +28,12 @@ Measured vs. documented:
 
 | Block | Measured (ngspice-42) | Documented |
 |-------|-----------------------|------------|
-| Power-amp gain | 27.21 dB (23.0×) | 23× / 27.2 dB ✅ |
-| Power-amp HF −3 dB | 6.83 kHz (with `C_fb_hf`) | ~7.2 kHz ✅ |
-| Power-amp LF −3 dB | 17.2 Hz | "7.2 Hz" — see below ⚠️ |
+| Power-amp gain | 26.66 dB (21.5×: 23× less 0.6 dB in the input filter) | 23× / 27.2 dB ✅ |
+| Power-amp HF −3 dB | 7.68 kHz (input low-pass `R_lp` / `C_lp`, errata #35; was 6.83 kHz with `C_fb_hf`) | ~7.2 kHz ✅ |
+| Power-amp LF −3 dB | 10.9 Hz | "7.2 Hz" — see below ⚠️ |
+| Power-amp phase margin | +68° / +76° (−9° / −1° with the 1 nF across `R_fb`), `ac_pa_stability.cir` | stable ✅ errata #35 |
 | Reverb-driver gain | 20.83 dB (11.0×) | 11× ✅ |
-| MRB peak | 577 Hz | ~610 Hz ✅ |
+| MRB peak | 590 Hz (3 × 22 nF; 577 Hz with one 68 nF) | ~610 Hz ✅ |
 | Tremolo LFO | 10.6 Hz (pot 0) … 0.60 Hz (pot max), 1/(2πRC) with the errata #19 network | RC-set ✅ (swept) |
 | Preamp drain | 12.1 V (Rs 2.2 k) | 8–9 V — see below ⚠️ |
 | Tone stack (errata #20) | noon flat −0.2 dB; bass −7.5…+4.9 dB @ 100 Hz; treble −16.5…+5.6 dB @ 10 kHz; MID CUT −9.6 dB @ 796 Hz | James network + gyrator notch ✅ (swept) |

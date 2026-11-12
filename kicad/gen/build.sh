@@ -3,7 +3,8 @@
 #
 #   kicad/gen/build.sh smd      # schematic -> placed board -> BOM -> autoroute -> finish -> ground
 #   kicad/gen/build.sh tht      #   stitching -> ERC/DRC reports -> crosstalk + ground / parasitics
-#                               #   audits -> (smd) JLCPCB package -> verify.py
+#                               #   audits -> (smd) JLCPCB package -> verify.py (which also runs
+#                               #   the ground-RETURN audit: kicad/reports/ground-<profile>.md)
 #
 # Needs kicad-cli 8, python3 with pcbnew + numpy + scipy, Java and kicad/gen/freerouting.jar
 # (Freerouting 1.9.0, see route_board.py), xvfb-run when there is no display, ngspice.
@@ -12,8 +13,8 @@ set -eu
 cd "$(dirname "$0")/../.."
 P=${1:-smd}
 case "$P" in
-  smd) PCB=kicad/smd/cambridge_reverb_smd.kicad_pcb; VIA=${VIA_COST:-60}; BOMF="--jlc";;
-  tht) PCB=kicad/cambridge_reverb.kicad_pcb;         VIA=${VIA_COST:-50}; BOMF="";;
+  smd) PCB=kicad/smd/cambridge_reverb_smd.kicad_pcb; VIA=${VIA_COST:-50}; BOMF="--jlc";;
+  tht) PCB=kicad/cambridge_reverb.kicad_pcb;         VIA=${VIA_COST:-60}; BOMF="";;
   *) echo "profile must be smd or tht"; exit 2;;
 esac
 q() { grep -vE '^$|Debug:' || true; }

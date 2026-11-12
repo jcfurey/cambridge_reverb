@@ -16,7 +16,7 @@
 | Ref | Description | Value | Package | Mouser P/N | ~Price |
 |-----|-------------|-------|---------|------------|--------|
 | BR1 | Bridge rectifier | 4A 1000V | Through-hole | 821-KBU4M (see Part 8: KBP410G preferred) | $0.65 |
-| C101–104 | Rectifier snubbing caps | 10nF 100V ceramic | Disc | 594-K104Z15Y5VF5TL2 | $0.10 ea |
+| C101–104 | Rectifier snubbing caps | 100nF **100V** X7R ceramic (errata #36: was 10 nF; the part number once listed here was a 50 V Y5V — each cap sees twice the secondary peak, ~70–85 V) | Disc | — | $0.10 ea |
 | C_main | Main filter cap | 4700µF 50V low-ESR | Radial | 667-EEU-FC1H472 | $3.50 |
 | C_filt1 | Secondary filter | 1000µF 50V low-ESR | Radial | 667-EEU-FC1H102 | $1.20 |
 | C_filt2 | Secondary filter | 1000µF 50V low-ESR | Radial | 667-EEU-FC1H102 | $1.20 |
@@ -25,15 +25,17 @@
 | R_reg2 | Regulator set resistor | 3.0kΩ 1% 1/4W metal film | Axial | 603-MFR-25FBF52-3K | $0.10 |
 | C_adj | LM317 ADJ-pin bypass (errata #21: ripple rejection 65 → 80 dB, output noise ÷ ~10) | 10µF/25V electrolytic | Radial | — | $0.15 |
 
-> **Errata Issue 10:** 240 Ω + 3.0 kΩ gives Vout = 1.25 × (1 + 3000/240) =
-> **16.88 V**, ~0.13 V below the 17.0–17.5 V band quoted in the setup/troubleshooting
-> tables. For 17.0–17.5 V use **R_reg2 = 3.09 kΩ (E96)** (→ 17.34 V); the BOM uses
-> this value. Alternatively accept ~16.9 V and read the band as 16.8–17.5 V.
+> **Errata Issues 10 and 34:** 240 Ω + 3.0 kΩ is right. Issue 10 computed
+> 1.25 × (1 + 3000/240) = 16.88 V and asked for an E96 3.09 kΩ to reach "17.0–17.5 V";
+> it left out the LM317's 50 µA adjust-pin current, which adds 0.15 V across 3.0 kΩ:
+> **17.0 V typical**. The regulator's reference is 1.20–1.30 V, so any unit lands
+> between **16.4 and 17.7 V** whatever the resistor's last digit. (SMD board: two
+> 1.5 kΩ 0805 in series, `R_reg2` + `R_reg2b` — 42 mW each, a JLCPCB basic part.)
 | C_reg_in | Regulator input cap | 10µF 50V tantalum | Radial | 581-TAP106K050SCS | $0.80 |
 | C_reg_out1 | Regulator output cap | 10µF 25V tantalum | Radial | 581-TAP106K025SCS | $0.60 |
 | C_reg_out2 | Regulator output bypass | 100nF 50V MLCC | Disc/radial | 594-K104K15X7RF5TL2 | $0.10 |
 | R_27V | LM317-input pre-filter / power-amp decoupling (net `VREG_IN`, ~32 V) | 100Ω 1W metal oxide | Axial | — | $0.20 |
-| F1 | Secondary fuse | 1A 250V slow-blow | PCB mount | 576-0273001.H | $0.40 |
+| F1 | Secondary fuse | **T1.6A** 250V time-lag, 5×20 mm (errata #33: it carries the reservoir's charging pulses — 1.1 A rms at full sine power, 1.5 A rms clipped) | PCB mount | 576-021801.6MXP | $0.40 |
 | F1_holder | Fuse holder | PCB mount 5×20mm | — | 534-3557 | $0.60 |
 
 ### Preamp (JFET) `[RECONSTRUCTED rows — verify vs SPICE/Part 8]`
@@ -92,24 +94,27 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 | C_bref | Bias-node bypass | 100µF/25V | errata #21: without it the divider fed rail ripple ×23 to the speaker |
 | R_bias3 | Bias node → + input | 22K 1% | errata #21; input impedance 22 k, 7 Hz corner with C_in_pa |
 | R_fb | Feedback resistor | 22K 1% | |
-| C_fb_hf | Feedback HF rolloff (across R_fb) | 1nF | 7.2 kHz bandwidth limit |
+| R_lp | Input low-pass / RF stopper | 1K 1% | errata #35: the 7.5 kHz guitar roll-off, at the **input** (was `C_fb_hf` 1 nF across R_fb — the LM1875 is only stable with a noise gain ≥ 10) |
+| C_lp | Input low-pass capacitor, + input to GND | 22nF C0G / film | with R_lp ∥ R_bias3: 7.5 kHz |
 | R_gain | Gain-setting resistor | 1K 1% | |
 | C_gain | Gain cap (LF rolloff) | 22µF/25V | |
 | C_in | Input coupling (film) | 1µF/50V | |
 | C_out | Output coupling | 2200µF/35V | **Required** for single-supply (Errata Issue 7) |
 | R_zobel | Zobel network R | 10R 1W | |
 | C_zobel | Zobel network C (film) | 100nF/100V | |
-| C_byp1 | V+ bypass MLCC | 100nF/50V | |
-| C_byp2 | V+ bypass electrolytic | 10µF/50V | |
+| C_byp1 | V+ bypass MLCC, pin 5 to pin 3 **at the IC** | 100nF/100V | returns to power ground `PGND` (errata #32) |
+| C_byp2 | V+ bypass electrolytic, at the IC | 10µF/50V | returns to `PGND` |
 | D1 | Output clamp to V+ | 1N4007 | |
-| D2 | Output clamp to GND | 1N4007 | |
+| D2 | Output clamp to power ground | 1N4007 | |
+| R_spk_rtn | Speaker return link, `SPK_N` → `PGND` | 0R (wire link) | carries the speaker current |
+| R_gnd | **Star link**, `SPK_N` → signal ground | 0R | the only connection between the planes and the power ground (errata #32) |
 
 ### MRB — recovered verbatim
 
 | Ref | Description | Value | Notes |
 |-----|-------------|-------|-------|
 | L1 | MRB inductor | 1H toroid | Reuse original or 2× 0.5H wah (Fasel) |
-| C_mrb2 | 600 Hz position (default) | 68nF/50V film | f = 1/(2π√(LC)) ≈ 610 Hz |
+| C_mrb2 | 600 Hz position (default) | 68nF/50V film | f = 1/(2π√(LC)) ≈ 610 Hz. SMD board: 3 × 22 nF C0G (`C_mrb_600`, `b`, `c`) = 66 nF → 620 Hz |
 | C_mrb1 | 450 Hz position (optional) | 120nF/50V film | ≈ 460 Hz |
 | C_mrb3 | 750 Hz position (optional) | 47nF/50V film | ≈ 734 Hz |
 | C_mrb_in | Input coupling | 100nF/50V film | |
@@ -127,26 +132,28 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 #   Pin 5: V+ (+33.5V)
 #
 # Connections:
-#   AUDIO_IN -> C_in(1uF) -> node_A
-#   +33.5V   -> R_bias1(22K) -> node_A
-#   node_A   -> R_bias2(22K) -> GND
+#   AUDIO_IN -> C_in(1uF) -> R_lp(1K) -> node_A          [as built since errata #21 / #35]
+#   node_A   -> C_lp(22nF) -> GND                         [7.5 kHz low-pass; feedback stays resistive]
+#   +33.5V   -> R_bias1(22K) -> BREF -> R_bias2(22K) -> GND;  BREF -> C_bref(100uF) -> GND
+#   BREF     -> R_bias3(22K) -> node_A
 #   node_A   -> IC_PA pin1 (+)
-#   IC_PA pin2 (-) -> R_fb(22K)   -> IC_PA pin4 (output)
+#   IC_PA pin2 (-) -> R_fb(22K)   -> IC_PA pin4 (output)   [nothing in parallel with R_fb]
 #   IC_PA pin2 (-) -> R_gain(1K)  -> C_gain(22uF) -> GND
-#   IC_PA pin3 -> GND
+#   IC_PA pin3 -> PGND (power ground)
 #   IC_PA pin5 -> +33.5V
-#   C_byp1, C_byp2: pin5 to GND (close to IC)
+#   C_byp1, C_byp2: pin5 to pin3 / PGND (close to IC)
 #   IC_PA pin4 -> C_out(2200uF) -> SPEAKER(+)
-#   SPEAKER(-) -> GND (star ground point)
-#   R_zobel(10R) + C_zobel(100nF) in series: pin4 to GND
+#   SPEAKER(-) = SPK_N -> R_spk_rtn(0R) -> PGND -> C_main(-)
+#   SPK_N -> R_gnd(0R) -> GND planes                      [THE star: errata #32]
+#   R_zobel(10R) + C_zobel(100nF) in series: pin4 to PGND
 #   D1: pin4(ANODE) -> +33.5V(CATHODE)  [clamp to V+; recovered text had the two labels swapped -- errata #25]
-#   D2: GND(ANODE)  -> pin4(CATHODE)    [clamp to GND]
+#   D2: PGND(ANODE) -> pin4(CATHODE)    [clamp to power ground]
 #
 # GAIN: Av = 1 + (R_fb / R_gain) = 1 + 22000/1000 = 23 (27.2 dB)
 #   Adjustable: R_gain = 2.2K -> Av = 11;  R_gain = 470R -> Av = 48 (max rec.)
 # BANDWIDTH:
 #   Low -3dB:  f_L = 1/(2π × R_gain × C_gain) = 7.2 Hz
-#   High -3dB: set by C_fb_hf(1nF) across R_fb -> ~7.2 kHz (guitar limit)
+#   High -3dB: R_lp(1K) || R_bias3(22K) with C_lp(22nF) -> 7.5 kHz (guitar limit), ahead of the amplifier
 ```
 
 ### Tremolo (Wien-bridge LFO + LED/LDR) — recovered verbatim
@@ -209,5 +216,6 @@ Q ≈ 0.6** (−3 dB ≈ 400 Hz … 1.7 kHz), flat when off.
 2. Main rail: 33–35 VDC.
 3. LM317 input (`VREG_IN`, after the R_27V/C_filt1 pre-filter): ~31–33 VDC (this
    node is *not* a regulated 27 V — it tracks the main rail minus ~1 V).
-4. Regulated 17 V rail: 17.0–17.5 VDC.
-5. Confirm before proceeding to signal stages.
+4. Regulated 17 V rail: 17.0 VDC typical, 16.4–17.7 V (errata #34).
+5. Power off: **0 Ω between the `GND` and `PGND` test points** (T1 `CT` pad on the THT board) — the star link R_gnd and the speaker link R_spk_rtn are both fitted. Without them the planes float.
+6. Confirm before proceeding to signal stages.

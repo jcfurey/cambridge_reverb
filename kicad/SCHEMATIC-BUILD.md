@@ -6,8 +6,8 @@ committed**, open in KiCad 7/8, and pass a real Electrical Rules Check:
 
 ```
 kicad-cli sch erc      ->  0 violations            (KiCad 8.0.9)
-kicad-cli sch export netlist ->  179 components (151 + 28 test points) · 85 nets · 0 unconnected pins
-GND spans 65 nodes · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
+kicad-cli sch export netlist ->  181 components (153 + 28 test points) · 87 nets · 0 unconnected pins   (SMD build: 157 + 29 · 88 nets)
+GND (signal ground) spans 55 pins; power ground PGND and the speaker return SPK_N are separate nets, joined to it by R_spk_rtn / R_gnd (errata #32) · split mid-rails VBIAS_R / VBIAS_T / VBIAS_3 · all inter-sheet signals resolve
 ```
 
 Files: `cambridge_reverb.kicad_sch` (root) + `power_supply / preamp /
@@ -93,6 +93,6 @@ Generator: `gen/gen_kicad.py` (regenerate with `python3 kicad/gen/gen_kicad.py`)
 
 ## Per-sheet contents
 Values come from Part 2 + `netlist-notes.txt`; see those and `errata.md` for the
-authoritative numbers (e.g. preamp `R_s ≈ 1–1.2 k`, `R_reg2 = 3.09 k`).
+authoritative numbers (e.g. preamp `R_s ≈ 1–1.2 k`, `R_reg2 = 3.0 k`).
 Power Supply · Preamp · Tone Stack · Reverb · Tremolo · MRB · Power Amp ·
 Switching/I-O — one hierarchical sheet each, in signal-flow order.

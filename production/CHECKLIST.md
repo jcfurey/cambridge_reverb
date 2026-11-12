@@ -5,7 +5,7 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 
 ## Checked by the tools (run `kicad/gen/build.sh smd`, or `kicad/gen/verify.py smd` on an existing build)
 
-`kicad/reports/verify-smd.txt` is the last result — 64 of 64 on the committed board.
+`kicad/reports/verify-smd.txt` is the last result — 75 of 75 on the committed board.
 
 - [x] ERC: 0 violations
 - [x] DRC with JLCPCB's limits and the project rules: 0 errors, 0 warnings, **0 open
@@ -15,6 +15,10 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
       JFETs, BJT, regulator, power amp, bridge, op-amps, vactrol)
 - [x] Clamp diodes reverse-biased; electrolytics the right way round at the DC
       operating point; rectifier not shorted; supply pins; pot directions; footswitch
+- [x] Star ground: power ground, speaker return and signal ground are three nets joined
+      by `R_spk_rtn` and `R_gnd` only; return-current hum and feedback solved on the
+      routed copper (`kicad/reports/ground-smd.md`); LM1875 feedback resistive, its
+      decoupling and Zobel at the IC
 - [x] Every part labelled on the silkscreen at a legal size; wiring pads labelled
 - [x] Project constraints at or above JLCPCB's published limits (re-read 2026-11-11)
 - [x] Ground system: signal / ground / signal / ground with nothing routed on a plane,
@@ -32,6 +36,9 @@ JLCPCB design limits: `../docs/04-jlcpcb-fabrication.md`.
 - [ ] **Transformer identified** — centre-tapped (leave `JP_BR` open, CT to the `CT`
       pad) or single winding (fit `JP_BR`, `CT` pad empty). Never both (errata #26)
 - [ ] `python3 kicad/gen/jlc_parts.py --check` — parts still in stock
+- [ ] **Fuse F1 is a T1.6A** time-lag 5 × 20 mm (errata #33), and the bright cap
+      `C_treble` is on your parts order (hand-fitted, errata #36)
+- [ ] After soldering: **0 Ω between test points `GND` and `PGND`** before first power-up
 - [ ] JLCPCB's Gerber viewer matches `smd/cambridge_reverb_smd-top.svg`, every layer
 - [ ] JLCPCB's placement preview: D1 / D2 cathodes, Q1 / Q2 / Q_rec / Q_trem orientation
 - [ ] Mains side: fused IEC inlet (T800 mA at 120 V), earth bonded to the chassis —

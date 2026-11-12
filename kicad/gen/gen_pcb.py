@@ -73,7 +73,9 @@ PROFILES = {
   # silkscreen labels cost no board area there (the SMD board keeps 0.4 mm of clear silk).
   # GAP 1.5 / ZONE_GAP 3.0 / BOT_GAP 4.0 (were 1.6 / 3.5 / 4.5) since the axial VTL5C1 footprint
   # (2026-11): with the old numbers the narrowest fitting columns needed 167 mm of 159.5.
-  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=3.0, BOT_GAP=4.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
+  # ZONE_GAP 2.5 (was 3.0) since the star ground and the PA input filter (2026-11-12, +3 parts):
+  # the narrowest fitting columns need 161.7 mm; 3.0 mm channels left 161.0.
+  "tht": dict(BW=190.0, BH=115.0, GAP=1.5, MARGIN=10.0, ZONE_GAP=2.5, BOT_GAP=4.0, TOP_POUR=True,  LAYERS=4, OUT="cambridge_reverb.kicad_pcb",     SUBDIR="", LBL_CLEAR=0.05),
   # SMD board 170x100 since the 4-layer / keepout regime (was 155x90, Part 7's "safe bet"):
   # at a 0.5 mm part gap no via fits next to an SMD ground or rail pad, and 30 of 52 open
   # links were exactly those. 170x100 still fits any chassis the 190x115 original did.
@@ -85,10 +87,42 @@ PROFILE = "tht"
 MARGIN = 10.0              # (set per profile in configure())
 ZONE_GAP = 4.0             # empty channel between columns (routing room)
 ZONE_VGAP = 2.0            # gap between zones stacked in one column
+# Parts that must sit AT a heat-sinked IC. LM1875 data sheet, "Stability": "keep the output
+# compensation components and the 0.1 uF supply decoupling capacitors as close as possible
+# to the LM1875"; LM317: R1 straight on the output pin. They used to land wherever the shelf
+# packer put them -- 46-66 mm from the LM1875 (errata #32). Now they are packed FIRST, in
+# this order, on the shelves directly under the IC (below its keep-out and the zone's
+# test-point strip): ~20 mm of 1.5 mm trace over a plane is 4 nH, less than the TO-220's
+# own leads.
+# The 190 x 115 THT board is full (2.8 mm of column width to spare before this pass): there
+# only the LM1875's decoupling and Zobel lead, which costs it nothing.
+CLOSE_BY_PROFILE = {
+  "smd": {"IC_PA": ["C_byp1", "C_zobel", "R_zobel", "C_byp2", "R_fb", "R_gain", "C_lp", "R_lp", "R_bias3", "C_gain"],
+          "U1":    ["R_reg1", "C_reg_out2", "C_reg_in", "C_reg_out1", "C_adj", "R_reg2", "R_reg2b"]},
+  "tht": {"IC_PA": ["C_byp1", "C_zobel", "R_zobel", "C_byp2"]},
+}
+# SMD board only (it has the room): the JFET rail's RC filter (drawn on the PSU sheet)
+# decouples at the PREAMP, to the preamp's ground -- a resistor-loaded JFET stage has no
+# supply rejection, so wherever C_pre's negative pin sits IS the reference of Q1's and
+# Q2's output. (With the star ground of errata #32 the planes are quiet either way.)
+SHEET_OVERRIDE_BY_PROFILE = {"smd": {"R_pre": "Preamp", "C_pre": "Preamp"}}
+# SMD board: the CLOSE parts get a shelf of their own directly under the IC's keep-out, AHEAD
+# of the zone's test-point strip (9 mm nearer the pins than behind it)
+CLOSE_OWN_SHELF = {"smd": True}
+# Parts packed directly AFTER an IC, ahead of the zone's other tall parts (SMD board; the
+# THT board is full and keeps its order). Height-class sorting put the reverb op-amp first
+# and its feedback network at the far end of the same row, behind four electrolytics: a
+# 40 mm inverting-input node, and tank-drive nets (0.6 / 0.8 mm rules) that the routers
+# could not always get across the column.
+NEAR_BY_PROFILE = {
+  "smd": {"IC1": ["R_mixfb", "C_mixfb", "R_drymix", "R_wetmix",      # summer: SUMJ / BLEND, pins 6 / 7
+                  "R_drv1", "R_drv2", "R_drvbias", "C_drvin", "R_drv3"]},   # tank driver: pins 1-3
+}
 def configure(profile):
     """Select the build profile: board size, margins, part gap, output path (+ gen_kicad's footprint map)."""
-    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR, LAYERS, STRIP_CELL
+    global PROFILE, BW, BH, GAP, MARGIN, ZONE_GAP, EDGE_Y, MAIN_TOP, MAIN_BOT, OUT, TOP_POUR, LAYERS, STRIP_CELL, CLOSE
     PROFILE = profile; P = PROFILES[profile]
+    CLOSE = CLOSE_BY_PROFILE[profile]
     BW, BH, GAP, MARGIN, ZONE_GAP, LAYERS = P["BW"], P["BH"], P["GAP"], P["MARGIN"], P["ZONE_GAP"], P["LAYERS"]
     STRIP_CELL = max(0.0, STRIP - (GAP - P.get("LBL_CLEAR", LBL_CLEAR)))
     TOP_POUR = P["TOP_POUR"]        # SMD board: F.Cu GND pour connects the SMD ground pads solid (plus a via each from the router)
@@ -122,7 +156,8 @@ EDGE_ZONE = {"J_IN1": 0, "J_IN2": 0, "J_IN3": 0,
              "LS1": 4,
              "JP_BR": 5,                   # the no-centre-tap link: two power pads right beside the transformer pads
              "T1": 5}                      # transformer pads: far right, away from signal
-BODY_ZONE = {"R_spk_rtn": 4}                # switching-sheet part that lives on the board body
+BODY_ZONE = {"R_spk_rtn": 4, "R_gnd": 4}    # switching-sheet parts that live on the board body: the speaker return
+                                            # link and the star link from the speaker's - terminal to the planes
 # The 155x90 SMD board's wiring edge (137 mm between the corner holes) is ~9 mm
 # too short for all 13 connector groups once the Bass/Treble pots and the mid-cut
 # toggle join it, so there the input-jack pads run down the LEFT edge instead,
@@ -160,8 +195,8 @@ ZONE_WEIGHT = {1: 1.35, 4: 1.05}     # (a bigger PA weight starves the effects c
 # inside their outline; the heat-sinked TO-220s carry it below (the tab side is the
 # board edge / heatsink).
 LBL = {}                   # ref -> (mode, label width mm): "above" | "below" | "inside" | "edge" | None
-BOARD_ID = {"tht": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  THT  REV B  2026-11",
-            "smd": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  SMD/THT  REV B  2026-11"}
+BOARD_ID = {"tht": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  THT  REV C  2026-11",
+            "smd": "VOX CAMBRIDGE REVERB  25-5274-2 REBUILD  SMD/THT  REV C  2026-11"}
 # off-board wiring pads: what each pad is FOR (printed next to it), pad number -> label.
 # Pots: lug 1 = CCW end, 2 = wiper, 3 = CW end (clockwise = more on every control).
 POT_PADS = {"1": "CCW", "2": "W", "3": "CW"}
@@ -177,7 +212,7 @@ PAD_LABELS = {
   "JP_BR": {"1": "NO CT", "2": "ONLY"},      # read together: fit the link for a transformer with NO centre tap ONLY
 }
 # a second silk line under a part where the reference alone is not enough
-NOTE = {"F1": "T1A 250V"}
+NOTE = {"F1": "T1.6A 250V"}
 LEFT_LABEL = 2.4           # extra room right of the left-edge jack pads for their labels (SMD board)
 
 def label_mode(fp, c):
@@ -458,13 +493,18 @@ def escape_stubs(board, fps):
         return 0
     fp = fps["IC_PA"][1]
     n = 0
-    # pin 3 (GND, V-) needs no stub: it is a THT pad in the bottom GND pour.
-    for num, dx, dy in (("4", 0.0, 6.0), ("5", 5.0, 5.0)):
+    # pin 3 (V-) is on the power ground PGND since errata #32 -- a routed net, not a pad in
+    # the plane -- so it needs its own way out: straight down like pin 4, but on the INNER
+    # signal layer, where nothing else leaves the pin row (4-layer boards only).
+    stubs = [("4", 0.0, 6.0, pcbnew.F_Cu), ("5", 5.0, 5.0, pcbnew.F_Cu)]
+    if LAYERS == 4:
+        stubs.append(("3", 0.0, 6.0, pcbnew.In2_Cu))
+    for num, dx, dy, layer in stubs:
         pad = [p for p in fp.Pads() if p.GetNumber() == num][0]
         c = pad.GetCenter()
         t = pcbnew.PCB_TRACK(board)
         t.SetStart(c); t.SetEnd(pcbnew.VECTOR2I(c.x + mm(dx), c.y + mm(dy)))
-        t.SetWidth(mm(0.9)); t.SetLayer(pcbnew.F_Cu); t.SetNetCode(pad.GetNetCode())
+        t.SetWidth(mm(0.9)); t.SetLayer(layer); t.SetNetCode(pad.GetNetCode())
         t.SetLocked(True); board.Add(t); n += 1
     return n
 
@@ -685,7 +725,7 @@ def main():
         elif ref in EDGE_ZONE:   edge_parts[EDGE_ZONE[ref]].append((c, fp))
         elif ref in BODY_ZONE:   zone_parts[BODY_ZONE[ref]].append((c, fp))
         else:
-            c = dict(c, sheet=SHEET_OVERRIDE.get(ref, c["sheet"]))
+            c = dict(c, sheet=SHEET_OVERRIDE_BY_PROFILE.get(PROFILE, {}).get(ref, SHEET_OVERRIDE.get(ref, c["sheet"])))
             zone_parts[sheet_zone[c["sheet"]]].append((c, fp))
 
     # inside a zone keep the sheet (signal-chain) grouping; within a sheet sort by
@@ -700,14 +740,26 @@ def main():
         return (1, 0.0)                  # axials, discs, chips: schematic order
     for zp in zone_parts:
         zp.sort(key=lambda cf: (sheet_order.index(cf[0]["sheet"]), hkey(cf[1])))
+        for ic, lst in NEAR_BY_PROFILE.get(PROFILE, {}).items():
+            refs = [c["ref"] for c, _ in zp]
+            if ic not in refs: continue
+            moved = [cf for r in lst for cf in zp if cf[0]["ref"] == r]
+            rest = [cf for cf in zp if cf[0]["ref"] not in lst]
+            i = [c["ref"] for c, _ in rest].index(ic) + 1
+            zp[:] = rest[:i] + moved + rest[i:]
 
     def pack_zone(zi, x0, x1, y):
         """Place zone zi between x0..x1 starting at y; returns the y its parts reach."""
+        in_zone = {c["ref"]: (c, fp) for c, fp in zone_parts[zi]}
+        first = []                             # CLOSE parts: the shelf right under the keep-out
         for ref, z in HEATSINK.items():        # top edge, centred, tab (-y) outward
             if z == zi and ref in hs:
                 w, h, _, _ = bbox_mm(hs[ref][1])
                 put(hs[ref][1], (x0 + x1) / 2, y + h / 2 + 1.0, 0)
                 y += h + 1.0 + KEEPOUT
+                first += [in_zone.pop(r) for r in CLOSE.get(ref, []) if r in in_zone]
+        if first and CLOSE_OWN_SHELF.get(PROFILE):
+            y = shelf_pack(first, x0, x1, y, MAIN_BOT)[0] + GAP; first = []
         # test-point strip: a row of labelled 2 mm pads across the top of the zone,
         # where a probe reaches them without leaning over parts
         tps = tp_parts[zi]
@@ -717,7 +769,11 @@ def main():
                 r, k = divmod(i, per_row)
                 put(fp, x0 + k * TP_W + TP_W / 2, y + r * TP_H + TP_H - 1.6, 0)   # label above, courtyard flush with the cell
             y += ((len(tps) - 1) // per_row + 1) * TP_H + GAP
-        ybot, _ = shelf_pack(zone_parts[zi], x0, x1, y, MAIN_BOT)
+        # THT board: one continuous packing -- the CLOSE parts lead, the zone's other parts follow
+        # on the same shelves, below the test-point strip (their own shelf leaves a ragged row
+        # that board has no room for)
+        rest = first + [cf for cf in zone_parts[zi] if cf[0]["ref"] in in_zone]
+        ybot, _ = shelf_pack(rest, x0, x1, y, MAIN_BOT) if rest else (y - GAP, [])
         return ybot
 
     def pack_column(ci, x0, x1):

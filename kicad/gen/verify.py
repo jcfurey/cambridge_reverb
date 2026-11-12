@@ -23,6 +23,10 @@ kicad/reports/verify-<profile>.txt (committed evidence).
                 pins, pot directions, footswitch lines, vactrol LED polarity
   silkscreen    every part has a visible reference of legal size on the front silk
   JLCPCB limits the project's DRC constraints are at or above JLCPCB's published ones
+  grounding     the star: power ground, speaker return and signal ground are three nets
+                joined by two 0R links and nothing else; kicad/gen/ground_audit.py solves the
+                routed copper for the hum and the feedback the return currents cause; the
+                LM1875's decoupling and Zobel sit at the IC and its feedback is resistive
   RF rules      kicad/gen/rf_audit.py on the finished copper: signal / GND / signal / GND
                 with nothing routed on a plane, no slot in a plane beyond the unavoidable
                 ones, edge pull-back, pour gaps, the ground fence and stitching density,
@@ -61,7 +65,7 @@ TO92 = {"NJFET": {"1": "D", "2": "S", "3": "G"},      # onsemi 2N5457 / J113
         "NPN":   {"1": "E", "2": "B", "3": "C"}}      # onsemi 2N3904
 # electrolytics: pad 1 is "+" on every KiCad CP_Radial footprint
 # DC operating point of the nets an electrolytic or a clamp can sit on (V, nominal)
-DC = {"GND": 0, "+33V5": 33.5, "VRAW": 34.0, "VREG_IN": 30.5, "+17V": 17.3, "+17V_PRE": 17.0, "ADJ17": 16.1,
+DC = {"GND": 0, "PGND": 0, "SPK_N": 0, "+33V5": 33.5, "VRAW": 34.0, "VREG_IN": 30.5, "+17V": 17.3, "+17V_PRE": 17.0, "ADJ17": 16.1,
       "VBIAS_R": 8.6, "VBIAS_T": 8.6, "VBIAS_3": 8.6, "Q1S": 1.1, "Q2S": 1.1, "QRS": 1.1,
       "PA_BREF": 16.75, "PA_GAIN": 16.75, "PA_OUT": 16.75, "SPK_P": 0.0, "R_DRVO": 8.6, "TKDRV": 0.0,
       "DPT_W": 8.6, "QDRV": 0.9, "TREM_OUT": 8.6, "TREM_S": 0.0}
@@ -187,14 +191,14 @@ def check_electrical(rep, pcbnew, b):
     A = lambda ok, text: rep.add("electrical", ok, text)
     # clamp diodes: pad 1 = cathode on both diode footprints
     A(N("D1", "1") == "+33V5" and N("D1", "2") == "PA_OUT", f"D1 clamps the output to V+: cathode {N('D1', '1')}, anode {N('D1', '2')}")
-    A(N("D2", "1") == "PA_OUT" and N("D2", "2") == "GND", f"D2 clamps the output to GND: cathode {N('D2', '1')}, anode {N('D2', '2')}")
+    A(N("D2", "1") == "PA_OUT" and N("D2", "2") == "PGND", f"D2 clamps the output to power ground: cathode {N('D2', '1')}, anode {N('D2', '2')}")
     A(DC[N("D1", "1")] > DC[N("D1", "2")] and DC[N("D2", "1")] > DC[N("D2", "2")], "both clamp diodes are reverse-biased at the DC operating point")
     A({N("LED_rate", "1"), N("LED_rate", "2")} == {N("LED_lim", "1"), N("LED_lim", "2")} and N("LED_rate", "1") == N("LED_lim", "2"),
       "LFO limiter LEDs are antiparallel")
     # rectifier: a centre tap on GND and the bridge '-' on GND short each half winding
     ct, neg = N("T1", "2"), N("BR1", "4")
-    A(not (ct == "GND" and neg == "GND"), f"rectifier: T1 centre tap on {ct}, bridge '-' on {neg} (not both hard-wired to GND)")
-    A({N("JP_BR", "1"), N("JP_BR", "2")} == {neg, "GND"}, "JP_BR is the only path from the bridge '-' pin to GND")
+    A(ct == "PGND" and neg not in ("GND", "PGND", "SPK_N"), f"rectifier: T1 centre tap on {ct}, bridge '-' on {neg} (not both hard-wired to ground)")
+    A({N("JP_BR", "1"), N("JP_BR", "2")} == {neg, "PGND"}, "JP_BR is the only path from the bridge '-' pin to power ground")
     A(N("BR1", "1") == "VRAW" and {N("BR1", "2"), N("BR1", "3")} == {"AC1", "AC2"}, "bridge: + on VRAW, ~ on the two secondary ends")
     # electrolytics against the DC operating point
     bad, n = [], 0
@@ -206,7 +210,7 @@ def check_electrical(rep, pcbnew, b):
     A(not bad and n > 0, f"{n} electrolytics: '+' pad on the more positive net" + ("" if not bad else " -- " + "; ".join(bad)))
     # supplies
     sup = [("IC1", "8", "+17V"), ("IC1", "4", "GND"), ("IC2", "8", "+17V"), ("IC2", "4", "GND"), ("IC3", "4", "+17V"), ("IC3", "11", "GND"),
-           ("IC_PA", "5", "+33V5"), ("IC_PA", "3", "GND"), ("U1", "3", "VREG_IN"), ("U1", "2", "+17V"), ("U1", "1", "ADJ17")]
+           ("IC_PA", "5", "+33V5"), ("IC_PA", "3", "PGND"), ("U1", "3", "VREG_IN"), ("U1", "2", "+17V"), ("U1", "1", "ADJ17")]
     wrong = [f"{r}.{p}={N(r, p)} (want {w})" for r, p, w in sup if N(r, p) != w]
     A(not wrong, "IC supply pins" + ("" if not wrong else ": " + ", ".join(wrong)))
     # JFET stages: drain through its load to the decoupled rail, source through its resistor to GND, gate never on a rail
@@ -233,6 +237,43 @@ def check_electrical(rep, pcbnew, b):
     A(N("L1", "2") == "FS_MRB" and N("C_mrb_600", "2") == "FS_MRB" and "GND" not in (N("L1", "1"), N("L1", "2")),
       "MRB tank returns through the footswitch line (out of circuit when the pedal is open)")
     A(N("POT_REV", "3") == "FS_REV" and N("Q_trem", "2") == "FS_TREM", "reverb and tremolo are defeated by grounding their footswitch lines")
+
+def check_ground(rep, pcbnew, b, pcb, profile):
+    """The star ground (errata #32) and the LM1875's surroundings (errata #35)."""
+    import ground_audit
+    A = lambda ok, text: rep.add("grounding", ok, text)
+    net = {}
+    for fp in b.GetFootprints():
+        for p in fp.Pads(): net.setdefault(fp.GetReference(), {})[p.GetNumber()] = p.GetNetname()
+    G = {"GND", "PGND", "SPK_N"}
+    bridges = sorted(r for r, d in net.items() if len(set(d.values()) & G) > 1)
+    ends = lambda r: set(net.get(r, {}).values())
+    A(bridges == ["R_gnd", "R_spk_rtn"] and ends("R_spk_rtn") == {"SPK_N", "PGND"} and ends("R_gnd") == {"SPK_N", "GND"},
+      f"signal ground, speaker return and power ground are three nets joined only by R_spk_rtn (SPK_N-PGND) and R_gnd (SPK_N-GND); parts bridging them: {bridges}")
+    want = [("T1", "2"), ("C_main", "2"), ("IC_PA", "3"), ("C_byp1", "2"), ("C_byp2", "2"), ("C_zobel", "2"), ("D2", "2"), ("C103", "2"), ("C104", "2")]
+    wrong = [f"{r}.{p}={net.get(r, {}).get(p)}" for r, p in want if net.get(r, {}).get(p) != "PGND"]
+    A(not wrong, "the heavy returns are on power ground: transformer centre tap, reservoir, LM1875 pin 3 with its decoupling, Zobel and clamp" + ("" if not wrong else ": " + ", ".join(wrong)))
+    zones = sorted({z.GetNetname() for z in b.Zones() if not z.GetIsRuleArea()})
+    A(zones == ["GND"], f"the planes and the pour are signal ground only (zones on: {', '.join(zones)})")
+    fb = sorted(r for r, d in net.items() if set(d.values()) == {"PA_INV", "PA_OUT"})
+    A(fb == ["R_fb"] and ends("R_lp") == {"PA_LP", "PA_BIAS"} and ends("C_lp") == {"PA_BIAS", "GND"},
+      f"LM1875 feedback is resistive (parts across PA_INV / PA_OUT: {fb}): noise gain 23 at every frequency; the 7.5 kHz roll-off is R_lp / C_lp at the + input")
+    R = ground_audit.audit(pcb)
+    for name, limit in (("charge-CT", 100.0), ("charge-BR", 100.0)):
+        h = R["loops"][name]
+        A(not h.get("missing") and h["hum"]["speaker_uV_rms"] <= limit and h["hum_hot"]["speaker_uV_rms"] <= 4 * limit,
+          f"{name}: ground-return hum at the speaker at idle {h['hum']['speaker_uV_rms']} uV rms "
+          f"({h['hum']['pulses_uV_rms']} uV from the charging pulses + {h['hum']['prefilter_uV_rms']} uV from the pre-filter's ripple current; "
+          f"{h['hum_hot']['speaker_uV_rms']} uV with the source bypass caps fitted) -- limit {limit:g} uV")
+    worst = max(R["loops"][n]["feedback_hot"]["loop_gain_dB"] for n in ("speaker", "speaker-IC"))
+    A(worst <= -80.0, "loudspeaker return: " + ("no speaker current in the planes" if worst < -200 else f"loop gain through the ground copper {worst} dB at most") + " (limit -80 dB), "
+      f"{max(R['loops'][n]['series_mohm'] for n in ('speaker', 'speaker-IC'))} mohm in series with the speaker")
+    d = R["pa_support"]; lim = 26.0 if profile == "smd" else 32.0
+    far = {k: v for k, v in d.items() if k.startswith(("C_byp1", "C_byp2", "R_zobel", "C_zobel")) and (v is None or v > lim)}
+    A(not far, f"LM1875 decoupling and Zobel within {lim:g} mm of its pins (C_byp1 {d['C_byp1 (100 nF) to pin 5']}, C_byp2 {d['C_byp2 (10 uF) to pin 5']}, "
+      f"R_zobel {d['R_zobel to pin 4']}, C_zobel {d['C_zobel ground to pin 3']} mm)" if not far else f"too far from the LM1875: {far}")
+    json.dump(R, open(os.path.join(ROOT, "kicad", "reports", f"ground-{profile}.json"), "w"), indent=1)
+    open(os.path.join(ROOT, "kicad", "reports", f"ground-{profile}.md"), "w").write(ground_audit.report(R))
 
 def check_silk(rep, pcbnew, b):
     missing, small = [], []
@@ -363,7 +404,8 @@ SPICE_EXEMPT = {("ac_hum_psrr.cir", "R_s1"): "trimmed 1.2 k (errata #15)", ("ac_
                 ("noise_frontend.cir", "R_s1"): "trimmed 1.2 k (errata #15)", ("noise_frontend.cir", "R_s2"): "trimmed 1.2 k (errata #15)",
                 ("ac_power_amp_lm1875.cir", "R_e"): "speaker model element, not the tremolo R_e",
                 ("ac_power_amp_lm1875.cir", "C_res"): "speaker model element, not the tone C_res",
-                ("sweep_pa_headroom.cir", "R_b1"): "local name for the PA bias divider", ("sweep_pa_headroom.cir", "R_b2"): "local name for the PA bias divider"}
+                ("sweep_pa_headroom.cir", "R_b1"): "local name for the PA bias divider", ("sweep_pa_headroom.cir", "R_b2"): "local name for the PA bias divider",
+                ("ac_mrb.cir", "C_mrb_600"): "SMD board: 3 x 22 nF; THT board: one 68 nF film capacitor (within 3 %)"}
 def check_spice(rep, vals, run):
     sch = {}
     for ref, v in vals.items():
@@ -412,6 +454,13 @@ def check_spice(rep, vals, run):
     t = res("sweep_pa_headroom.txt"); m = re.search(r"^33\.5 (\S+) (\S+) (\S+) (\S+) (\S+)", t, re.M)
     pw = float(m.group(5)) if m else float("nan")
     lim.append((pw >= 11, f"power amp at the nominal rail: {pw:.1f} W into 8 ohm (>= 11)"))
+    t = res("ac_power_amp_lm1875.txt"); fhi = num(t, r"fhi\s*=\s*([\d.eE+-]+)"); g300 = num(t, r"g_300\s*=\s*([\d.eE+-]+)")
+    lim.append((6.5e3 <= fhi <= 8.5e3 and 26.0 <= g300 <= 27.5, f"power amp: {g300:.1f} dB, HF -3 dB at {fhi / 1e3:.1f} kHz from the input low-pass (6.5 .. 8.5)"))
+    t = res("ac_pa_stability.txt")
+    pm = {(m, c): num(t, rf"m={m} cfg={c} .*PHASE MARGIN=([-\d.eE+]+)") for m in "12" for c in "012"}
+    lim.append((min(pm[("1", "2")], pm[("2", "2")]) >= 60, f"LM1875 phase margin with resistive feedback: {pm[('1', '2')]:.0f} / {pm[('2', '2')]:.0f} deg "
+                f"(amplifier modelled with 45 / 60 deg at the data sheet's minimum gain of 10); >= 60"))
+    lim.append((max(pm[("1", "1")], pm[("2", "1")]) < 20, f"...and why the 1 nF across R_fb had to go: {pm[('1', '1')]:.0f} / {pm[('2', '1')]:.0f} deg with it"))
     for ok, text in lim: rep.add("SPICE", ok, text)
 
 def main():
@@ -433,6 +482,7 @@ def main():
     check_electrical(rep, pcbnew, b)
     check_silk(rep, pcbnew, b)
     check_jlc(rep, pcb)
+    check_ground(rep, pcbnew, b, pcb, a.profile)
     check_rf(rep, pcbnew, b, pcb, a.profile)
     if a.profile == "smd":
         check_package(rep, pcbnew, b)

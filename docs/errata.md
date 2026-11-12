@@ -552,3 +552,148 @@ short way home instead of a detour through the audio path.
 **Severity:** MEDIUM — the old copper would have worked as an audio board; it would
 have been needlessly open to hum fields and radio pickup, and three of the four
 defects were invisible to DRC.
+
+## Issue 32 — One ground net: the reservoir's charging pulses and the speaker current ran through the planes the preamp is referenced to (2026-11-12) — HIGH (design change)
+A ground plane is not an equipotential. The rectifier refills `C_main` in pulses
+(0.7 A peaks at idle, 3 A at full power), and they returned from the reservoir's
+negative pin to the transformer's centre-tap pad **through the planes, 57 mm
+apart**; the loudspeaker current took the same copper from `R_spk_rtn` to the reservoir
+and to the LM1875's ground pin. Part 3 has always said "single star-ground point near
+C_main … all ground returns land at the star"; the board never had one.
+
+New tool **`kicad/gen/ground_audit.py`**: it rasterises the routed ground copper of all
+layers, joins them through every via and solves the resistor network (finite
+differences, 738 000 nodes). For each current loop it reports the voltage that appears
+*between the two ground references of each stage*, multiplies by that stage's gain to
+the speaker (from `spice/results/`), and sums — with a time-domain rectifier model for
+the pulse spectrum. On the boards as committed on 2026-11-11:
+
+| | SMD board | THT board |
+|---|---:|---:|
+| Buzz at the speaker at idle, standard build | **4.4 mV rms** (31 dBA at 1 m) | **7.4 mV** (36 dBA) |
+| … with `C_s1` / `C_s2` fitted | 6.9 mV (35 dBA) | 23.9 mV (46 dBA) |
+| Speaker current → ground drop → back into the amplifier: loop gain | -49 dB | -42 dB (-31 dB with the bypass caps) |
+| LM1875 0.1 µF decoupling / Zobel, distance from the IC | 66 / 62 mm | 71 / 62 mm |
+
+Largest shares: the reverb recovery stage (tank return pad against the JFET's source
+bypass, ×575 to the speaker) and the preamp rail filter `C_pre`, whose negative pin sat
+in the power-supply corner although a resistor-loaded JFET stage has no supply rejection
+— wherever that pin is, is the reference of Q1's and Q2's output.
+
+**Resolution** (both boards):
+- **Three ground nets.** `PGND` (power ground: T1 centre tap, `JP_BR`, `C_main` −,
+  snubbers `C103`/`C104`, LM1875 pin 3 with `C_byp1`, `C_byp2`, `C_zobel`, `D2`),
+  `SPK_N` (the speaker's return pad) and `GND` (everything else = the planes). `PGND`
+  and `SPK_N` are 1.5 mm traces. `R_spk_rtn` (0 Ω) links `SPK_N` to `PGND`; the new
+  **`R_gnd` (0 Ω) links `SPK_N` to the planes — the star.** The planes take their
+  reference from the speaker's own "−" terminal, so no drop on the power ground is in
+  series with anything. The star is in the netlist, not in the placement: however the
+  router lays the traces, the pulses have no path through `SPK_N` or `GND`.
+- **LM1875 parts at the LM1875** (data sheet: "as close as possible"): `C_byp1`,
+  `C_zobel`, `R_zobel`, `C_byp2` lead the packing order of the power-amp zone, on the
+  SMD board also the feedback and input-filter parts and the LM317's set resistor and
+  capacitors (`gen_pcb.CLOSE`). Pin 3 gets its own escape stub on the inner signal layer.
+- **SMD board: `R_pre` / `C_pre` move to the preamp** (`SHEET_OVERRIDE_BY_PROFILE`), and
+  the reverb op-amp's feedback and summing parts sit directly beside it
+  (`NEAR_BY_PROFILE`): height-class sorting had put them 35–40 mm away behind four
+  electrolytics — a long inverting-input node, and tank-drive nets the routers could
+  no longer get across the column. Worst crosstalk pair on the re-routed board:
+  `R_DRVO` → `SUMJ` **−84 dB** (was `R_DRVO` → `TANK_OUT` −61 dB).
+- A chassis-bond pad pair `J_CHS` on signal ground (SMD board) and a `PGND` test point.
+
+| After | SMD board | THT board |
+|---|---:|---:|
+| Buzz at the speaker at idle, standard / with bypass caps | **13 µV / 22 µV** | **31 µV / 82 µV** |
+| Loop gain through the ground copper | none dB | none dB |
+| `C_byp1` / `R_zobel` from the IC | 20 / 15 mm | 25 / 25 mm |
+
+`verify.py` has a new "grounding" group: the three nets are bridged by exactly the two
+0 Ω links, the heavy returns are on `PGND`, no plane carries anything but `GND`, the
+audit's hum and loop-gain figures are inside limits, the decoupling is at the IC.
+**What the audit is not:** a field solver or a measurement. It is a DC sheet model with
+simulated gains and a resistive transformer; it compares layouts and gives an order of
+magnitude. Magnetic pickup from the transformer and chassis loops are outside it.
+**Severity:** HIGH — an audible buzz that no amount of filtering would have removed,
+and on the THT board enough ground feedback to matter with the hot preamp option.
+
+## Issue 33 — F1: a 1 A fuse in a path that carries 1.1–1.5 A rms (2026-11-12) — MEDIUM
+`F1` sits between the bridge and the reservoir, so it carries the charging pulses, not
+the average rail current. The rectifier model in `ground_audit.py` (24-0-24 V, 2.8 Ω per
+half winding, 4700 µF): 0.24 A rms at idle, **1.11 A rms at full sine power (0.64 A
+average), 1.54 A rms driven into clipping.** A T1A fuse runs above its rating exactly
+when the amplifier is played hard and fails after hours, not seconds — the kind of fault
+that reads as "the amp died at the gig". (The roast, R5, already called it marginal.)
+**Resolution:** `F1` = **T1.6A 250 V time-lag** (5 × 20 mm; silkscreen note updated).
+That is 69 % loading at full sine power, and it still opens at about 110 % of the 50 VA
+transformer's secondary rating; a short behind it draws over 8 A and clears it at once.
+**Severity:** MEDIUM — nuisance blowing; no hazard either way.
+
+## Issue 34 — LM317 set resistor: errata #10 "corrected" 3.0 kΩ to an E96 value the regulator cannot resolve (2026-11-12) — LOW
+Issue 10 computed 1.25 × (1 + 3000/240) = 16.88 V, found it 0.13 V under the
+"17.0–17.5 V" quoted in Part 2, and specified 3.09 kΩ (E96). Two things were missing:
+the adjust-pin current (50 µA typ, × 3.0 kΩ = +0.15 V, so the original value gives
+**17.03 V** typical), and the reference tolerance (1.20–1.30 V): any LM317 lands between
+**16.4 and 17.7 V** whichever of the two resistors is fitted. The E96 part was also the
+SMD board's only 1206 resistor and an extended part of its own.
+**Resolution:** `R_reg2` = 3.0 kΩ — on the SMD board as 2 × 1.5 kΩ 0805 in series
+(`R_reg2`, `R_reg2b`: 42 mW each; one 0805 would run at 83 mW of its 125). Part 2 / 3
+now quote 17.0 V typical, 16.4–17.7 V.
+**Severity:** LOW.
+
+## Issue 35 — LM1875: the 1 nF across the feedback resistor takes its noise gain to 1; the IC is stable for gains ≥ 10 (2026-11-12) — HIGH
+`C_fb_hf` (1 nF across `R_fb` 22 k) set the 7.2 kHz "guitar" roll-off. It also makes the
+feedback network's attenuation fall with frequency: the noise gain 1 + Z_f/R_gain is 23
+in the audio band, **below 10 above 16 kHz and 1 above about 160 kHz**. The LM1875 "is
+designed to be stable when operated at a closed-loop gain of 10 or greater" (data
+sheet, Application Hints) — it is not unity-gain compensated, and with this network the
+loop closes at its unity-gain frequency. `spice/ac_power_amp_lm1875.cir` could not see
+it: a one-pole op-amp model has 90° of phase margin at any gain.
+
+New `spice/ac_pa_stability.cir` with a three-pole model (`models/opamp3p.sub`; GBW 5.5 MHz
+from the data sheet, the non-dominant poles set so the amplifier has 45° — or,
+generously, 60° — of phase margin at a noise gain of 10):
+
+| | phase margin (45° / 60° model) | loop crosses unity at |
+|---|---:|---:|
+| calibration: plain gain of 10 | 48° / 61° | 0.46 / 0.51 MHz |
+| **as drawn: 1 nF across R_fb** | **−9° / −1°** | 1.8 / 2.3 MHz |
+| resistive feedback, roll-off at the input | **+68° / +76°** | 0.23 MHz |
+
+**Resolution:** `C_fb_hf` removed; the roll-off is an RC in front of the + input —
+**`R_lp` 1 k** between `C_in_pa` and the pin, **`C_lp` 22 nF C0G** from the pin to
+ground (7.7 kHz with `R_bias3`; simulated). The feedback is `R_fb` / `R_gain` and
+nothing else, which `verify.py` now asserts. Side effects: 0.6 dB less gain (input
+divider), and the input finally has the series resistor and shunt capacitor the same
+data-sheet section recommends against RF pickup. The class-A variant schematic
+(`gen_classa.py`) had the same capacitor — and still carried the pre-#25 diode pin
+order — both corrected.
+**Severity:** HIGH — an output stage that would probably have oscillated in the
+megahertz range, cooking the Zobel resistor; the Part 3 troubleshooting table even
+lists "high-frequency squeal — LM1875 oscillating".
+
+## Issue 36 — JLCPCB assembly: 14 extended part types where 3 are needed (2026-11-12) — LOW (cost)
+The 2026-11-11 part selection looked for C0G capacitors in the footprint the board
+already had (1206) and found every one of them "extended" ($3.07 loading fee per part
+type per order). JLCPCB's **basic** library does hold C0G 33 pF, 100 pF and 2.2 nF and a
+**100 V** X7R 100 nF — in 0805. Re-selected, with every part looked up live again:
+
+| Change | Why it is free |
+|---|---|
+| 100 pF, 2.2 nF, 33 pF C0G and the 100 V 100 nF X7R: 1206 → **0805** basic / preferred parts | same dielectric and rating, smaller pad |
+| Snubbers `C101`–`C104` 10 nF → **100 nF** (the same 100 V part as the rail bypass) | any value from 10 to 100 nF does this job |
+| `C_in_pre` 47 nF → **100 nF** C0G (existing line) | 1.6 Hz corner instead of 3.4; less of `R_g1`'s noise reaches the gate |
+| `C_rev2` 10 nF → **22 nF** C0G (existing line) | 7 Hz corner instead of 16; halves `R_rec_bias`'s noise at the gate |
+| `C_mrb_600` 68 nF → **3 × 22 nF** (SMD board) | the 68 nF C0G had 215 pieces in stock; 620 Hz instead of 610 |
+| `R_reg2` 3.09 k 1206 → 2 × 1.5 k 0805 | errata #34 |
+| `C_fb_hf` 1 nF → gone | errata #35 (`C_lp` is on the 22 nF line) |
+| **`C_treble`** 470 pF: hand-fitted on both boards | no basic C0G of that value in any size; and the bright cap is the first part a player changes |
+
+Left as extended, because nothing basic replaces them: 22 nF and 100 nF C0G, and the
+JFET. **26 lines (20 basic, 3 preferred, 3 extended), 99 placed parts; assembly fees for
+five boards $54 → $21, with parts about $45** (`kicad/gen/jlc_cost.py`, with JLCPCB's
+price table as updated 2026-10-22). Part 2's snubber row also listed a 50 V Y5V part
+number for a capacitor that sees twice the secondary peak; corrected to 100 V X7R.
+The THT board keeps one 68 nF film capacitor and one 3 k resistor (and has no `J_CHS`
+or `PGND` test point): it is full — the three parts this pass adds there fit only with
+2.5 mm instead of 3.0 mm channels between the columns.
+**Severity:** LOW — money, and two parts that could have held an order up.

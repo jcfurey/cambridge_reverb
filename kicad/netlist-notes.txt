@@ -9,7 +9,7 @@
 #   R_bias1  22K           Input bias divider (V+ to input)
 #   R_bias2  22K           Input bias divider (input to GND)
 #   R_fb     22K           Feedback resistor (output to inv input)
-#   C_fb_hf  1nF           Feedback HF rolloff (across R_fb)
+#   R_lp 1k / C_lp 22nF    Input low-pass 7.5 kHz (replaces C_fb_hf across R_fb: errata #35)
 #   R_gain   1K            Gain-setting resistor
 #   C_gain   22uF/25V      Gain LF rolloff cap
 #   C_in     1uF/50V       Input coupling cap (film)
@@ -28,7 +28,7 @@
 #   PA_BIAS -> IC_PA pin1 (non-inv +)
 #   IC_PA pin2 (inv -) = PA_INV
 #   PA_INV -> R_fb(22K) -> PA_OUT
-#   PA_INV -> C_fb_hf(1nF) -> PA_OUT  [parallel with R_fb, HF rolloff]
+#   PA_IN -> C_in_pa -> PA_LP -> R_lp(1k) -> PA_BIAS -> C_lp(22nF) -> GND  [HF rolloff at the input; nothing parallels R_fb]
 #   PA_INV -> R_gain(1K) -> C_gain(22uF) -> GND
 #   IC_PA pin3 (V-) -> GND
 #   IC_PA pin5 (V+) -> +33V5

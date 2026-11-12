@@ -1,0 +1,42 @@
+fc                  =  4.619908e+05
+ph                  =  -1.320155e+02
+g1k                 =  1.999688e+01
+fpk                 =  4.739300e+05 with=  1.747957e+00
+f3                  =  8.048093e+05
+ng                  =  2.000001e+01
+m=1 cfg=0 | loop crosses unity at 461991 Hz, noise gain there 20 dB | PHASE MARGIN=47.9845 deg | closed loop: peaking=1.74796 dB at 473930 Hz, -3 dB at 804809 Hz
+fc                  =  1.756361e+06
+ph                  =  -1.889810e+02
+g1k                 =  2.714161e+01
+fpk                 =  2.692053e+02 with=  7.455902e-02
+f3                  =  7.173111e+03
+ng                  =  3.873546e-02
+m=1 cfg=1 | loop crosses unity at 1.75636E+06 Hz, noise gain there 0.0387355 dB | PHASE MARGIN=-8.981 deg | closed loop: peaking=0.074559 dB at 269.205 Hz, -3 dB at 7173.11 Hz
+fc                  =  2.272835e+05
+ph                  =  -1.119757e+02
+g1k                 =  2.659627e+01
+fpk                 =  2.754771e+02 with=  6.164141e-02
+f3                  =  7.825132e+03
+ng                  =  2.723457e+01
+m=1 cfg=2 | loop crosses unity at 227284 Hz, noise gain there 27.2346 dB | PHASE MARGIN=68.0243 deg | closed loop: peaking=0.0616414 dB at 275.477 Hz, -3 dB at 7825.13 Hz
+fc                  =  5.088753e+05
+ph                  =  -1.185060e+02
+g1k                 =  1.999687e+01
+fpk                 =  2.695669e+05 with=  6.027724e-02
+f3                  =  8.751250e+05
+ng                  =  2.000001e+01
+m=2 cfg=0 | loop crosses unity at 508875 Hz, noise gain there 20 dB | PHASE MARGIN=61.494 deg | closed loop: peaking=0.0602772 dB at 269567 Hz, -3 dB at 875125 Hz
+fc                  =  2.326268e+06
+ph                  =  -1.810965e+02
+g1k                 =  2.714158e+01
+fpk                 =  2.295342e+06 with=  8.691788e+00
+f3                  =  7.172072e+03
+ng                  =  2.212295e-02
+m=2 cfg=1 | loop crosses unity at 2.32627E+06 Hz, noise gain there 0.022123 dB | PHASE MARGIN=-1.0965 deg | closed loop: peaking=8.69179 dB at 2.29534E+06 Hz, -3 dB at 7172.07 Hz
+fc                  =  2.339593e+05
+ph                  =  -1.035404e+02
+g1k                 =  2.659625e+01
+fpk                 =  2.754771e+02 with=  6.165941e-02
+f3                  =  7.822357e+03
+ng                  =  2.723457e+01
+m=2 cfg=2 | loop crosses unity at 233959 Hz, noise gain there 27.2346 dB | PHASE MARGIN=76.4596 deg | closed loop: peaking=0.0616594 dB at 275.477 Hz, -3 dB at 7822.36 Hz

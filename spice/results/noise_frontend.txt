@@ -1,17 +1,17 @@
-g_q2d               =  2.799666e+02
-g_tone              =  2.512733e+02
-g_pa                =  5.247774e+03
-cfg=0 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=279.967 | Q2D noise density V/rtHz @100Hz=7.29886E-05 @1k=7.63248E-05 @10k=7.26457E-05 | noise_rms(20Hz-20kHz) Q2D=0.010372 TONE_OUT=0.00930907 PA_OUT=0.194209 | EIN(rms, re Q2D gain)=3.70472E-05 | SNR_at_12W=34.0591 dB
-g_q2d               =  2.799666e+02
-g_tone              =  2.512733e+02
-g_pa                =  5.247774e+03
-cfg=1 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=279.967 | Q2D noise density V/rtHz @100Hz=7.69622E-06 @1k=8.15542E-06 @10k=7.25436E-06 | noise_rms(20Hz-20kHz) Q2D=0.0012261 TONE_OUT=0.00110051 PA_OUT=0.0229688 | EIN(rms, re Q2D gain)=4.37945E-06 | SNR_at_12W=52.6018 dB
-g_q2d               =  2.798231e+02
-g_tone              =  2.511444e+02
-g_pa                =  5.245084e+03
-cfg=2 Vd1=9.31755 Vd2=9.31755 | gain(1k) to Q2D=279.823 | Q2D noise density V/rtHz @100Hz=2.86843E-06 @1k=3.2576E-06 @10k=1.38446E-06 | noise_rms(20Hz-20kHz) Q2D=0.000688055 TONE_OUT=0.000617636 PA_OUT=0.0129027 | EIN(rms, re Q2D gain)=2.45889E-06 | SNR_at_12W=57.6109 dB
-g_q2d               =  2.799666e+02
-g_tone              =  2.512733e+02
-g_pa                =  5.247774e+03
-Rows : 1
-cfg=3 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=279.967 | Q2D noise density V/rtHz @100Hz=2.84693E-06 @1k=3.25888E-06 @10k=1.38549E-06 | noise_rms(20Hz-20kHz) Q2D=0.000688384 TONE_OUT=0.000617936 PA_OUT=0.0129089 | EIN(rms, re Q2D gain)=2.4588E-06 | SNR_at_12W=57.6067 dB
+g_q2d               =  2.803517e+02
+g_tone              =  2.516188e+02
+g_pa                =  4.693417e+03
+cfg=0 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=280.352 | Q2D noise density V/rtHz @100Hz=7.30017E-05 @1k=7.63442E-05 @10k=7.26563E-05 | noise_rms(20Hz-20kHz) Q2D=0.0103737 TONE_OUT=0.00931058 PA_OUT=0.122612 | EIN(rms, re Q2D gain)=3.70023E-05 | SNR_at_12W=38.0539 dB
+g_q2d               =  2.803517e+02
+g_tone              =  2.516188e+02
+g_pa                =  4.693417e+03
+cfg=1 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=280.352 | Q2D noise density V/rtHz @100Hz=7.66698E-06 @1k=8.16288E-06 @10k=7.2552E-06 | noise_rms(20Hz-20kHz) Q2D=0.00122668 TONE_OUT=0.00110103 PA_OUT=0.0157367 | EIN(rms, re Q2D gain)=4.3755E-06 | SNR_at_12W=55.8862 dB
+g_q2d               =  2.802084e+02
+g_tone              =  2.514903e+02
+g_pa                =  4.691018e+03
+cfg=2 Vd1=9.31755 Vd2=9.31755 | gain(1k) to Q2D=280.208 | Q2D noise density V/rtHz @100Hz=2.7854E-06 @1k=3.27201E-06 @10k=1.38345E-06 | noise_rms(20Hz-20kHz) Q2D=0.00068885 TONE_OUT=0.00061836 PA_OUT=0.010201 | EIN(rms, re Q2D gain)=2.45835E-06 | SNR_at_12W=59.6517 dB
+g_q2d               =  2.803517e+02
+g_tone              =  2.516188e+02
+g_pa                =  4.693417e+03
+s : 1
+cfg=3 Vd1=9.46727 Vd2=9.46727 | gain(1k) to Q2D=280.352 | Q2D noise density V/rtHz @100Hz=2.76276E-06 @1k=3.2733E-06 @10k=1.38447E-06 | noise_rms(20Hz-20kHz) Q2D=0.000689177 TONE_OUT=0.000618659 PA_OUT=0.0102052 | EIN(rms, re Q2D gain)=2.45826E-06 | SNR_at_12W=59.6481 dB

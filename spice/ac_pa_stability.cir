@@ -1,0 +1,88 @@
+LM1875 stage -- phase margin with the HF roll-off in the FEEDBACK (old) vs at the INPUT (new)
+* The LM1875 is not unity-gain stable: "designed to be stable when operated at a closed-loop
+* gain of 10 or greater" (data sheet, Application Hints / Stability). What has to stay >= 10
+* is the NOISE gain 1 + Zf/Zg at the frequencies where the loop gain crosses unity.
+*
+*   old: C_fb_hf 1 nF across R_fb 22k. Above 16 kHz the noise gain is below 10, above
+*        ~160 kHz it is 1: the loop then closes at the amplifier's unity-gain frequency.
+*   new: feedback purely resistive (noise gain 23 at every frequency); the 7.5 kHz guitar
+*        roll-off is R_lp / C_lp in front of the + input (errata #35).
+*
+* The data sheet gives GBW = 5.5 MHz and the gain >= 10 rule, not the non-dominant poles,
+* so the amplifier is modelled twice (models/opamp3p.sub):
+*   m=1  as marginal as the rule allows: 45 deg of phase margin at a noise gain of 10
+*   m=2  generous: 60 deg at a noise gain of 10
+* cfg=0 is the calibration (a plain gain-of-10 stage), cfg=1 the old circuit, cfg=2 the new.
+* Loop gain T = A.beta, measured by driving the feedback network from a source in place of
+* the output (the output node carries the real load: Zobel + loudspeaker).
+
+.include models/opamp3p.sub
+.param cfg = 2
+.param m = 1
+.param p2 = {m==1 ? 800k : 1.5e6}
+.param p3 = {m==1 ? 2.2e6 : 3.0e6}
+.param rfb  = {cfg==0 ? 9k : 22k}
+.param cfb  = {cfg==1 ? 1n : 1e-18}
+
+* ---- loop-gain fixture
+Vt   OUTF 0 AC 1
+R_fb OUTF INV {rfb}
+Cfb  OUTF INV {cfb}
+R_gain INV G 1k
+C_gain G 0 22u
+* + input as the loop sees it: the source is an AC ground behind R_lp (new) or directly (old)
+R_lp PA_LP A 1k
+C_lp A 0 22n
+R_bias3 A 0 22k
+Vz PA_LP 0 0
+X1 A INV OUT OPAMP3P PARAMS: aol=31623 gbw=5.5e6 p2={p2} p3={p3} rout=0.1
+R_zobel OUT Z 10
+C_zobel Z 0 100n
+C_out OUT SPK 2200u
+R_vc SPK S1 8
+L_vc S1 S2 0.5m
+R_mres S2 0 56
+L_mres S2 0 22m
+C_mres S2 0 104u
+
+* ---- the same stage closed, for its frequency response (cfg 2: -3 dB of the input filter)
+Vin IN 0 AC 1
+C_in_pa IN LPc 1u
+Rlpc LPc Ac {cfg==2 ? 1k : 1e-3}
+Clpc Ac 0 {cfg==2 ? 22n : 1e-18}
+Rb3c Ac 0 22k
+X2 Ac INVc OUTc OPAMP3P PARAMS: aol=31623 gbw=5.5e6 p2={p2} p3={p3} rout=0.1
+Rfbc OUTc INVc {rfb}
+Cfbc OUTc INVc {cfb}
+Rgc INVc Gc 1k
+Cgc Gc 0 22u
+Rzc OUTc Zc 10
+Czc Zc 0 100n
+Rldc OUTc 0 8
+
+.control
+foreach mm 1 2
+  foreach c 0 1 2
+    alterparam m = $mm
+    alterparam cfg = $c
+    reset
+    ac dec 200 100 20meg
+    let t = -v(out)/v(outf)
+    let tdb = db(t)
+    let tph = 180/PI*cph(t)
+    meas ac fc WHEN tdb=0 FALL=1
+    meas ac ph FIND tph AT=fc
+    let pm = 180 + ph
+    let g = db(v(outc))
+    meas ac g1k FIND g AT=1000
+    let gn = g - g1k
+    meas ac pk MAX gn
+    meas ac fpk MAX_AT gn
+    meas ac f3 WHEN gn=-3 FALL=1
+    let ngc = db(1/abs(v(inv)/v(outf)))
+    meas ac ng FIND ngc AT=fc
+    echo "m=$mm cfg=$c | loop crosses unity at $&fc Hz, noise gain there $&ng dB | PHASE MARGIN=$&pm deg | closed loop: peaking=$&pk dB at $&fpk Hz, -3 dB at $&f3 Hz"
+  end
+end
+.endc
+.end

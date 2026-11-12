@@ -28,7 +28,9 @@ R_bias1 P33 BREF 22k
 R_bias2 BREF 0 22k
 C_bref BREF 0 {c_bref}
 R_bias3 BREF PA_BIAS {r_b3}
-C_in_pa PA_INA PA_BIAS 1u
+C_in_pa PA_INA PA_LP 1u
+R_lp PA_LP PA_BIAS 1k                 ; input low-pass (errata #35)
+C_lp PA_BIAS 0 22n
 R_drv PA_INA 0 75                      ; source impedance of the IC2-B buffer feeding PA_IN
 X_PA PA_BIAS PA_INV PA_OUT_A OPAMP1P PARAMS: aol=3e4 gbw=5.5e6 rout=0.1
 R_fb PA_OUT_A PA_INV 22k

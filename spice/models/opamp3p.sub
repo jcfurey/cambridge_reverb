@@ -1,0 +1,20 @@
+* Three-pole op-amp macromodel (ngspice) -- for STABILITY questions, where the one-pole
+* OPAMP1P cannot say anything (it has 90 degrees of phase margin at any gain).
+*   aol, gbw : DC gain and gain-bandwidth of the dominant pole (as OPAMP1P)
+*   p2, p3   : the two non-dominant poles, Hz
+* A decompensated power amplifier such as the LM1875 ("stable for gains of 10 or more")
+* is exactly an amplifier whose p2 / p3 sit BELOW its unity-gain frequency.
+.subckt OPAMP3P inp inn out PARAMS: aol=31623 gbw=5.5e6 p2=800k p3=2.2e6 rout=0.1
+Rin   inp inn 1G
+Gm    0 a  inp inn 1m
+Rp    a 0  {aol/1m}
+Cp    a 0  {1m/(2*3.141592653589793*gbw)}
+E2    b1 0 a 0 1
+R2    b1 b 1k
+C2    b 0  {1/(2*3.141592653589793*1k*p2)}
+E3    c1 0 b 0 1
+R3    c1 c 1k
+C3    c 0  {1/(2*3.141592653589793*1k*p3)}
+Eout  o 0  c 0 1
+Rout  o out {rout}
+.ends OPAMP3P

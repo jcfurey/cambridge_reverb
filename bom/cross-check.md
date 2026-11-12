@@ -48,6 +48,9 @@ than only flag them, an **ngspice-runnable** companion set now exists and was
 LTspice `power_amp_lm1875.cir` is left verbatim for provenance; the new
 `ac_power_amp_lm1875.cir` adds the missing pieces:
 
+- *(Superseded 2026-11-12, errata #35: `C_fb_hf` is gone — a capacitor across the
+  feedback resistor of an LM1875 takes its noise gain below the minimum of 10; the
+  roll-off is now `R_lp` / `C_lp` at the input, 7.7 kHz.)*
 - **`C_fb_hf` (1 nF across R_fb)** — added; the sim now shows the HF −3 dB at
   **6.83 kHz** (≈ the documented 7.2 kHz), confirming the bandwidth limit. The
   original `.cir` had no HF element.
@@ -80,3 +83,4 @@ ladder — the buffer / make-up / mid-cut stages do not care.
 ## 5. Value change applied from the consistency pass
 `R_reg2` changed **3.0 kΩ → 3.09 kΩ (E96)** so the LM317 lands inside the stated
 17.0–17.5 V window (16.88 V → 17.34 V). See errata Issue 10.
+**Superseded 2026-11-12 (errata #34):** back to 3.0 kΩ — with the LM317's adjust-pin current that is 17.0 V typical; the reference tolerance (±4 %) is far wider than the window.

@@ -29,6 +29,7 @@ import finish_routes as fr
 
 STITCH_PITCH = 7.5        # mm
 STITCH_REACH = 2.5        # a grid node may slide this far to find a free spot
+FILL_FROM = 6.0           # mm: after the grid pass, no free spot stays further than this from a ground via
 STITCH_PAD_CLEAR = 1.0    # a stitching via stays this far from ANY pad: most of them are soldered by hand
 FANOUT_REACH = 3.0        # an SMD ground pad's via is at most this far from the pad centre
 VIA_D, VIA_DRILL = 0.8, 0.4
@@ -120,7 +121,25 @@ def stitch(board, pcb, pitch=STITCH_PITCH):
             vx, vy = grid.pos(*cells[0])
             _via(board, vx, vy, code); have.append((vx, vy)); n += 1
             grid.seg(vb, vx, vy, vx, vy, VIA_DRILL + rules.hole_hole + fr.SAFETY)
-    return n
+    # fill pass: a grid node that found no free spot within its reach leaves a hole in the
+    # stitching (traces of the routed power ground, a dense row of parts). Wherever a FREE
+    # cell is still further than FILL_FROM from every ground via, put a via on the one that
+    # is furthest -- largest hole first -- until none is left.
+    nfill = 0
+    for _ in range(400):
+        m = np.ones((grid.H, grid.W), bool)
+        for (x, y) in have:
+            iy, ix = grid.cell(x, y)
+            if 0 <= iy < grid.H and 0 <= ix < grid.W: m[iy, ix] = False
+        far = ndimage.distance_transform_edt(m) * fr.RES
+        far[vb] = 0.0
+        if far.max() < FILL_FROM:
+            break
+        iy, ix = np.unravel_index(int(far.argmax()), far.shape)
+        vx, vy = grid.pos(int(iy), int(ix))
+        _via(board, vx, vy, code); have.append((vx, vy)); nfill += 1
+        grid.seg(vb, vx, vy, vx, vy, VIA_DRILL + rules.hole_hole + fr.SAFETY)
+    return n + nfill
 
 def nfp(board):
     """Remove unconnected pad / via copper on the inner layers (keep the outer ends)."""
@@ -146,7 +165,7 @@ def main():
     fr.refill(board)
     pcbnew.SaveBoard(a.src, board)
     total = sum(1 for t in board.GetTracks() if t.GetClass() == "PCB_VIA" and t.GetNetname() == "GND")
-    print(f"stitching: {n} ground vias added on a {STITCH_PITCH} mm grid ({total} ground vias in all); unused inner-layer copper removed from {m} pads / vias")
+    print(f"stitching: {n} ground vias added on a {STITCH_PITCH} mm grid and in the gaps it left ({total} ground vias in all); unused inner-layer copper removed from {m} pads / vias")
 
 if __name__ == "__main__":
     main()

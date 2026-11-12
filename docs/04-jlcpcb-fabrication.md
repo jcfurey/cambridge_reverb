@@ -45,28 +45,34 @@ Estimated cost: ~$2–7 for 5 boards + ~$5–15 shipping. Under $25 total.
 ## SMT assembly of the mixed SMD/THT board (`kicad/smd/`) — cost model, added 2026-09-07
 
 JLCPCB's economic assembly is priced per **solder joint** and per **part type**, not per
-board area: setup $8 + stencil $1.50 + $0.0016 per joint, plus **$3 per order for every
-"extended" (non-basic-library) part type**. `kicad/gen/jlc_cost.py` reads the generated
-assembly BOM and shows which knob moves the number:
+board area. Their price table as last updated 2026-10-22 (read 2026-11-12): setup $8.18 +
+stencil $1.53 + $0.0016 per joint, plus **$3.07 per order for every "extended"
+(non-basic-library) part type**; basic parts carry no loading fee, and JLCPCB's assembly
+pages say the same of "preferred" extended parts on Economic PCBA (the table itself does
+not list them — `jlc_cost.py` prints the worst case too). `kicad/gen/jlc_cost.py` reads
+the generated assembly BOM and shows which knob moves the number:
 
-| | Before | Errata #23 (assumed classes) | **2026-11, classes looked up (errata #30)** |
-|---|---:|---:|---:|
-| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 | **95 / 31** |
-| Extended part types (× $3) | 7 ($21) | 3 ($9) | **14 ($42)** + 2 "preferred" (no fee) |
-| Joints per board | 183 | 194 | 194 |
-| Assembly fees for 5 boards | ~$32 | ~$20 | **~$53**, parts extra |
+| | Before | Errata #23 (assumed classes) | 2026-11-11, classes looked up (errata #30) | **2026-11-12, re-selected (errata #36)** |
+|---|---:|---:|---:|---:|
+| SMD parts placed / assembly lines | 90 / 31 | 95 / 29 | 95 / 31 | **99 / 26** |
+| Extended part types | 7 | 3 | 14 + 2 "preferred" | **3** + 3 "preferred" |
+| Joints per board | 183 | 194 | 194 | 202 |
+| Assembly fees for 5 boards | ~$32 | ~$20 | ~$54 | **~$21** |
+| … with the parts | | | | **~$45** ($4.83 of parts per board) |
 
-The middle column rested on an assumption — that common 1206 capacitor values are
-basic-library parts whatever the dielectric. `kicad/gen/jlc_parts.py` now holds a part
-that was actually looked up for every line: in 1206 only the 100 nF and 1 µF X7R 50 V
-parts are basic, and none of the C0G values this board needs above 100 pF is basic in
-0603, 0805 or 1206. The board keeps C0G on the high-impedance and frequency-setting
-nodes (DC-biased X7R on a 1 MΩ node in a combo cabinet is a microphone) and uses 100 V
-X7R on the 33.5 V rail and across the bridge: ten C0G lines (the tenth is the 33 pF
-summer feedback capacitor of errata #31), two 100 V X7R lines, the JFET and the E96 set
-resistor are the fourteen.
+The second column rested on an assumption — that common 1206 capacitor values are
+basic-library parts whatever the dielectric. The third looked every part up, but only in
+the footprint the board already had: in 1206, C0G above 100 pF and 100 V X7R are all
+extended. **The fourth looked the other way round — what does the basic library hold,
+and can the circuit use it?** C0G 33 pF (preferred), 100 pF and 2.2 nF, and a 100 V X7R
+100 nF, are basic parts in **0805**; the remaining values were moved onto those and onto
+the two C0G lines that have no basic equivalent in any size (22 nF and 100 nF), see
+errata #36 for the list. The board still keeps C0G on every high-impedance and
+frequency-setting node (DC-biased X7R on a 1 MΩ node in a combo cabinet is a
+microphone) and 100 V parts on the 33.5 V rail and across the bridge. What is left as
+extended: 22 nF C0G, 100 nF C0G, and the JFET.
 
-What changed: every SMD capacitor is **1206** (the 1210 line — 1 µF X7R 50 V and the
+What changed in the earlier passes: every SMD capacitor was made **1206** (the 1210 line — 1 µF X7R 50 V and the
 Zobel 100 nF — was an extended part for no electrical gain; 1206 1 µF/50 V X7R is a
 basic part), the two optional MRB caps (`C_mrb_450`, `C_mrb_750`, marked "(opt)") are
 **DNP** — on the board, excluded from the assembly BOM and the position file — and the
@@ -147,8 +153,17 @@ frequency; measured on the finished board by `kicad/gen/rf_audit.py`, enforced b
 > layer, buried between them, and F.Cu carries the component-side traces with a GND
 > pour around them. `gen_pcb.py` places a ground via fence along the perimeter every
 > 5 mm (rule 3 asked 15) and gives every SMD ground pad its own via; `stitch.py` adds
-> ground vias on a 7.5 mm grid after routing. Every part has keepout areas between its
-> pins on the component side so traces cannot run through footprints.
+> ground vias on a 7.5 mm grid after routing and then fills the gaps the grid left (no
+> free spot further than 6 mm from a ground via). Every part has keepout areas between
+> its pins on the component side so traces cannot run through footprints.
+>
+> **Star ground (generated, errata #32):** the planes are SIGNAL ground only. The heavy
+> returns — transformer centre tap, reservoir, LM1875 pin 3 with its decoupling and
+> Zobel — are a separate net `PGND`, routed as 1.5 mm traces; the speaker's return pad is
+> `SPK_N`. Two 0 Ω links join them: `R_spk_rtn` (`SPK_N` → `PGND`) and `R_gnd`
+> (`SPK_N` → planes), the star. "Connect to the star ground via multiple vias near
+> C_main" (step 2 above) is superseded: one link, no others.
+> `kicad/gen/ground_audit.py` checks the result on the routed copper.
 
 In KiCad: Edit → Fill Zones → B.Cu → Net GND; clearance 0.3 mm, min width
 0.25 mm, thermal relief gap 0.5 mm, spoke width 0.5 mm.

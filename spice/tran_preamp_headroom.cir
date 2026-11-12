@@ -15,7 +15,7 @@ PREAMP HEADROOM: both JFET stages, real guitar levels, with and without the sour
 .param vin=0.1
 V_dd VDD 0 17
 V_in GUITAR_IN 0 SIN(0 {vin} 1000)
-C_in_pre GUITAR_IN RF1 47n
+C_in_pre GUITAR_IN RF1 100n
 R_rf1 RF1 Q1G 1k
 C_rf1 Q1G 0 100p
 R_g1 Q1G 0 1meg

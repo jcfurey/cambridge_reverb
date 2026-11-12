@@ -1,28 +1,28 @@
-ta100               =  4.255261e+00
-ta120               =  2.709693e+00
+ta100               =  4.985462e+00
+ta120               =  3.991156e+00
 tb100               =  -5.673071e+01
 tb120               =  -5.815227e+01
-ma100               =  1.632161e+00
+ma100               =  1.775306e+00
 mb100               =  1.457016e-03
-cfg=0 pathA bias-divider dB at 100/120 Hz: 4.25526 / 2.70969 | pathB LM317-preamp dB at 100/120 Hz: -56.7307 / -58.1523 | hum at speaker for 0.25 Vrms ripple: A=408.04 mV B=0.364254 mV total=408.04 mVrms = -27.6105 dB re 12 W
-ta100               =  -5.846154e+01
-ta120               =  -6.161066e+01
+cfg=0 pathA bias-divider dB at 100/120 Hz: 4.98546 / 3.99116 | pathB LM317-preamp dB at 100/120 Hz: -56.7307 / -58.1523 | hum at speaker for 0.25 Vrms ripple: A=443.827 mV B=0.364254 mV total=443.827 mVrms = -26.8803 dB re 12 W
+ta100               =  -5.739396e+01
+ta120               =  -5.998767e+01
 tb100               =  -5.673071e+01
 tb120               =  -5.815227e+01
-ma100               =  1.193777e-03
+ma100               =  1.349902e-03
 mb100               =  1.457016e-03
-cfg=1 pathA bias-divider dB at 100/120 Hz: -58.4615 / -61.6107 | pathB LM317-preamp dB at 100/120 Hz: -56.7307 / -58.1523 | hum at speaker for 0.25 Vrms ripple: A=0.298444 mV B=0.364254 mV total=0.470903 mVrms = -86.3659 dB re 12 W
-ta100               =  -5.846154e+01
-ta120               =  -6.161066e+01
+cfg=1 pathA bias-divider dB at 100/120 Hz: -57.394 / -59.9877 | pathB LM317-preamp dB at 100/120 Hz: -56.7307 / -58.1523 | hum at speaker for 0.25 Vrms ripple: A=0.337476 mV B=0.364254 mV total=0.496559 mVrms = -85.9051 dB re 12 W
+ta100               =  -5.739396e+01
+ta120               =  -5.998767e+01
 tb100               =  -7.173071e+01
 tb120               =  -7.315227e+01
-ma100               =  1.193777e-03
+ma100               =  1.349902e-03
 mb100               =  2.590982e-04
-cfg=2 pathA bias-divider dB at 100/120 Hz: -58.4615 / -61.6107 | pathB LM317-preamp dB at 100/120 Hz: -71.7307 / -73.1523 | hum at speaker for 0.25 Vrms ripple: A=0.298444 mV B=0.0647746 mV total=0.305393 mVrms = -90.1273 dB re 12 W
-ta100               =  -5.846154e+01
-ta120               =  -6.161066e+01
+cfg=2 pathA bias-divider dB at 100/120 Hz: -57.394 / -59.9877 | pathB LM317-preamp dB at 100/120 Hz: -71.7307 / -73.1523 | hum at speaker for 0.25 Vrms ripple: A=0.337476 mV B=0.0647746 mV total=0.343636 mVrms = -89.1026 dB re 12 W
+ta100               =  -5.739396e+01
+ta120               =  -5.998767e+01
 tb100               =  -9.459744e+01
 tb120               =  -9.758710e+01
-ma100               =  1.193777e-03
+ma100               =  1.349902e-03
 mb100               =  1.862635e-05
-cfg=3 pathA bias-divider dB at 100/120 Hz: -58.4615 / -61.6107 | pathB LM317-preamp dB at 100/120 Hz: -94.5974 / -97.5871 | hum at speaker for 0.25 Vrms ripple: A=0.298444 mV B=0.00465659 mV total=0.298481 mVrms = -90.3262 dB re 12 W
+cfg=3 pathA bias-divider dB at 100/120 Hz: -57.394 / -59.9877 | pathB LM317-preamp dB at 100/120 Hz: -94.5974 / -97.5871 | hum at speaker for 0.25 Vrms ripple: A=0.337476 mV B=0.00465659 mV total=0.337508 mVrms = -89.2588 dB re 12 W

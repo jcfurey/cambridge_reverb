@@ -33,7 +33,7 @@ Vin  gsrc 0 AC 1
 R_pu gsrc pu1 6k
 L_pu pu1 GUITAR_IN 2.5
 C_cab GUITAR_IN 0 470p
-C_in_pre GUITAR_IN RF1 47n
+C_in_pre GUITAR_IN RF1 100n
 R_rf1 RF1 Q1G 1k                  ; RF stopper (errata #24): 1k + 100 pF, 1.6 MHz
 C_rf1 Q1G 0 100p
 R_g1 Q1G 0 1meg
@@ -92,7 +92,9 @@ C_obuf_in TREM_OUT OBUF_IN 1u
 R_obuf_b OBUF_IN VB 100k
 X_OB OBUF_IN PA_IN PA_IN OPAMP_N
 * ---- power amp (LM1875 gain 23, en ~ 3 uVrms CCIR/600R -> ~15 nV/rtHz, its own PSRR path ignored)
-C_in_pa PA_IN PA_BIAS 1u
+C_in_pa PA_IN PA_LP 1u
+R_lp PA_LP PA_BIAS 1k
+C_lp PA_BIAS 0 22n
 R_bias1 RAIL PA_BIAS 22k
 R_bias2 PA_BIAS 0 22k
 X_PA PA_BIAS PA_INV PA_OUT OPAMP_N PARAMS: aol=3e4 gbw=5.5e6 rout=0.1 en=15e-9

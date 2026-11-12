@@ -17,7 +17,8 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | `ac_mrb.cir` | MRB | Resonant peak with the footswitch closed; **flatness with it open** (errata #27) |
 | **`tran_preamp_headroom.cir`** | Preamp, both stages | Gain and THD at pickup levels (20 mV – 0.5 V pk) with both / one / no source-bypass cap (errata #28) |
 | `tran_tremolo_lfo.cir` | Tremolo LFO | Oscillation + rate at the fast end of the **errata #19** network |
-| `ac_power_amp_lm1875.cir` | Power amp | Gain + LF/HF −3 dB with `C_fb_hf` + a 10″ speaker model |
+| `ac_power_amp_lm1875.cir` | Power amp | Gain + LF/HF −3 dB with the input low-pass `R_lp` / `C_lp` + a 10″ speaker model |
+| **`ac_pa_stability.cir`** | Power amp | **Phase margin** of the LM1875 loop with a three-pole amplifier model: roll-off capacitor across `R_fb` (as drawn until errata #35) vs resistive feedback + input low-pass |
 | `tran_reverb_mixer.cir` | Reverb summer | **Rail-aware**: mid-rail bias, unity sum, headroom / clipping |
 | **`ac_summer_stability.cir`** | Reverb summer | Closed-loop peaking vs stray capacitance on the summing node, without / with `C_mixfb` (errata #31) |
 | `ac_tonestack.cir` | Tone | **Rail-aware**: IC3 bias, noon response, MID CUT on/off (errata #20) |
@@ -34,6 +35,7 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 | **`sweep_classa_bias.cir`** | Class-A stage | Standing current, heat and THD vs the bias spreader |
 | **`sweep_pa_headroom.cir`** | Power amp | Clean output ceiling vs the rail (mains −10 % … +10 %) |
 | `models/opamp1p.sub` | shared | One-pole op-amp macromodel (small-signal, **no rails**) |
+| `models/opamp3p.sub` | shared | Three-pole op-amp macromodel for stability questions (a one-pole model has 90° of margin at any gain) |
 | `models/opamp_rail.sub` | shared | **Rail-aware** one-pole op-amp (output clamped to the supplies) |
 | `models/jfet_2n5457.lib` | shared | 2N5457/MMBF5457 nominal model (Idss ≈ 3 mA, Vp = −1.8 V) |
 | `run_all.sh` | — | Runs everything, saves `results/`, exit ≠ 0 if ngspice fails |
@@ -41,11 +43,13 @@ Requires ngspice (`apt install ngspice`; verified with ngspice-42).
 ## Fixed-point results (`results/*.txt`, ngspice-42)
 | Block | Measured | Documented | Verdict |
 |-------|----------|------------|---------|
-| Power amp midband gain | **27.21 dB** (23.0×) | 23× / 27.2 dB | ✅ |
-| Power amp HF −3 dB | **6.83 kHz** | ~7.2 kHz (`C_fb_hf`) | ✅ |
-| Power amp LF −3 dB | **17.2 Hz** | "7.2 Hz" (C_gain only) | ⚠️ input pole adds a second LF corner — fine for guitar |
+| Power amp midband gain | **26.66 dB** (21.5×) | 23× less 0.6 dB in the input network (R_lp against R_bias3, C_in_pa against C_lp) | ✅ |
+| Power amp HF −3 dB | **7.68 kHz** | ~7.5 kHz (`R_lp` ∥ `R_bias3`, `C_lp`) | ✅ errata #35 |
+| Power amp LF −3 dB | **10.9 Hz** | "7.2 Hz" (C_gain only) | ⚠️ input pole adds a second LF corner — fine for guitar |
+| LM1875 phase margin, 1 nF across `R_fb` (as drawn) | **−9° / −1°** (amplifier modelled with 45° / 60° at the data sheet's minimum gain of 10) | stable | ❌ noise gain 1 above 160 kHz on an amplifier compensated for ≥ 10 |
+| … resistive feedback, roll-off at the input | **+68° / +76°** | stable | ✅ errata #35 |
 | Reverb driver gain | **20.83 dB** (11.0×) | 11× | ✅ |
-| MRB resonant peak (footswitch closed) | **577 Hz**, −29 dB at 100 Hz, −10 dB at 1 kHz | ~610 Hz (1 H ‖ 68 nF) | ✅ (pulled low by the output network) |
+| MRB resonant peak (footswitch closed) | **590 Hz**, −29 dB at 100 Hz, −9 dB at 1 kHz | ~620 Hz (1 H ‖ 3 × 22 nF; 610 Hz with the THT board's 68 nF) | ✅ (pulled low by the output network) |
 | MRB bypassed (footswitch open, 1 nF of pedal cable) | **−1.0 … −1.4 dB, 100 Hz – 5 kHz**; −2.1 dB at 10 kHz | flat | ✅ errata #27 (was: band-pass always in circuit) |
 | Preamp, both stages, no source bypass (as built) | **21.0 dB**; THD 0.5 % at 0.1 V pk, 1.1 % at 0.2 V, 4.7 % at 0.5 V | clean amplifier | ✅ errata #28 |
 | Preamp with `C_s1` + `C_s2` fitted (as drawn) | 44.7 dB; THD **8 % at 20 mV**, 35 % at 0.1 V | — | ⚠️ the reason the caps are optional |

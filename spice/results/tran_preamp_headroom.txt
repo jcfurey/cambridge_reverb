@@ -1,45 +1,45 @@
-ROW opt=0 vin_pk=0.02 V | out=6.85179 Vpp | gain=44.6749 dB (THD on the next line)
+ROW opt=0 vin_pk=0.02 V | out=6.86043 Vpp | gain=44.6858 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 8.34075 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=0 vin_pk=0.05 V | out=14.3798 Vpp | gain=43.1551 dB (THD on the next line)
+  No. Harmonics: 10, THD: 8.35238 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=0 vin_pk=0.05 V | out=14.3925 Vpp | gain=43.1627 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 25.1014 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=0 vin_pk=0.1 V | out=15.0585 Vpp | gain=37.5351 dB (THD on the next line)
+  No. Harmonics: 10, THD: 25.1457 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=0 vin_pk=0.1 V | out=15.0589 Vpp | gain=37.5353 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 34.7362 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=0 vin_pk=0.2 V | out=15.2477 Vpp | gain=31.6229 dB (THD on the next line)
+  No. Harmonics: 10, THD: 34.7436 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=0 vin_pk=0.2 V | out=15.2482 Vpp | gain=31.6232 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 43.3803 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=0 vin_pk=0.5 V | out=15.3388 Vpp | gain=23.7158 dB (THD on the next line)
+  No. Harmonics: 10, THD: 43.4071 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=0 vin_pk=0.5 V | out=15.3405 Vpp | gain=23.7168 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 52.9615 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=1 vin_pk=0.02 V | out=1.78021 Vpp | gain=32.9682 dB (THD on the next line)
+  No. Harmonics: 10, THD: 52.9585 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=1 vin_pk=0.02 V | out=1.78259 Vpp | gain=32.9798 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 0.102163 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=1 vin_pk=0.05 V | out=4.42324 Vpp | gain=32.9148 dB (THD on the next line)
+  No. Harmonics: 10, THD: 0.10247 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=1 vin_pk=0.05 V | out=4.4291 Vpp | gain=32.9263 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 0.264271 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=1 vin_pk=0.1 V | out=8.59678 Vpp | gain=32.6661 dB (THD on the next line)
+  No. Harmonics: 10, THD: 0.265032 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=1 vin_pk=0.1 V | out=8.60729 Vpp | gain=32.6767 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 1.02092 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=1 vin_pk=0.2 V | out=13.2038 Vpp | gain=30.3728 dB (THD on the next line)
+  No. Harmonics: 10, THD: 1.02495 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=1 vin_pk=0.2 V | out=13.2078 Vpp | gain=30.3754 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 13.6625 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=1 vin_pk=0.5 V | out=13.6149 Vpp | gain=22.6803 dB (THD on the next line)
+  No. Harmonics: 10, THD: 13.6821 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=1 vin_pk=0.5 V | out=13.6174 Vpp | gain=22.6819 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 30.7625 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=2 vin_pk=0.02 V | out=0.450452 Vpp | gain=21.0318 dB (THD on the next line)
+  No. Harmonics: 10, THD: 30.7631 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=2 vin_pk=0.02 V | out=0.450939 Vpp | gain=21.0412 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 0.0984672 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=2 vin_pk=0.05 V | out=1.12585 Vpp | gain=21.0296 dB (THD on the next line)
+  No. Harmonics: 10, THD: 0.0985827 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=2 vin_pk=0.05 V | out=1.12705 Vpp | gain=21.0389 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 0.247151 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=2 vin_pk=0.1 V | out=2.24907 Vpp | gain=21.0194 dB (THD on the next line)
+  No. Harmonics: 10, THD: 0.247433 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=2 vin_pk=0.1 V | out=2.25148 Vpp | gain=21.0288 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 0.501125 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=2 vin_pk=0.2 V | out=4.47685 Vpp | gain=20.9782 dB (THD on the next line)
+  No. Harmonics: 10, THD: 0.501688 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=2 vin_pk=0.2 V | out=4.48163 Vpp | gain=20.9875 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 1.06142 %, Gridsize: 200, Interpolation Degree: 1
-ROW opt=2 vin_pk=0.5 V | out=10.5789 Vpp | gain=20.4888 dB (THD on the next line)
+  No. Harmonics: 10, THD: 1.06266 %, Gridsize: 200, Interpolation Degree: 1
+ROW opt=2 vin_pk=0.5 V | out=10.5879 Vpp | gain=20.4962 dB (THD on the next line)
 Fourier analysis for v(preamp_out):
-  No. Harmonics: 10, THD: 4.65186 %, Gridsize: 200, Interpolation Degree: 1
+  No. Harmonics: 10, THD: 4.66546 %, Gridsize: 200, Interpolation Degree: 1

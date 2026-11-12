@@ -24,6 +24,7 @@ run ac_reverb_driver.cir
 run ac_mrb.cir                   "^fs="
 run tran_tremolo_lfo.cir
 run ac_power_amp_lm1875.cir
+run ac_pa_stability.cir         "^m="
 run tran_reverb_mixer.cir
 run ac_summer_stability.cir      "^cfb="
 run ac_tonestack.cir "= |^DC:"

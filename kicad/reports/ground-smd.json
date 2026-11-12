@@ -1,0 +1,732 @@
+{
+ "board": "kicad/smd/cambridge_reverb_smd.kicad_pcb",
+ "size": [
+  170.2,
+  105.2
+ ],
+ "layers": [
+  "F.Cu",
+  "In1.Cu",
+  "B.Cu"
+ ],
+ "cell_mm": 0.25,
+ "nodes": 737690,
+ "ground_vias": 337,
+ "floating_copper_pieces": 0,
+ "nets": [
+  "GND",
+  "PGND",
+  "SPK_N"
+ ],
+ "links": [
+  [
+   "R_spk_rtn",
+   "SPK_N - PGND",
+   0.003
+  ],
+  [
+   "R_gnd",
+   "SPK_N - GND",
+   0.02
+  ]
+ ],
+ "star": true,
+ "net_of": {
+  "C_bref.2": "GND",
+  "TP_GND_PSU.1": "GND",
+  "POT_REV.1": "GND",
+  "R_g1.2": "GND",
+  "C_vbr.2": "GND",
+  "R_bleed.2": "GND",
+  "C_reg_in.2": "GND",
+  "R_rec_bias.2": "GND",
+  "TP_GND_REV.1": "GND",
+  "REV1.2": "GND",
+  "REV1.4": "GND",
+  "C_s1.2": "GND",
+  "POT_VOL.1": "GND",
+  "R_fs_mrb.2": "GND",
+  "R_s1.2": "GND",
+  "C_byp1.2": "PGND",
+  "R_vbt2.2": "GND",
+  "C103.2": "PGND",
+  "J_IN3.2": "GND",
+  "TP_GND_PA.1": "GND",
+  "TP_PGND.1": "PGND",
+  "C_filt2.2": "GND",
+  "C_reg_out1.2": "GND",
+  "C_vb3.2": "GND",
+  "IC3.11": "GND",
+  "C_rf1.2": "GND",
+  "J_IN1.2": "GND",
+  "C_main.2": "PGND",
+  "TP_GND_PRE.1": "GND",
+  "FS1.4": "GND",
+  "FS1.5": "GND",
+  "FS1.6": "GND",
+  "R_spk_rtn.1": "SPK_N",
+  "R_spk_rtn.2": "PGND",
+  "LS1.2": "SPK_N",
+  "J_IN2.2": "GND",
+  "C_lp.2": "GND",
+  "C_filt1.2": "GND",
+  "IC1.4": "GND",
+  "C_rec_byp.2": "GND",
+  "C_reg_out2.2": "GND",
+  "IC_PA.3": "PGND",
+  "R_s2.2": "GND",
+  "C_rf2.2": "GND",
+  "D2.2": "PGND",
+  "R_e.2": "GND",
+  "C_gain.2": "GND",
+  "C_s2.2": "GND",
+  "R_vb32.2": "GND",
+  "JP_BR.2": "PGND",
+  "TP_GND_TREM.1": "GND",
+  "R_reg2b.2": "GND",
+  "C_byp2.2": "PGND",
+  "R_b2.2": "GND",
+  "T1.2": "PGND",
+  "J_CHS.1": "GND",
+  "J_CHS.2": "GND",
+  "C_pres.2": "GND",
+  "R_g2.2": "GND",
+  "R_vbr2.2": "GND",
+  "C_adj.2": "GND",
+  "C_zobel.2": "PGND",
+  "VTL1.4": "GND",
+  "R_rec2.2": "GND",
+  "C_vbt.2": "GND",
+  "IC2.4": "GND",
+  "C_pre.2": "GND",
+  "R_gnd.1": "SPK_N",
+  "R_gnd.2": "GND",
+  "R_bias2.2": "GND",
+  "C104.2": "PGND",
+  "C_byp3.2": "GND"
+ },
+ "rectifier": {
+  "idle_A": 0.1,
+  "pulse_peak_idle_A": 0.69,
+  "pulse_peak_full_A": 2.98,
+  "harmonics_idle_mA": [
+   [
+    100.0,
+    190.9
+   ],
+   [
+    200.0,
+    165.4
+   ],
+   [
+    300.0,
+    128.3
+   ],
+   [
+    400.0,
+    86.4
+   ],
+   [
+    500.0,
+    46.5
+   ],
+   [
+    600.0,
+    14.4
+   ]
+  ],
+  "ac_rms_idle_A": 0.213,
+  "ac_rms_idle_A_weighted": 0.0721,
+  "ripple_mV_rms": 51.2,
+  "prefilter_mA_rms": 0.512
+ },
+ "loops": {
+  "charge-CT": {
+   "what": "reservoir charging pulses, centre-tapped transformer (default build)",
+   "src": "C_main.2",
+   "snk": "T1.2",
+   "distance_mm": 50.2,
+   "loop_mohm": 28.434,
+   "victims": [
+    {
+     "victim": "input jack sleeve -> Q1 source",
+     "a": "J_IN1.2",
+     "b": "R_s1.2",
+     "uV_per_A": -0.0,
+     "gain": 210.0,
+     "gain_hot": 5248.0
+    },
+    {
+     "victim": "Q1 drain rail reference -> Q2 source",
+     "a": "C_pre.2",
+     "b": "R_s2.2",
+     "uV_per_A": -0.0,
+     "gain": 63.0,
+     "gain_hot": 314.0
+    },
+    {
+     "victim": "Q2 drain rail reference -> tone ref",
+     "a": "C_pre.2",
+     "b": "C_vb3.2",
+     "uV_per_A": -0.0,
+     "gain": 19.0,
+     "gain_hot": 19.0
+    },
+    {
+     "victim": "tone reference -> volume pot ground",
+     "a": "C_vb3.2",
+     "b": "POT_VOL.1",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "volume pot ground -> mixer reference",
+     "a": "POT_VOL.1",
+     "b": "C_vbr.2",
+     "uV_per_A": -0.0,
+     "gain": 46.0,
+     "gain_hot": 46.0
+    },
+    {
+     "victim": "tank return -> recovery source",
+     "a": "REV1.4",
+     "b": "C_rec_byp.2",
+     "uV_per_A": 0.0,
+     "gain": 575.0,
+     "gain_hot": 575.0
+    },
+    {
+     "victim": "recovery rail reference -> reverb pot",
+     "a": "C_pre.2",
+     "b": "POT_REV.1",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "mixer reference -> PA feedback ground",
+     "a": "C_vbr.2",
+     "b": "C_gain.2",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "PA bias reference -> feedback ground",
+     "a": "C_bref.2",
+     "b": "C_gain.2",
+     "uV_per_A": 0.0,
+     "gain": 1.7,
+     "gain_hot": 1.7
+    },
+    {
+     "victim": "PA feedback ground -> speaker return",
+     "a": "C_gain.2",
+     "b": "LS1.2",
+     "uV_per_A": -0.0,
+     "gain": 1.0,
+     "gain_hot": 1.0
+    }
+   ],
+   "hum": {
+    "speaker_uV_rms": 12.67,
+    "pulses_uV_rms": 0.0,
+    "prefilter_uV_rms": 12.67,
+    "speaker_uV_A_weighted": 2.353,
+    "dB_re_full_power": -117.6,
+    "dBA_SPL_1m": -24.6,
+    "dominant": "PA feedback ground -> speaker return",
+    "dominant_loop": "pre-filter ripple current"
+   },
+   "hum_hot": {
+    "speaker_uV_rms": 21.76,
+    "pulses_uV_rms": 0.0,
+    "prefilter_uV_rms": 21.76,
+    "speaker_uV_A_weighted": 4.041,
+    "dB_re_full_power": -112.9,
+    "dBA_SPL_1m": -19.9,
+    "dominant": "PA feedback ground -> speaker return",
+    "dominant_loop": "pre-filter ripple current"
+   }
+  },
+  "charge-BR": {
+   "what": "reservoir charging pulses, single winding + JP_BR fitted",
+   "src": "C_main.2",
+   "snk": "JP_BR.2",
+   "distance_mm": 54.7,
+   "loop_mohm": 22.8,
+   "victims": [
+    {
+     "victim": "input jack sleeve -> Q1 source",
+     "a": "J_IN1.2",
+     "b": "R_s1.2",
+     "uV_per_A": -0.0,
+     "gain": 210.0,
+     "gain_hot": 5248.0
+    },
+    {
+     "victim": "Q1 drain rail reference -> Q2 source",
+     "a": "C_pre.2",
+     "b": "R_s2.2",
+     "uV_per_A": -0.0,
+     "gain": 63.0,
+     "gain_hot": 314.0
+    },
+    {
+     "victim": "Q2 drain rail reference -> tone ref",
+     "a": "C_pre.2",
+     "b": "C_vb3.2",
+     "uV_per_A": -0.0,
+     "gain": 19.0,
+     "gain_hot": 19.0
+    },
+    {
+     "victim": "tone reference -> volume pot ground",
+     "a": "C_vb3.2",
+     "b": "POT_VOL.1",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "volume pot ground -> mixer reference",
+     "a": "POT_VOL.1",
+     "b": "C_vbr.2",
+     "uV_per_A": -0.0,
+     "gain": 46.0,
+     "gain_hot": 46.0
+    },
+    {
+     "victim": "tank return -> recovery source",
+     "a": "REV1.4",
+     "b": "C_rec_byp.2",
+     "uV_per_A": 0.0,
+     "gain": 575.0,
+     "gain_hot": 575.0
+    },
+    {
+     "victim": "recovery rail reference -> reverb pot",
+     "a": "C_pre.2",
+     "b": "POT_REV.1",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "mixer reference -> PA feedback ground",
+     "a": "C_vbr.2",
+     "b": "C_gain.2",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "PA bias reference -> feedback ground",
+     "a": "C_bref.2",
+     "b": "C_gain.2",
+     "uV_per_A": 0.0,
+     "gain": 1.7,
+     "gain_hot": 1.7
+    },
+    {
+     "victim": "PA feedback ground -> speaker return",
+     "a": "C_gain.2",
+     "b": "LS1.2",
+     "uV_per_A": -0.0,
+     "gain": 1.0,
+     "gain_hot": 1.0
+    }
+   ],
+   "hum": {
+    "speaker_uV_rms": 12.67,
+    "pulses_uV_rms": 0.0,
+    "prefilter_uV_rms": 12.67,
+    "speaker_uV_A_weighted": 2.353,
+    "dB_re_full_power": -117.6,
+    "dBA_SPL_1m": -24.6,
+    "dominant": "PA feedback ground -> speaker return",
+    "dominant_loop": "pre-filter ripple current"
+   },
+   "hum_hot": {
+    "speaker_uV_rms": 21.76,
+    "pulses_uV_rms": 0.0,
+    "prefilter_uV_rms": 21.76,
+    "speaker_uV_A_weighted": 4.041,
+    "dB_re_full_power": -112.9,
+    "dBA_SPL_1m": -19.9,
+    "dominant": "PA feedback ground -> speaker return",
+    "dominant_loop": "pre-filter ripple current"
+   }
+  },
+  "speaker": {
+   "what": "loudspeaker return, positive half-cycle (supply -> IC -> speaker -> reservoir)",
+   "src": "LS1.2",
+   "snk": "C_main.2",
+   "distance_mm": 51.1,
+   "loop_mohm": 72.265,
+   "victims": [
+    {
+     "victim": "input jack sleeve -> Q1 source",
+     "a": "J_IN1.2",
+     "b": "R_s1.2",
+     "uV_per_A": 0.0,
+     "gain": 210.0,
+     "gain_hot": 5248.0
+    },
+    {
+     "victim": "Q1 drain rail reference -> Q2 source",
+     "a": "C_pre.2",
+     "b": "R_s2.2",
+     "uV_per_A": 0.0,
+     "gain": 63.0,
+     "gain_hot": 314.0
+    },
+    {
+     "victim": "Q2 drain rail reference -> tone ref",
+     "a": "C_pre.2",
+     "b": "C_vb3.2",
+     "uV_per_A": 0.0,
+     "gain": 19.0,
+     "gain_hot": 19.0
+    },
+    {
+     "victim": "tone reference -> volume pot ground",
+     "a": "C_vb3.2",
+     "b": "POT_VOL.1",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "volume pot ground -> mixer reference",
+     "a": "POT_VOL.1",
+     "b": "C_vbr.2",
+     "uV_per_A": 0.0,
+     "gain": 46.0,
+     "gain_hot": 46.0
+    },
+    {
+     "victim": "tank return -> recovery source",
+     "a": "REV1.4",
+     "b": "C_rec_byp.2",
+     "uV_per_A": -0.0,
+     "gain": 575.0,
+     "gain_hot": 575.0
+    },
+    {
+     "victim": "recovery rail reference -> reverb pot",
+     "a": "C_pre.2",
+     "b": "POT_REV.1",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "mixer reference -> PA feedback ground",
+     "a": "C_vbr.2",
+     "b": "C_gain.2",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "PA bias reference -> feedback ground",
+     "a": "C_bref.2",
+     "b": "C_gain.2",
+     "uV_per_A": -0.0,
+     "gain": 1.7,
+     "gain_hot": 1.7
+    },
+    {
+     "victim": "PA feedback ground -> speaker return",
+     "a": "C_gain.2",
+     "b": "LS1.2",
+     "uV_per_A": -7747.752,
+     "gain": 1.0,
+     "gain_hot": 1.0
+    }
+   ],
+   "feedback": {
+    "loop_gain": 0.0,
+    "loop_gain_dB": -300.0
+   },
+   "feedback_hot": {
+    "loop_gain": 0.0,
+    "loop_gain_dB": -300.0
+   },
+   "series_mohm": 7.75
+  },
+  "speaker-IC": {
+   "what": "loudspeaker return, negative half-cycle (C_out -> IC ground pin -> speaker)",
+   "src": "LS1.2",
+   "snk": "IC_PA.3",
+   "distance_mm": 86.7,
+   "loop_mohm": 82.617,
+   "victims": [
+    {
+     "victim": "input jack sleeve -> Q1 source",
+     "a": "J_IN1.2",
+     "b": "R_s1.2",
+     "uV_per_A": 0.0,
+     "gain": 210.0,
+     "gain_hot": 5248.0
+    },
+    {
+     "victim": "Q1 drain rail reference -> Q2 source",
+     "a": "C_pre.2",
+     "b": "R_s2.2",
+     "uV_per_A": 0.0,
+     "gain": 63.0,
+     "gain_hot": 314.0
+    },
+    {
+     "victim": "Q2 drain rail reference -> tone ref",
+     "a": "C_pre.2",
+     "b": "C_vb3.2",
+     "uV_per_A": 0.0,
+     "gain": 19.0,
+     "gain_hot": 19.0
+    },
+    {
+     "victim": "tone reference -> volume pot ground",
+     "a": "C_vb3.2",
+     "b": "POT_VOL.1",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "volume pot ground -> mixer reference",
+     "a": "POT_VOL.1",
+     "b": "C_vbr.2",
+     "uV_per_A": 0.0,
+     "gain": 46.0,
+     "gain_hot": 46.0
+    },
+    {
+     "victim": "tank return -> recovery source",
+     "a": "REV1.4",
+     "b": "C_rec_byp.2",
+     "uV_per_A": -0.0,
+     "gain": 575.0,
+     "gain_hot": 575.0
+    },
+    {
+     "victim": "recovery rail reference -> reverb pot",
+     "a": "C_pre.2",
+     "b": "POT_REV.1",
+     "uV_per_A": 0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "mixer reference -> PA feedback ground",
+     "a": "C_vbr.2",
+     "b": "C_gain.2",
+     "uV_per_A": -0.0,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "PA bias reference -> feedback ground",
+     "a": "C_bref.2",
+     "b": "C_gain.2",
+     "uV_per_A": -0.0,
+     "gain": 1.7,
+     "gain_hot": 1.7
+    },
+    {
+     "victim": "PA feedback ground -> speaker return",
+     "a": "C_gain.2",
+     "b": "LS1.2",
+     "uV_per_A": -7747.752,
+     "gain": 1.0,
+     "gain_hot": 1.0
+    }
+   ],
+   "feedback": {
+    "loop_gain": 0.0,
+    "loop_gain_dB": -300.0
+   },
+   "feedback_hot": {
+    "loop_gain": 0.0,
+    "loop_gain_dB": -300.0
+   },
+   "series_mohm": 7.75
+  },
+  "prefilter": {
+   "what": "ripple current of the 100 R / 2000 uF pre-filter",
+   "src": "C_filt1.2",
+   "snk": "C_main.2",
+   "distance_mm": 16.3,
+   "loop_mohm": 88.726,
+   "victims": [
+    {
+     "victim": "input jack sleeve -> Q1 source",
+     "a": "J_IN1.2",
+     "b": "R_s1.2",
+     "uV_per_A": 3.321,
+     "gain": 210.0,
+     "gain_hot": 5248.0
+    },
+    {
+     "victim": "Q1 drain rail reference -> Q2 source",
+     "a": "C_pre.2",
+     "b": "R_s2.2",
+     "uV_per_A": 4.067,
+     "gain": 63.0,
+     "gain_hot": 314.0
+    },
+    {
+     "victim": "Q2 drain rail reference -> tone ref",
+     "a": "C_pre.2",
+     "b": "C_vb3.2",
+     "uV_per_A": 9.1,
+     "gain": 19.0,
+     "gain_hot": 19.0
+    },
+    {
+     "victim": "tone reference -> volume pot ground",
+     "a": "C_vb3.2",
+     "b": "POT_VOL.1",
+     "uV_per_A": 21.529,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "volume pot ground -> mixer reference",
+     "a": "POT_VOL.1",
+     "b": "C_vbr.2",
+     "uV_per_A": 17.18,
+     "gain": 46.0,
+     "gain_hot": 46.0
+    },
+    {
+     "victim": "tank return -> recovery source",
+     "a": "REV1.4",
+     "b": "C_rec_byp.2",
+     "uV_per_A": 0.13,
+     "gain": 575.0,
+     "gain_hot": 575.0
+    },
+    {
+     "victim": "recovery rail reference -> reverb pot",
+     "a": "C_pre.2",
+     "b": "POT_REV.1",
+     "uV_per_A": 89.775,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "mixer reference -> PA feedback ground",
+     "a": "C_vbr.2",
+     "b": "C_gain.2",
+     "uV_per_A": -110.742,
+     "gain": 23.0,
+     "gain_hot": 23.0
+    },
+    {
+     "victim": "PA bias reference -> feedback ground",
+     "a": "C_bref.2",
+     "b": "C_gain.2",
+     "uV_per_A": -74.727,
+     "gain": 1.7,
+     "gain_hot": 1.7
+    },
+    {
+     "victim": "PA feedback ground -> speaker return",
+     "a": "C_gain.2",
+     "b": "LS1.2",
+     "uV_per_A": 22878.838,
+     "gain": 1.0,
+     "gain_hot": 1.0
+    }
+   ]
+  }
+ },
+ "pads": {
+  "C_bref.2": [
+   112.3,
+   76.6
+  ],
+  "C_filt1.2": [
+   152.2,
+   44.0
+  ],
+  "C_gain.2": [
+   110.1,
+   39.7
+  ],
+  "C_main.2": [
+   136.1,
+   46.8
+  ],
+  "C_pre.2": [
+   13.3,
+   17.4
+  ],
+  "C_rec_byp.2": [
+   84.8,
+   84.0
+  ],
+  "C_vb3.2": [
+   24.3,
+   48.9
+  ],
+  "C_vbr.2": [
+   78.3,
+   72.7
+  ],
+  "IC_PA.3": [
+   107.8,
+   11.5
+  ],
+  "JP_BR.2": [
+   158.7,
+   96.6
+  ],
+  "J_IN1.2": [
+   3.0,
+   11.6
+  ],
+  "LS1.2": [
+   124.5,
+   96.6
+  ],
+  "POT_REV.1": [
+   91.2,
+   96.6
+  ],
+  "POT_VOL.1": [
+   38.5,
+   96.6
+  ],
+  "REV1.4": [
+   86.2,
+   96.6
+  ],
+  "R_s1.2": [
+   15.1,
+   29.9
+  ],
+  "R_s2.2": [
+   21.3,
+   35.5
+  ],
+  "T1.2": [
+   142.6,
+   96.6
+  ]
+ },
+ "pa_support": {
+  "C_byp1 (100 nF) to pin 5": 19.7,
+  "C_byp1 ground to pin 3": 16.3,
+  "C_byp2 (10 uF) to pin 5": 20.8,
+  "R_zobel to pin 4": 14.6,
+  "C_zobel ground to pin 3": 14.3,
+  "C_lp to pin 1": 20.4,
+  "R_fb to pin 2": 19.0,
+  "R_gain to pin 2": 19.1
+ }
+}

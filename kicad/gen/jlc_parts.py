@@ -13,77 +13,83 @@ number. Stock moves, so re-check right before ordering:
 changed class (basic <-> extended changes the price: extended parts cost a one-off
 loading fee per part TYPE per order; "preferred" extended parts do not).
 
-Dielectric policy (why eleven capacitor lines are extended): C0G / NP0 wherever the
-capacitor is in the signal path at high impedance or sets a frequency -- the preamp
-and reverb-recovery coupling caps (a DC-biased X7R on a 1 M node in a combo cabinet is
-a microphone), the tone stack, the MRB tank, the RF stoppers, the power-amp feedback
-cap. X7R only for supply bypass, the bridge snubbers (100 V) and the 1 uF coupling /
-LFO caps, where no C0G exists in 1206. Of the values this board needs, JLCPCB's basic
-library holds two 1206 capacitors (100 nF and 1 uF X7R 50 V); the C0G values above
-100 pF came back as extended parts in 0603, 0805 and 1206 alike, so a different
-footprint would not have saved the loading fees.
+Dielectric policy: C0G / NP0 wherever the capacitor is in the signal path at high
+impedance or sets a frequency -- the preamp and reverb-recovery coupling caps (a DC-biased
+X7R on a 1 M node in a combo cabinet is a microphone), the tone stack, the MRB tank, the RF
+stoppers, the power-amp input low-pass. X7R only for supply bypass, the bridge snubbers
+(100 V) and the 1 uF coupling / LFO caps, where no C0G exists.
+
+Cost policy (2026-11-12): an EXTENDED part costs a loading fee per part type per order
+($3.07; basic and "preferred" parts none), so the circuit uses the values JLCPCB keeps as
+basic parts wherever that costs nothing: C0G 33 pF, 100 pF and 2.2 nF and the 100 V X7R
+100 nF are basic in 0805 (not in 1206, where the first version of this table looked), so
+those footprints are 0805. What is left as extended is what has no basic equivalent:
+the two large C0G values (22 nF, 100 nF) and the JFET. 14 extended lines became 3.
 """
 import sys, json, time, argparse
 
-SNAPSHOT = "2026-11-11"
-MIN_STOCK = 100            # --check warns below this (five boards need at most 70 of one line)
+SNAPSHOT = "2026-11-12"
+MIN_STOCK = 500            # --check warns below this (five boards need at most 75 of one line)
 
 # ---- which capacitor references are C0G (signal path / frequency-setting) ------------
 C0G_REFS = {
     "C_in_pre", "C_rf1", "C_pres", "C_cpl12",                       # preamp
-    "C_j1", "C_j2", "C_j3", "C_j4", "C_res", "C_gg", "C_treble",    # tone stack
+    "C_j1", "C_j2", "C_j3", "C_j4", "C_res", "C_gg",                # tone stack (the bright cap C_treble is fitted by hand)
     "C_drvin", "C_rev2", "C_rf2", "C_rev4", "C_mixfb",              # reverb
-    "C_mrb_in", "C_mrb_600", "C_mrb_out",                           # MRB
-    "C_fb_hf",                                                      # power-amp HF roll-off
+    "C_mrb_in", "C_mrb_600", "C_mrb_600b", "C_mrb_600c", "C_mrb_out",   # MRB
+    "C_lp",                                                         # power-amp input low-pass
 }
-# 100 nF X7R that sits on / swings to the 33.5 V rail: 100 V parts for all four bypass /
-# Zobel caps (one line; a 50 V part on a rail that reaches 37-40 V unloaded is too close)
-X7R_100V_REFS = {"C_byp1", "C_zobel", "C_byp3", "C_reg_out2", "C101", "C102", "C103", "C104"}
+# every "100nF/100V" in the schematic: the rail bypass / Zobel caps (a 50 V part on a rail that
+# reaches 37-40 V unloaded is too close) and the four bridge snubbers (reverse voltage 2 x Vpk)
 
 def P(lcsc, mpn, mfr, cls, comment, stock):
     return dict(lcsc=lcsc, mpn=mpn, mfr=mfr, cls=cls, comment=comment, stock=stock)
 
-# (kind, value) -> part.  kind: R0805 / R1206 / C0G / X7R / X7R100 / D_SMA / JFET / NPN
+# (kind, value) -> part.  kind: R0805 / C0G (1206) / C0G0805 / X7R (1206) / X7R100 (0805) / D_SMA / JFET / NPN
 PARTS = {
     # --- resistors, 0805 1 % thick film (UNI-ROYAL 0805W8F...), 125 mW / 150 V
-    ("R0805", "10R"):   P("C17415",  "0805W8F100JT5E",  "UNI-ROYAL", "basic",     "10R 1% 0805",  5135932),
-    ("R0805", "100R"):  P("C17408",  "0805W8F1000T5E",  "UNI-ROYAL", "basic",     "100R 1% 0805", 7046027),
-    ("R0805", "240R"):  P("C17572",  "0805W8F2400T5E",  "UNI-ROYAL", "preferred", "240R 1% 0805",  138734),
-    ("R0805", "470R"):  P("C17710",  "0805W8F4700T5E",  "UNI-ROYAL", "basic",     "470R 1% 0805", 1865483),
-    ("R0805", "1k"):    P("C17513",  "0805W8F1001T5E",  "UNI-ROYAL", "basic",     "1k 1% 0805",  40233399),
-    ("R0805", "4.7k"):  P("C17673",  "0805W8F4701T5E",  "UNI-ROYAL", "basic",     "4.7k 1% 0805", 4271521),
-    ("R0805", "10k"):   P("C17414",  "0805W8F1002T5E",  "UNI-ROYAL", "basic",     "10k 1% 0805", 49038635),
-    ("R0805", "15k"):   P("C17475",  "0805W8F1502T5E",  "UNI-ROYAL", "basic",     "15k 1% 0805",   536585),
-    ("R0805", "22k"):   P("C17560",  "0805W8F2202T5E",  "UNI-ROYAL", "basic",     "22k 1% 0805",  1323637),
-    ("R0805", "68k"):   P("C17801",  "0805W8F6802T5E",  "UNI-ROYAL", "basic",     "68k 1% 0805",   270492),
-    ("R0805", "100k"):  P("C149504", "0805W8F1003T5E",  "UNI-ROYAL", "basic",     "100k 1% 0805", 2544046),
-    ("R0805", "180k"):  P("C17501",  "0805W8F1803T5E",  "UNI-ROYAL", "preferred", "180k 1% 0805",   88382),
-    ("R0805", "220k"):  P("C17556",  "0805W8F2203T5E",  "UNI-ROYAL", "basic",     "220k 1% 0805",  488709),
-    ("R0805", "1M"):    P("C17514",  "0805W8F1004T5E",  "UNI-ROYAL", "basic",     "1M 1% 0805",   1656683),
-    # --- LM317 set resistor, E96, 85 mW -> 1206 (250 mW)
-    ("R1206", "3.09k"): P("C2091788", "CRCW12063K09FKEA", "Vishay",  "extended",  "3.09k 1% 1206", 4950),
-    # --- C0G / NP0, 1206
-    ("C0G", "33pF"):    P("C85570",   "CC1206JKNPOCBN330", "YAGEO",  "extended",  "33pF 1kV C0G 5% 1206",   16339),
-    ("C0G", "100pF"):   P("C107179",  "CC1206JRNPO9BN101", "YAGEO",  "extended",  "100pF 50V C0G 5% 1206",  34304),
-    ("C0G", "470pF"):   P("C113880",  "CC1206JRNPO0BN471", "YAGEO",  "extended",  "470pF 100V C0G 5% 1206",  5650),
-    ("C0G", "1nF"):     P("C113881",  "CC1206JRNPO9BN102", "YAGEO",  "extended",  "1nF 50V C0G 5% 1206",    13320),
-    ("C0G", "2.2nF"):   P("C326631",  "CC1206JRNPO9BN222", "YAGEO",  "extended",  "2.2nF 50V C0G 5% 1206",  19543),
-    ("C0G", "10nF"):    P("C326648",  "CC1206JKNPO9BN103", "YAGEO",  "extended",  "10nF 50V C0G 5% 1206",   23303),
-    ("C0G", "22nF"):    P("C7500389", "CC1206JRNPO9BN223", "YAGEO",  "extended",  "22nF 50V C0G 5% 1206",   10978),
-    ("C0G", "47nF"):    P("C5451690", "C1206N473J050T",    "HOLY STONE (IHHEC)", "extended", "47nF 50V C0G 5% 1206", 1184),
-    ("C0G", "68nF"):    P("C711038",  "GRM31C5C2A683JA01L", "Murata", "extended", "68nF 100V C0G 5% 1206",    215),
-    ("C0G", "100nF"):   P("C170182",  "1206N104J500CT",    "Walsin", "extended",  "100nF 50V C0G 5% 1206", 145451),
-    # --- X7R, 1206
-    ("X7R100", "10nF"): P("C107204",  "CC1206KRX7R0BB103", "YAGEO",  "extended",  "10nF 100V X7R 10% 1206",  16770),
-    ("X7R100", "100nF"): P("C107181", "CC1206KKX7R0BB104", "YAGEO",  "extended",  "100nF 100V X7R 10% 1206", 63874),
-    ("X7R", "1uF"):     P("C1848",    "CL31B105KBHNNNE",   "Samsung", "basic",    "1uF 50V X7R 10% 1206",   753353),
+    ("R0805", "10R"):   P("C17415",  "0805W8F100JT5E",  "UNI-ROYAL", "basic",     "10R 1% 0805",  5060759),
+    ("R0805", "100R"):  P("C17408",  "0805W8F1000T5E",  "UNI-ROYAL", "basic",     "100R 1% 0805", 6913131),
+    ("R0805", "240R"):  P("C17572",  "0805W8F2400T5E",  "UNI-ROYAL", "preferred", "240R 1% 0805",  271123),
+    ("R0805", "470R"):  P("C17710",  "0805W8F4700T5E",  "UNI-ROYAL", "basic",     "470R 1% 0805", 1798840),
+    ("R0805", "1k"):    P("C17513",  "0805W8F1001T5E",  "UNI-ROYAL", "basic",     "1k 1% 0805",  39835633),
+    ("R0805", "4.7k"):  P("C17673",  "0805W8F4701T5E",  "UNI-ROYAL", "basic",     "4.7k 1% 0805", 4040609),
+    ("R0805", "10k"):   P("C17414",  "0805W8F1002T5E",  "UNI-ROYAL", "basic",     "10k 1% 0805", 48472575),
+    ("R0805", "15k"):   P("C17475",  "0805W8F1502T5E",  "UNI-ROYAL", "basic",     "15k 1% 0805",   503718),
+    ("R0805", "22k"):   P("C17560",  "0805W8F2202T5E",  "UNI-ROYAL", "basic",     "22k 1% 0805",  1293120),
+    ("R0805", "68k"):   P("C17801",  "0805W8F6802T5E",  "UNI-ROYAL", "basic",     "68k 1% 0805",   257818),
+    ("R0805", "100k"):  P("C149504", "0805W8F1003T5E",  "UNI-ROYAL", "basic",     "100k 1% 0805", 2440596),
+    ("R0805", "180k"):  P("C17501",  "0805W8F1803T5E",  "UNI-ROYAL", "preferred", "180k 1% 0805",   81957),
+    ("R0805", "220k"):  P("C17556",  "0805W8F2203T5E",  "UNI-ROYAL", "basic",     "220k 1% 0805",  484887),
+    ("R0805", "1M"):    P("C17514",  "0805W8F1004T5E",  "UNI-ROYAL", "basic",     "1M 1% 0805",   1609832),
+    ("R0805", "0R"):    P("C17477",  "0805W8F0000T5E",  "UNI-ROYAL", "basic",     "0R 0805 (jumper)", 3873967),
+    ("R0805", "1.5k"):  P("C4310",   "0805W8F1501T5E",  "UNI-ROYAL", "basic",     "1.5k 1% 0805",  942696),
+    # --- C0G / NP0 that JLCPCB keeps as BASIC (or preferred) parts: 0805
+    ("C0G0805", "33pF"):  P("C107115", "CC0805JRNPO9BN330", "YAGEO",   "preferred", "33pF 50V C0G 5% 0805",  1008956),
+    ("C0G0805", "100pF"): P("C1790",   "CL21C101JBANNNC",   "Samsung", "basic",     "100pF 50V C0G 5% 0805",  679953),
+    ("C0G0805", "2.2nF"): P("C28260",  "CL21C222JBFNNNE",   "Samsung", "basic",     "2.2nF 50V C0G 5% 0805",  370139),
+    # --- C0G / NP0, 1206: the two values with no basic equivalent in any size
+    ("C0G", "22nF"):    P("C7500389", "CC1206JRNPO9BN223", "YAGEO",  "extended",  "22nF 50V C0G 5% 1206",   10952),
+    ("C0G", "100nF"):   P("C170182",  "1206N104J500CT",    "Walsin", "extended",  "100nF 50V C0G 5% 1206", 143396),
+    # --- X7R
+    ("X7R100", "100nF"): P("C28233",  "CL21B104KCFNNNE",   "Samsung", "basic",    "100nF 100V X7R 10% 0805", 2960530),
+    ("X7R", "1uF"):     P("C1848",    "CL31B105KBHNNNE",   "Samsung", "basic",    "1uF 50V X7R 10% 1206",   725516),
     # --- semiconductors
-    ("D_SMA", "1N4007"): P("C95872",  "M7",                "MDD",    "basic",     "M7 (1N4007, 1 kV 1 A, SMA)", 5380312),
-    ("JFET", "MMBF5457"): P("C2830807", "MMBF5457",        "onsemi", "extended",  "MMBF5457 N-JFET SOT-23",   40537),
-    ("NPN", "2N3904"):  P("C20526",   "MMBT3904",          "Jiangsu Changjing (JSCJ)", "basic", "MMBT3904 NPN SOT-23", 4303491),
+    ("D_SMA", "1N4007"): P("C95872",  "M7",                "MDD",    "basic",     "M7 (1N4007, 1 kV 1 A, SMA)", 6489784),
+    ("JFET", "MMBF5457"): P("C2830807", "MMBF5457",        "onsemi", "extended",  "MMBF5457 N-JFET SOT-23",   40507),
+    ("NPN", "2N3904"):  P("C20526",   "MMBT3904",          "Jiangsu Changjing (JSCJ)", "basic", "MMBT3904 NPN SOT-23", 4181453),
+}
+# unit price in USD at the 1-piece tier on SNAPSHOT (jlc_cost.py; the quote decides)
+PRICE = {
+    "C107115": 0.0069, "C149504": 0.0059, "C170182": 0.1576, "C17408": 0.0042, "C17414": 0.0034,
+    "C17415": 0.004, "C17475": 0.0041, "C17477": 0.0046, "C17501": 0.0032, "C17513": 0.0035,
+    "C17514": 0.0044, "C17556": 0.0028, "C17560": 0.0048, "C17572": 0.0036, "C17673": 0.0034,
+    "C17710": 0.0048, "C17801": 0.0029, "C1790": 0.0092, "C1848": 0.0506, "C20526": 0.0103,
+    "C28233": 0.0161, "C28260": 0.0369, "C2830807": 0.3085, "C4310": 0.0028, "C7500389": 0.2523,
+    "C95872": 0.0103,
 }
 # what the live library must say about each part's package (checked by --check)
-PKG = {"R0805": "0805", "R1206": "1206", "C0G": "1206", "X7R": "1206", "X7R100": "1206",
+PKG = {"R0805": "0805", "C0G": "1206", "C0G0805": "0805", "X7R": "1206", "X7R100": "0805",
        "D_SMA": "SMA", "JFET": "SOT-23", "NPN": "SOT-23"}
 
 def base_value(value):
@@ -94,10 +100,10 @@ def kind_for(c):
     """Part kind for a gen_kicad component record on the SMD profile, or None if THT."""
     fp = (c["fp"] or "").split(":")[-1]; ref = c["ref"]
     if fp.startswith("R_0805"): return "R0805"
-    if fp.startswith("R_1206"): return "R1206"
+    if fp.startswith("C_0805"):
+        return "C0G0805" if ref in C0G_REFS else "X7R100"
     if fp.startswith("C_1206"):
-        if ref in C0G_REFS: return "C0G"
-        return "X7R100" if ref in X7R_100V_REFS else "X7R"
+        return "C0G" if ref in C0G_REFS else "X7R"
     if fp.startswith("D_SMA"): return "D_SMA"
     if fp.startswith("SOT-23_MMBT3904"): return "NPN"
     if fp == "SOT-23": return "JFET"
@@ -140,9 +146,9 @@ def main():
     ap.add_argument("--check", action="store_true", help="query JLCPCB for current stock / class / package")
     a = ap.parse_args()
     bad = 0
-    print(f"{'kind':7s} {'value':7s} {'LCSC':9s} {'class':9s} {'MPN':20s} {'stock@' + SNAPSHOT:>17s}" + ("   live" if a.check else ""))
+    print(f"{'kind':8s} {'value':7s} {'LCSC':9s} {'class':9s} {'MPN':20s} {'stock@' + SNAPSHOT:>17s}" + ("   live" if a.check else ""))
     for (kind, value), p in sorted(PARTS.items()):
-        line = f"{kind:7s} {value:7s} {p['lcsc']:9s} {p['cls']:9s} {p['mpn']:20s} {p['stock']:>17d}"
+        line = f"{kind:8s} {value:7s} {p['lcsc']:9s} {p['cls']:9s} {p['mpn']:20s} {p['stock']:>17d}"
         if a.check:
             c = lookup(p["lcsc"]); time.sleep(0.4)
             if c is None:

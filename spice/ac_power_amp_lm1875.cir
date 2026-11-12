@@ -1,25 +1,28 @@
-LM1875 power amp -- ngspice AC analysis (guitar-optimized, with C_fb_hf)
-* Single-supply, gain 23x. This is the ngspice-runnable companion to the
-* LTspice power_amp_lm1875.cir; it ADDS the documented items the LTspice
-* netlist was missing (bom/cross-check.md sec.3):
-*   - C_fb_hf 1nF across R_fb  -> ~7.2 kHz HF -3dB (guitar bandwidth limit)
-*   - a 10" speaker model (Re+Le + 105 Hz mechanical resonance) instead of 8 ohm
-* Expected: midband ~27.2 dB (23x); LF -3dB ~7.2 Hz (C_gain); HF -3dB ~7.2 kHz.
+LM1875 power amp -- ngspice AC analysis (gain 23, input low-pass, 10 in speaker model)
+* Single-supply, gain 23x, feedback purely resistive. The 7.5 kHz guitar roll-off is the
+* input low-pass R_lp / C_lp (errata #35: until 2026-11 it was C_fb_hf, 1 nF across R_fb,
+* which takes the noise gain of a gain->=10 amplifier down to 1 -- ac_pa_stability.cir).
+*   - a 10" speaker model (Re + Le + 105 Hz mechanical resonance) instead of 8 ohm
+* Expected: midband ~26.7 dB (23x less 0.6 dB in the input network: R_lp against R_bias3 and
+* C_in_pa against C_lp); LF -3dB ~11 Hz; HF -3dB ~7.5 kHz.
 
 .include models/opamp1p.sub
 
 V_in   IN 0 AC 1
 V_sup  VPLUS 0 DC 33.5 AC 0        ; AC ground; only sets DC operating rail
 
-C_in   IN A 1u
-R_bias1 VPLUS A 22k                ; bias divider (AC: 22k||22k to gnd)
-R_bias2 A 0 22k
+C_in_pa IN PA_LP 1u
+R_lp   PA_LP A 1k                  ; input low-pass / RF stopper
+C_lp   A 0 22n
+R_bias1 VPLUS BREF 22k             ; bias divider, bypassed (C_bref), fed to the + input by R_bias3
+R_bias2 BREF 0 22k
+C_bref BREF 0 100u
+R_bias3 BREF A 22k
 
 * LM1875 behavioral op-amp (aol=100k, GBW=2.5MHz)
 X1 A FB OUT OPAMP1P PARAMS: aol=1e5 gbw=2.5e6 rout=0.1
 
 R_fb   OUT FB 22k
-C_fb_hf OUT FB 1n                  ; HF rolloff ~7.2 kHz  <-- the fix
 R_gain FB G 1k
 C_gain G 0 22u                     ; LF rolloff ~7.2 Hz
 
@@ -37,11 +40,13 @@ C_res  S2 0 104u
 
 .control
 ac dec 200 1 100k
-meas ac g_300  FIND vdb(out) AT=300       ; midband gain (expect ~27.2 dB = 23x)
-meas ac fhi    WHEN vdb(out)=24.21 FALL=1 ; HF -3dB corner (expect ~7.2 kHz, from C_fb_hf)
-meas ac flo    WHEN vdb(out)=24.21 RISE=1 ; LF -3dB corner (full stage, incl. input pole)
-meas ac g_7p2k FIND vdb(out) AT=7200      ; gain at the 7.2 kHz guitar limit
-meas ac g_20k  FIND vdb(out) AT=20000     ; well into rolloff above guitar band
+let g = vdb(out)
+meas ac g_300  FIND g AT=300              ; midband gain (expect ~26.7 dB)
+let gn = g - g_300
+meas ac fhi    WHEN gn=-3 FALL=1          ; HF -3dB corner (expect ~7.5 kHz, from R_lp / C_lp)
+meas ac flo    WHEN gn=-3 RISE=1          ; LF -3dB corner (full stage, incl. input pole)
+meas ac g_7p2k FIND g AT=7200             ; gain at the 7.2 kHz guitar limit
+meas ac g_20k  FIND g AT=20000            ; well into rolloff above guitar band
 print g_300 flo fhi g_7p2k g_20k
 .endc
 .end

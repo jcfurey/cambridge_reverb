@@ -62,7 +62,7 @@ half-winding through a bridge diode.
 | AC at T1 primary | 120 VAC | Check power cord, fuse, power switch |
 | AC at T1 secondary | ~48 VAC (or ~24 VAC) | Transformer is dead — replace |
 | DC at C_main (+) | 33–35 VDC | Check bridge rectifier, fuse F1 |
-| DC at 17V rail | 17.0–17.5 V | Check LM317, R_reg1, R_reg2 |
+| DC at 17V rail | 16.4–17.7 V (17.0 typ.) | Check LM317, R_reg1, R_reg2 |
 | DC at LM317 input (VREG_IN) | ~31–33 V | Check R_27V (100Ω) + C_filt1 pre-filter |
 | DC at LM1875 pin 5 | ~33.5 V | Check wiring to V+ rail |
 | DC at LM1875 pin 4 | ~16–17 V (V+/2) | IC may be bad or oscillating |
@@ -87,6 +87,25 @@ half-winding through a bridge diode.
 | Low-frequency motorboating | Power supply feedback | Check all bypass caps, verify star ground |
 
 ## Star grounding
-Single star-ground point located near C_main, connected to chassis. All ground
-returns land at the star. The continuous bottom-layer ground plane ties to the
-star via multiple vias near C_main (see Part 4).
+*As built since errata #32 (2026-11-12).* The board has three ground nets:
+
+| Net | What is on it | Copper |
+|---|---|---|
+| `PGND` power ground | transformer centre tap, reservoir `C_main` −, LM1875 pin 3 with its decoupling, Zobel and clamp diode, bridge snubbers | 1.5 mm traces |
+| `SPK_N` speaker return | the `LS1` "−" pad | 1.5 mm trace |
+| `GND` signal ground | everything else: both planes and the top pour | planes |
+
+`R_spk_rtn` (0 Ω, a wire link) takes the speaker return to power ground; **`R_gnd`
+(0 Ω) is the star**: the one link from the speaker's "−" terminal to the planes. The
+reservoir's charging pulses (0.7 A peaks at idle, 3 A at full power) and the speaker
+current therefore never flow in the copper the preamp is referenced to. On the earlier
+single-net board they did, and `kicad/gen/ground_audit.py` puts the result at 4–7 mV of
+buzz at the speaker at idle; now it is under 0.1 mV (`kicad/reports/ground-*.md`).
+
+- Do not add ground links. One is the design.
+- **Chassis:** bond it to circuit ground in ONE place. With the original
+  (non-insulated) input jacks that place is the jacks: leave the `J_CHS` pads empty.
+  With insulated jacks run one wire from `J_CHS` (SMD board; the PSU-corner `GND`
+  test point on the THT board) to the chassis lug. The mains safety earth goes to
+  the chassis, never to the board.
+- Before first power-up: 0 Ω between test points `GND` and `PGND`.

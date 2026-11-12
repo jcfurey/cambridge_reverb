@@ -3,6 +3,42 @@
 All notable design work on this project. Parts correspond to the structured
 deliverables produced during the design phase.
 
+### Optimisation pass: hum, stability, cost, build quality (2026-11-12)
+- **Errata #35 (high) — LM1875 stability.** `C_fb_hf` (1 nF across `R_fb`) took the
+  amplifier's noise gain to 1 above ~160 kHz; the LM1875 is compensated for gains ≥ 10.
+  New `spice/ac_pa_stability.cir` (three-pole model, `models/opamp3p.sub`): phase margin
+  **−9° / −1°** as drawn, **+68° / +76°** with resistive feedback. The 7.7 kHz roll-off
+  is now `R_lp` 1 k / `C_lp` 22 nF at the + input. Same fix in the class-A variant,
+  which also still had the pre-#25 diode pin order.
+- **Errata #32 (high) — star ground.** New `kicad/gen/ground_audit.py` solves the routed
+  ground copper as a resistor network and prices the return currents in hum at the
+  speaker: the old single-net boards came out at **4.4 mV (SMD) / 7.4 mV (THT)**
+  of charging-pulse buzz at idle, and −31 dB of loop gain through the ground on
+  the THT board with the hot preamp option. Now three nets — `PGND` (transformer centre
+  tap, reservoir, LM1875 pin 3 with its decoupling and Zobel), `SPK_N`, `GND` (planes) —
+  joined by `R_spk_rtn` and the new star link **`R_gnd`** at the speaker's return
+  terminal: **13 µV / 31 µV**, no speaker current in the planes.
+- **LM1875 and LM317 support parts at their ICs** (`gen_pcb.CLOSE`): decoupling and Zobel
+  20–15 mm from the LM1875 instead of 46–66 mm; pin 3 escape stub on the
+  inner layer. SMD board: `R_pre` / `C_pre` at the preamp, the reverb op-amp's feedback
+  network beside it (`NEAR_BY_PROFILE`; it was 40 mm away behind four electrolytics).
+- **Errata #33 — fuse.** `F1` T1A → **T1.6A**: it carries the charging pulses, 1.1 A rms
+  at full sine power, 1.5 A rms clipped.
+- **Errata #34 — LM317.** `R_reg2` back to 3.0 k (17.0 V typical with the adjust current;
+  16.4–17.7 V over the reference tolerance); errata #10's E96 3.09 k withdrawn.
+- **Errata #36 — cost.** JLCPCB keeps C0G 33 pF / 100 pF / 2.2 nF and a 100 V X7R 100 nF
+  as *basic* parts in 0805; values consolidated onto them and onto the two remaining
+  C0G lines: **14 extended part types → 3**, 31 lines → 26, 99 placed parts. Assembly
+  fees for five boards **$54 → $21** (about $45 with parts). `jlc_cost.py` now uses
+  JLCPCB's price table of 2026-10-22 and prices the parts. `C_treble` (bright cap) is
+  hand-fitted. All 26 parts re-checked live for class and stock.
+- **Stitching:** `stitch.py` fills the gaps its grid leaves — no free spot further than
+  6 mm from a ground via (337 / 370 ground vias; worst point 13.3 / 13.2 mm).
+- **`verify.py`:** new "grounding" group and the stability / roll-off limits —
+  **75 / 75** (SMD), **66 / 66** (THT). Board ID REV C.
+- THT board: keeps one 68 nF film cap and one 3 k resistor, 2.5 mm channels between
+  columns (it had 2.8 mm of width to spare before the three parts this pass adds).
+
 ### Ground system to RF practice; JLCPCB limits re-read (2026-11-11)
 - **Errata #31.** Asked whether the traces sit too close to the pours: measured, they do
   not (0.5 mm everywhere; largest stray capacitance 26 pF, lowest corner 100 kHz) — but

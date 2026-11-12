@@ -5,7 +5,7 @@ this project's rules exactly.
 Freerouting gets every net class as ONE clearance and ONE width, so two kinds of link
 stay open on every run:
 
-  * signal-level branches of a power net -- PA_OUT to the feedback parts (R_fb, C_fb_hf),
+  * signal-level branches of a power net -- PA_OUT to the feedback resistor R_fb, the speaker return to the star link R_gnd,
     +33V5 to the bias divider: a 1.5 mm trace with 0.4 mm of clearance does not fit
     between 0805 pads, although those branches carry microamps;
   * the reverb tank drive: its 0.6 / 0.8 mm separation is only required from the tank
@@ -53,7 +53,7 @@ EDGE_CLEAR = 1.0              # copper stays this far inside the board outline, 
 TANK_RETURN = {"TANK_OUT", "RF2", "QRG", "WET", "DRVP"}
 # a branch that ends on one of these carries signal current only -> may be necked down ...
 def light_ref(ref):
-    return (ref.startswith(("TP_", "R_")) and ref not in ("R_spk_rtn", "R_zobel")) or ref in ("C_fb_hf", "C_bref")
+    return (ref.startswith(("TP_", "R_")) and ref not in ("R_spk_rtn", "R_zobel")) or ref in ("C_bref", "C101", "C102", "C103", "C104")
 # ... unless its other end is one of the parts that carry the amps (then the link may be
 # the ONLY copper to that part, however light the pad it happens to land on)
 HEAVY = {"IC_PA", "C_out", "D1", "D2", "C_byp1", "C_byp2", "C_main", "F1", "BR1", "T1", "LS1", "R_spk_rtn",
